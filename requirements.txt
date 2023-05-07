@@ -1,0 +1,15 @@
+matplotlib
+numpy
+opencv-python
+Pillow
+
+#matplotlib~=3.6.3
+#numpy~=1.24.2
+#opencv-python~=4.5.4.60  #4.6.0.66
+#Pillow~=9.4.0
+
+# ^^ Development environment, as of February 2023, Linux Ubuntu 20.04:
+# Note that matplotlib, and it's dependency Pillow, are needed only with
+#  the 'equalize*.py' modules.
+
+
