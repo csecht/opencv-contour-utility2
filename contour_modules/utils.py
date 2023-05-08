@@ -46,7 +46,7 @@ def check_platform() -> None:
         if platform.release() < '10':
             windll.user32.SetProcessDPIAware()
         else:
-            windll.shcore.SetProcessDpiAwareness(1)
+            windll.shcore.SetProcessDpiAwareness(2)
 
     print('Quit program with Esc or Ctrl-Q. From the Terminal, use Ctrl-C.')
 

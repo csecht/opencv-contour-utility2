@@ -773,6 +773,13 @@ class ContourViewer(ProcessImage):
         for settings and reporting frames, and utility buttons.
         """
 
+        # The expected width of the settings report window (app Toplevel)
+        #  is 729. Need to set this window near the top right corner
+        #  of the screen so that it doesn't cover up the img windows; also
+        #  so that the bottom of it is, hopefully, not below the bottom
+        #  of the screen.
+        self.geometry(f'+{self.winfo_screenwidth()-750}+0')
+
         # OS-specific window size ranges set in Controller __init__
         # Need to color in all the master Frame and use near-white border;
         #   bd changes to darker shade for click-drag and loss of focus.
