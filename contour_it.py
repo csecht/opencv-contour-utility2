@@ -2244,7 +2244,6 @@ class ShapeViewer(tk.Canvas):  # or tk.Frame
 
         Returns: An array of HoughCircles contours.
         """
-        print('now in find_circles()')
         shaped_img = INPUT_IMG.copy()
 
         mindist = self.select_val['circle_mindist'].get()
