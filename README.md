@@ -81,7 +81,9 @@ Alternative commands (system dependent):
     python -m pip install -r requirements.txt (Windows)
 
 ### Known Issues:
-When using the sample4.jpg (shapes) image, a white border around the black background will have a hexagon-shaped contour, but may be difficult to see, especially when using yellow contour lines. Consequently, it will be counted as a hexagon shape unless, in main settings, it counted as a contour by selecting the cv2.arcLength buttong instead of cv2.contourArea.
+When using the sample4.jpg (shapes) image, a white border around the black background will have a hexagon-shaped contour, but may be difficult to see, especially when using yellow contour lines. Consequently, it will be counted as a hexagon shape unless, in main settings, it counted as a contour by selecting the cv2.arcLength button instead of cv2.contourArea.
+
+The shape identification image windows (invoked with the "ID shapes from:" buttons) do not update with changes in the main OpenCV settings window. So, for example, if shape ID needs higher image contrast, then you need to exit the program and try again before selecting one a 'ID shape' buttong. The reason is an awkward Class architecture. A remedy is in the works. Suggestions are welcome.
 
 Waiting for user comments.
 
@@ -90,7 +92,7 @@ All screenshots are from an Ubuntu Linux platform. For Windows and macOS platfor
 
 ![opening_windows](images/settings_report_window.png)
 
-Opening window for settings report and contour selectors for with the default file `sample1.jpg` input file.
+Opening window for settings report_contour and contour selectors for with the default file `sample1.jpg` input file.
 
 ![ID_image_windows](images/all_image_windows.png)
 
