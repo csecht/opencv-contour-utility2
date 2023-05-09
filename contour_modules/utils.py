@@ -181,6 +181,46 @@ def scale_img(img: np.ndarray, scale: float) -> np.ndarray:
                               interpolation=interpolate)
     return scaled_image
 
+def display_report(frame: tk.Frame, report: str) -> None:
+
+    max_line = len(max(report.splitlines(), key=len))
+
+    # Note: TkFixedFont only works when not in a tuple, so no font size.
+    #  The goal is to get a suitable platform-independent mono font.
+    #  font=('Courier', 10) should also work, if you need font size.
+    #  A smaller font is needed to shorten the window as lines & rows are added.
+    #  With smaller font, need better fg font contrast, e.g. yellow, not MASTER_BG.
+    if const.MY_OS == 'lin':
+        txt_font = ('Courier', 10)
+    elif const.MY_OS == 'win':
+        txt_font = ('Courier', 8)
+    else:  # is macOS
+        txt_font = ('Courier', 10)
+
+    reporttxt = tk.Text(frame,
+                        # font='TkFixedFont',
+                        font=txt_font,
+                        bg=const.DARK_BG,
+                        # fg=const.MASTER_BG,  # gray80 matches master self bg.
+                        fg=const.CBLIND_COLOR_TK['yellow'],  # Matches slider labels.
+                        width=max_line,
+                        height=report.count('\n'),
+                        relief='flat',
+                        padx=8, pady=8
+                        )
+    # Replace prior Text with current text;
+    #   hide cursor in Text; (re-)grid in-place.
+    reporttxt.delete('1.0', tk.END)
+    reporttxt.insert(tk.INSERT, report)
+    # Indent helps center text in the Frame.
+    reporttxt.tag_config('leftmargin', lmargin1=25)
+    reporttxt.tag_add('leftmargin', '1.0', tk.END)
+    reporttxt.configure(state=tk.DISABLED)
+
+    reporttxt.grid(column=0, row=0,
+                   columnspan=2,
+                   sticky=tk.EW)
+
 
 def text_array(text_shape: iter, do_text: str) -> np.ndarray:
     """

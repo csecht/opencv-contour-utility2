@@ -1550,44 +1550,8 @@ class ContourViewer(ProcessImage):
             f'{tab}Canny {num_canny_c_select} (from {num_canny_c_all} total)\n'
         )
 
-        max_line = len(max(self.contour_settings_txt.splitlines(), key=len))
-
-        # TODO: Put all this below in a utility module.
-        # Note: TkFixedFont only works when not in a tuple, so no font size.
-        #  The goal is to get a suitable platform-independent mono font.
-        #  font=('Courier', 10) should also work, if you need font size.
-        #  A smaller font is needed to shorten the window as lines & rows are added.
-        #  With smaller font, need better fg font contrast, e.g. yellow, not MASTER_BG.
-        if const.MY_OS == 'lin':
-            txt_font = ('Courier', 9)
-        elif const.MY_OS == 'win':
-            txt_font = ('Courier', 8)
-        else:  # is macOS
-            txt_font = ('Courier', 10)
-
-        reporttxt = tk.Text(self.frame_report,
-                            # font='TkFixedFont',
-                            font=txt_font,
-                            bg=const.DARK_BG,
-                            # fg=const.MASTER_BG,  # gray80 matches master self bg.
-                            fg=const.CBLIND_COLOR_TK['yellow'],  # Matches slider labels.
-                            width=max_line,
-                            height=self.contour_settings_txt.count('\n'),
-                            relief='flat',
-                            padx=8, pady=8
-                            )
-        # Replace prior Text with current text;
-        #   hide cursor in Text; (re-)grid in-place.
-        reporttxt.delete('1.0', tk.END)
-        reporttxt.insert(tk.INSERT, self.contour_settings_txt)
-        # Indent helps center text in the Frame.
-        reporttxt.tag_config('leftmargin', lmargin1=25)
-        reporttxt.tag_add('leftmargin', '1.0', tk.END)
-        reporttxt.configure(state=tk.DISABLED)
-
-        reporttxt.grid(column=0, row=0,
-                       columnspan=2,
-                       sticky=tk.EW)
+        utils.display_report(frame=self.frame_report,
+                             report=self.contour_settings_txt)
 
     def process_all(self, event=None) -> None:
         """
@@ -2394,35 +2358,8 @@ class ShapeViewer(tk.Canvas):  # or tk.Frame
             f'{shape_type.ljust(18)}{poly_choice}, found: {self.num_shapes}\n'
         )
 
-        max_line = len(max(self.shape_settings_txt.splitlines(), key=len))
-
-        # TODO: Put all this below in a utility module (see CV.report_contours).
-        # Note: TkFixedFont only works when not in a tuple, so no font size.
-        #  The goal is to get a suitable platform-independent mono font.
-        #  font=('Courier', 10) should also work, if you need font size.
-        #  A smaller font is needed to shorten the window as lines & rows are added.
-        #  With smaller font, need better fg font contrast, e.g. yellow, not MASTER_BG.
-        reporttxt = tk.Text(self.frame_shape_report,
-                            font='TkFixedFont',
-                            bg=const.DARK_BG,
-                            fg='gray80',  # gray80 matches master self bg.
-                            width=max_line,
-                            height=self.shape_settings_txt.count('\n'),
-                            relief='flat',
-                            padx=8, pady=8
-                            )
-        # Replace prior Text with current text;
-        #   hide cursor in Text; (re-)grid in-place.
-        reporttxt.delete('1.0', tk.END)
-        reporttxt.insert(tk.INSERT, self.shape_settings_txt)
-        # Indent helps center text in the Frame.
-        reporttxt.tag_config('leftmargin', lmargin1=25)
-        reporttxt.tag_add('leftmargin', '1.0', tk.END)
-        reporttxt.configure(state=tk.DISABLED)
-
-        reporttxt.grid(column=0, row=0,
-                       columnspan=2,
-                       sticky=tk.EW)
+        utils.display_report(frame=self.frame_shape_report,
+                             report=self.shape_settings_txt)
 
 
 if __name__ == "__main__":
