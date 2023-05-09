@@ -86,16 +86,14 @@ class ProcessImage(tk.Tk):
     """
 
     __slots__ = ('tk',
-                 'canny_lbl', 'cbox_val', 'circled_can_lbl',
-                 'circled_th_lbl', 'computed_threshold',
+                 'cbox_val', 'computed_threshold',
                  'contour_color', 'contour_limit', 'contours',
-                 'contrast_lbl', 'curr_contrast_std',
-                 'edge_contour_lbl', 'filter_lbl', 'filtered_img',
-                 'gray_lbl', 'img_window', 'input_contrast_std',
-                 'input_lbl', 'num_contours', 'radio_val',
-                 'reduced_noise_img', 'redux_lbl', 'sigma_color',
-                 'sigma_space', 'sigma_x', 'sigma_y', 'slider_val',
-                 'th_contour_lbl', 'thresh_lbl', 'tkimg',
+                 'curr_contrast_std', 'filtered_img',
+                 'img_window', 'img_label',
+                 'input_contrast_std', 'num_contours',
+                 'radio_val', 'reduced_noise_img',
+                 'sigma_color', 'sigma_space', 'sigma_x', 'sigma_y',
+                 'slider_val', 'tkimg',
                  )
 
     def __init__(self):
@@ -175,8 +173,36 @@ class ProcessImage(tk.Tk):
         self.computed_threshold = 0
         self.contour_limit = 0
 
-        # Tk windows are assigned here, but are titled in
-        #  CoutourViewer.setup_image_windows().
+        self.img_window = None
+        self.img_label = None
+
+        # (Statement is duplicated in ShapeViewer.__init__)
+        if arguments['color'] == 'yellow':
+            self.contour_color = const.CBLIND_COLOR_CV['yellow']
+        else:  # is default CV2 contour color option, green, as (BGR).
+            self.contour_color = arguments['color']
+
+    def setup_image_windows(self) -> None:
+        """
+        Create and configure all Toplevel windows and their Labels
+        needed to display processed images.
+        Called from ContourViewer() __init__ so that new Toplevels are
+        not created from ProcessImage() __init__, which may be inherited
+        from multiple Classes.
+
+        Returns: None
+        """
+
+        def no_exit_on_x():
+            """
+            Provide a notice in Terminal. Called from .protocol() in loop.
+            """
+            print('Image windows cannot be closed from the window bar.\n'
+                  'They can be minimized to get them out of the way.\n'
+                  'You can quit the program from the OpenCV Settings Report'
+                  '  window bar or Esc or Ctrl-Q keys.'
+                  )
+
         self.img_window = {
             'input': tk.Toplevel(),
             'contrasted': tk.Toplevel(),
@@ -186,29 +212,37 @@ class ProcessImage(tk.Tk):
             'thresh sized': tk.Toplevel(),
             'canny sized': tk.Toplevel(),
         }
-        # # Sized windows are deiconified in size_the_contours().
-        # self.img_window['thresh sized'].withdraw()
-        # self.img_window['canny sized'].withdraw()
+
+        # Prevent user from inadvertently resizing a window too small to use.
+        # Need to disable default window Exit in display windows b/c
+        #  subsequent calls to them need a valid path name.
+        for _, value in self.img_window.items():
+            value.minsize(200, 200)
+            value.protocol('WM_DELETE_WINDOW', no_exit_on_x)
+
+        self.img_window['input'].title(const.WIN_NAME['input+gray'])
+        self.img_window['contrasted'].title(const.WIN_NAME['contrast+redux'])
+        self.img_window['filtered'].title(const.WIN_NAME['filtered'])
+        self.img_window['thresholded'].title(const.WIN_NAME['th+contours'])
+        self.img_window['canny'].title(const.WIN_NAME['canny+contours'])
+        self.img_window['thresh sized'].title(const.WIN_NAME['thresh sized'])
+        self.img_window['canny sized'].title(const.WIN_NAME['canny sized'])
 
         # The Labels to display scaled images, which are updated using
         #  .configure() for 'image=' in their respective processing methods.
-        self.input_lbl = tk.Label(self.img_window['input'])
-        self.gray_lbl = tk.Label(self.img_window['input'])
-        self.contrast_lbl = tk.Label(self.img_window['contrasted'])
-        self.redux_lbl = tk.Label(self.img_window['contrasted'])
-        self.filter_lbl = tk.Label(self.img_window['filtered'])
-        self.thresh_lbl = tk.Label(self.img_window['thresholded'])
-        self.th_contour_lbl = tk.Label(self.img_window['thresholded'])
-        self.canny_lbl = tk.Label(self.img_window['canny'])
-        self.edge_contour_lbl = tk.Label(self.img_window['canny'])
-        self.circled_th_lbl = tk.Label(self.img_window['thresh sized'])
-        self.circled_can_lbl = tk.Label(self.img_window['canny sized'])
-
-        # (Statement is duplicated in ShapeViewer.__init__)
-        if arguments['color'] == 'yellow':
-            self.contour_color = const.CBLIND_COLOR_CV['yellow']
-        else:  # is default CV2 contour color option, green, as (BGR).
-            self.contour_color = arguments['color']
+        self.img_label = {
+            'input': tk.Label(self.img_window['input']),
+            'gray': tk.Label(self.img_window['input']),
+            'contrast': tk.Label(self.img_window['contrasted']),
+            'redux': tk.Label(self.img_window['contrasted']),
+            'filter': tk.Label(self.img_window['filtered']),
+            'thresh': tk.Label(self.img_window['thresholded']),
+            'th_contour': tk.Label(self.img_window['thresholded']),
+            'canny': tk.Label(self.img_window['canny']),
+            'can_contour': tk.Label(self.img_window['canny']),
+            'circled_th': tk.Label(self.img_window['thresh sized']),
+            'circled_can': tk.Label(self.img_window['canny sized']),
+        }
 
     def adjust_contrast(self) -> None:
         """
@@ -235,12 +269,12 @@ class ProcessImage(tk.Tk):
         # Using .configure to update image avoids the white flash each time an
         #  image is updated were a Label() to be re-made here each call.
         self.tkimg['contrast'] = manage.tkimage(contrasted)
-        self.contrast_lbl.configure(image=self.tkimg['contrast'])
+        self.img_label['contrast'].configure(image=self.tkimg['contrast'])
         # Place the label panel to the left of the contrast label gridded
         #  in reduce_noise().
-        self.contrast_lbl.grid(column=0, row=0,
-                               padx=5, pady=5,
-                               sticky=tk.NSEW)
+        self.img_label['contrast'].grid(column=0, row=0,
+                                        padx=5, pady=5,
+                                        sticky=tk.NSEW)
 
         return contrasted
 
@@ -290,12 +324,12 @@ class ProcessImage(tk.Tk):
         )
 
         self.tkimg['redux'] = manage.tkimage(self.reduced_noise_img)
-        self.redux_lbl.configure(image=self.tkimg['redux'])
+        self.img_label['redux'].configure(image=self.tkimg['redux'])
         # Place the label panel to the right of the contrast label gridded
         #  in adjust_contrast().
-        self.redux_lbl.grid(column=1, row=0,
-                            padx=5, pady=5,
-                            sticky=tk.NSEW)
+        self.img_label['redux'].grid(column=1, row=0,
+                                     padx=5, pady=5,
+                                     sticky=tk.NSEW)
 
         return self.reduced_noise_img
 
@@ -372,10 +406,10 @@ class ProcessImage(tk.Tk):
                                          borderType=border_type)
 
         self.tkimg['filter'] = manage.tkimage(self.filtered_img)
-        self.filter_lbl.configure(image=self.tkimg['filter'])
-        self.filter_lbl.grid(column=1, row=0,
-                             padx=5, pady=5,
-                             sticky=tk.NSEW)
+        self.img_label['filter'].configure(image=self.tkimg['filter'])
+        self.img_label['filter'].grid(column=1, row=0,
+                                      padx=5, pady=5,
+                                      sticky=tk.NSEW)
 
         return self.filtered_img
 
@@ -473,16 +507,16 @@ class ProcessImage(tk.Tk):
         # Need to use self.*_img to keep attribute reference and thus
         #   prevent garbage collection.
         self.tkimg['thresh'] = manage.tkimage(thresh_img)
-        self.thresh_lbl.configure(image=self.tkimg['thresh'])
-        self.thresh_lbl.grid(column=0, row=0,
-                             padx=5, pady=5,
-                             sticky=tk.NSEW)
+        self.img_label['thresh'].configure(image=self.tkimg['thresh'])
+        self.img_label['thresh'].grid(column=0, row=0,
+                                      padx=5, pady=5,
+                                      sticky=tk.NSEW)
 
         self.tkimg['drawn_th'] = manage.tkimage(self.contours['drawn_thresh'])
-        self.th_contour_lbl.configure(image=self.tkimg['drawn_th'])
-        self.th_contour_lbl.grid(column=1, row=0,
-                                 padx=5, pady=5,
-                                 sticky=tk.NSEW)
+        self.img_label['th_contour'].configure(image=self.tkimg['drawn_th'])
+        self.img_label['th_contour'].grid(column=1, row=0,
+                                          padx=5, pady=5,
+                                          sticky=tk.NSEW)
 
         return th_type
 
@@ -579,16 +613,16 @@ class ProcessImage(tk.Tk):
                                                         lineType=cv2.LINE_AA)
 
         self.tkimg['canny'] = manage.tkimage(canny_img)
-        self.canny_lbl.configure(image=self.tkimg['canny'])
-        self.canny_lbl.grid(column=0, row=0,
-                            padx=5, pady=5,
-                            sticky=tk.NSEW)
+        self.img_label['canny'].configure(image=self.tkimg['canny'])
+        self.img_label['canny'].grid(column=0, row=0,
+                                     padx=5, pady=5,
+                                     sticky=tk.NSEW)
 
         self.tkimg['drawn_can'] = manage.tkimage(self.contours['drawn_canny'])
-        self.edge_contour_lbl.configure(image=self.tkimg['drawn_can'])
-        self.edge_contour_lbl.grid(column=1, row=0,
-                                   padx=5, pady=5,
-                                   sticky=tk.NSEW)
+        self.img_label['can_contour'].configure(image=self.tkimg['drawn_can'])
+        self.img_label['can_contour'].grid(column=1, row=0,
+                                           padx=5, pady=5,
+                                           sticky=tk.NSEW)
 
     def size_the_contours(self,
                           contour_list: list,
@@ -604,9 +638,6 @@ class ProcessImage(tk.Tk):
 
         Returns: None
         """
-
-        # Need to show the size window that was hidden in __init__.
-        # self.img_window[called_by].deiconify()
 
         circled_contours = INPUT_IMG.copy()
         line_thickness = infile_dict['line_thickness']
@@ -654,16 +685,16 @@ class ProcessImage(tk.Tk):
         #   ContourViewer.setup_buttons().  Ugh, messy hard coding.
         if called_by == 'thresh sized':
             self.tkimg['circled_th'] = manage.tkimage(circled_contours)
-            self.circled_th_lbl.configure(image=self.tkimg['circled_th'])
-            self.circled_th_lbl.grid(column=0, row=0,
-                                     padx=5, pady=5,
-                                     sticky=tk.NSEW)
+            self.img_label['circled_th'].configure(image=self.tkimg['circled_th'])
+            self.img_label['circled_th'].grid(column=0, row=0,
+                                              padx=5, pady=5,
+                                              sticky=tk.NSEW)
         else:  # called by 'canny sized'
             self.tkimg['circled_can'] = manage.tkimage(circled_contours)
-            self.circled_can_lbl.configure(image=self.tkimg['circled_can'])
-            self.circled_can_lbl.grid(column=0, row=0,
-                                      padx=5, pady=5,
-                                      sticky=tk.NSEW)
+            self.img_label['circled_can'].configure(image=self.tkimg['circled_can'])
+            self.img_label['circled_can'].grid(column=0, row=0,
+                                               padx=5, pady=5,
+                                               sticky=tk.NSEW)
 
 
 class ContourViewer(ProcessImage):
@@ -674,13 +705,13 @@ class ContourViewer(ProcessImage):
         master_layout
         setup_styles
         setup_buttons
-        setup_image_windows
+        display_input_images
         config_sliders
         config_comboboxes
         config_radiobuttons
         grid_selector_widgets
         default_settings
-        report
+        report_contour
         process_all
         process_contours
     """
@@ -690,8 +721,9 @@ class ContourViewer(ProcessImage):
                  'slider', 'contour_settings_txt',
                  )
 
-    def __init__(self):
+    def __init__(self, tk1):
         super().__init__()
+        # Note: the tk1 param represents the inherited tk.Tk base class.
         # self.configure(bg='green')
         self.frame_report = tk.Frame()
         self.frame_selectors = tk.Frame()
@@ -756,6 +788,8 @@ class ContourViewer(ProcessImage):
         #  to utils.save_settings_and_img() from the Save button.
         self.contour_settings_txt = ''
 
+        self.setup_image_windows()  # called from ProcessImage base Class.
+        self.display_input_images()
         self.master_layout()
         self.setup_styles()
         self.setup_buttons()
@@ -764,8 +798,7 @@ class ContourViewer(ProcessImage):
         self.config_radiobuttons()
         self.grid_selector_widgets()
         self.default_settings()
-        self.report()
-        self.setup_image_windows()
+        self.report_contour()
 
     def master_layout(self) -> None:
         """
@@ -773,21 +806,21 @@ class ContourViewer(ProcessImage):
         for settings and reporting frames, and utility buttons.
         """
 
-        # The expected width of the settings report window (app Toplevel)
+        # The expected width of the settings report_contour window (app Toplevel)
         #  is 729. Need to set this window near the top right corner
         #  of the screen so that it doesn't cover up the img windows; also
         #  so that the bottom of it is, hopefully, not below the bottom
         #  of the screen.
-        self.geometry(f'+{self.winfo_screenwidth()-750}+0')
+        self.geometry(f'+{self.winfo_screenwidth() - 740}+0')
 
-        # OS-specific window size ranges set in Controller __init__
-        # Need to color in all the master Frame and use near-white border;
-        #   bd changes to darker shade for click-drag and loss of focus.
+        # Need to color in all the master Frame and use yellow border;
+        #   border highlightcolor changes to dark grey when click-dragged
+        #   and loss of focus.
         self.config(
-            bg=const.MASTER_BG,  # gray80 matches report() txt fg.
-            # bg=const.CBLIND_COLOR_TK['sky blue'],
+            bg=const.MASTER_BG,  # gray80 matches report_contour() txt fg.
+            # bg=const.CBLIND_COLOR_TK['sky blue'],  # for dev.
             highlightthickness=5,
-            highlightcolor='grey95',
+            highlightcolor=const.CBLIND_COLOR_TK['yellow'],
             highlightbackground='grey65'
         )
         # Need to provide exit info msg to Terminal.
@@ -893,15 +926,14 @@ class ContourViewer(ProcessImage):
         # Need to remove the buttons that call ShapeViewer() once used.
         #  Once both buttons have been used (not visible), also remove
         #  their label.
-        # This is awkward. The whole ShapeViewer calling or display
-        #  logic needs improvement.
-        # TODO: FIX problem that shapeimg does not update with changes
-        #   in main settings window. Explain in README the update issue.
         def find_shape_from_thresh():
             ShapeViewer(
                 self.contours['selected_thresh'],
                 self.filtered_img,
                 find_in='thresh')
+            # TODO: make it so the shape images are drawn with others at
+            #  stateup, but their windows are deiconified or hidden
+            #  each time btn is clicked.
             id_th_shapes_btn.grid_remove()
             if not id_canny_shapes_btn.winfo_ismapped():
                 id_shapes_label.grid_remove()
@@ -984,40 +1016,13 @@ class ContourViewer(ProcessImage):
                             pady=(0, 5),
                             sticky=tk.W)
 
-    def setup_image_windows(self):
+    def display_input_images(self):
         """
-        Reads and displays input image and its grayscale as panels packed
-        in their parent toplevel window. Provides initial read of input
-        image file.
+        Converts input image and its grayscale to tk image formate and
+        displays them as panels gridded in their toplevel window.
         Calls manage.tkimage(), which applies scaling, cv2 -> tk array
         conversion, and updates the panel Label's image parameter.
         """
-
-        # These windows are attributed in ProcessImage() __init__.
-        self.img_window['input'].title(const.WIN_NAME['input+gray'])
-        self.img_window['contrasted'].title(const.WIN_NAME['contrast+redux'])
-        self.img_window['filtered'].title(const.WIN_NAME['filtered'])
-        self.img_window['thresholded'].title(const.WIN_NAME['th+contours'])
-        self.img_window['canny'].title(const.WIN_NAME['canny+contours'])
-        self.img_window['thresh sized'].title(const.WIN_NAME['thresh sized'])
-        self.img_window['canny sized'].title(const.WIN_NAME['canny sized'])
-
-        def no_exit_on_x():
-            """
-            Provide a notice in Terminal. Called from .protocol() in loop.
-            """
-            print('Image windows cannot be closed from the window bar.\n'
-                  'They can be minimized to get them out of the way.\n'
-                  'You can quit the program from the OpenCV Settings Report'
-                  '  window bar or Esc or Ctrl-Q keys.'
-                  )
-
-        # Prevent user from inadvertently resizing a window too small to use.
-        # Need to disable default window Exit in display windows b/c
-        #  subsequent calls to them need a valid path name.
-        for _, value in self.img_window.items():
-            value.minsize(200, 200)
-            value.protocol('WM_DELETE_WINDOW', no_exit_on_x)
 
         # Display the input image and its grayscale; both are static, so
         #  do not need updating, but retain the image display statement
@@ -1025,14 +1030,14 @@ class ContourViewer(ProcessImage):
         # Note: Use 'self' to scope the ImageTk.PhotoImage in the Class,
         #  otherwise it will/may not show b/c of garbage collection.
         self.tkimg['input'] = manage.tkimage(INPUT_IMG)
-        self.input_lbl.configure(image=self.tkimg['input'])
-        self.input_lbl.grid(column=0, row=0,
-                            padx=5, pady=5)
+        self.img_label['input'].configure(image=self.tkimg['input'])
+        self.img_label['input'].grid(column=0, row=0,
+                                     padx=5, pady=5)
 
         self.tkimg['gray'] = manage.tkimage(GRAY_IMG)
-        self.gray_lbl.configure(image=self.tkimg['gray'])
-        self.gray_lbl.grid(column=1, row=0,
-                           padx=5, pady=5)
+        self.img_label['gray'].configure(image=self.tkimg['gray'])
+        self.img_label['gray'].grid(column=1, row=0,
+                                    padx=5, pady=5)
 
     def config_sliders(self):
         """
@@ -1468,7 +1473,7 @@ class ContourViewer(ProcessImage):
         # Apply the default settings.
         self.process_all()
 
-    def report(self) -> None:
+    def report_contour(self) -> None:
         """
         Write the current settings and cv2 metrics in a Text widget of
         the report_frame. Same text is printed in Terminal from "Save"
@@ -1545,51 +1550,16 @@ class ContourViewer(ProcessImage):
             f'{tab}Canny {num_canny_c_select} (from {num_canny_c_all} total)\n'
         )
 
-        max_line = len(max(self.contour_settings_txt.splitlines(), key=len))
-
-        # Note: TkFixedFont only works when not in a tuple, so no font size.
-        #  The goal is to get a suitable platform-independent mono font.
-        #  font=('Courier', 10) should also work, if you need font size.
-        #  A smaller font is needed to shorten the window as lines & rows are added.
-        #  With smaller font, need better fg font contrast, e.g. yellow, not MASTER_BG.
-        if const.MY_OS == 'lin':
-            txt_font = ('Courier', 9)
-        elif const.MY_OS == 'win':
-            txt_font = ('Courier', 8)
-        else:  # is macOS
-            txt_font = ('Courier', 10)
-
-        reporttxt = tk.Text(self.frame_report,
-                            # font='TkFixedFont',
-                            font=txt_font,
-                            bg=const.DARK_BG,
-                            # fg=const.MASTER_BG,  # gray80 matches master self bg.
-                            fg=const.CBLIND_COLOR_TK['yellow'],  # Matches slider labels.
-                            width=max_line,
-                            height=self.contour_settings_txt.count('\n'),
-                            relief='flat',
-                            padx=8, pady=8
-                            )
-        # Replace prior Text with current text;
-        #   hide cursor in Text; (re-)grid in-place.
-        reporttxt.delete('1.0', tk.END)
-        reporttxt.insert(tk.INSERT, self.contour_settings_txt)
-        # Indent helps center text in the Frame.
-        reporttxt.tag_config('leftmargin', lmargin1=25)
-        reporttxt.tag_add('leftmargin', '1.0', tk.END)
-        reporttxt.configure(state=tk.DISABLED)
-
-        reporttxt.grid(column=0, row=0,
-                       columnspan=2,
-                       sticky=tk.EW)
+        utils.display_report(frame=self.frame_report,
+                             report=self.contour_settings_txt)
 
     def process_all(self, event=None) -> None:
         """
         Runs all image processing methods from ProcessImage() and the
-        settings report.
+        settings report_contour.
         Calls adjust_contrast(), reduce_noise(), filter_image(), and
         contour_threshold() from ProcessImage.
-        Calls report() from ContourViewer.
+        Calls report_contour() from ContourViewer.
         Args:
             event: The implicit mouse button event.
 
@@ -1603,14 +1573,14 @@ class ContourViewer(ProcessImage):
         self.contour_canny(event)
         self.size_the_contours(self.contours['selected_thresh'], 'thresh sized')
         self.size_the_contours(self.contours['selected_canny'], 'canny sized')
-        self.report()
+        self.report_contour()
 
         return event
 
     def process_contours(self, event=None) -> None:
         """
         Calls contour_threshold() from ProcessImage.
-        Calls report() from ContourViewer.
+        Calls report_contour() from ContourViewer.
         Args:
             event: The implicit mouse button event.
 
@@ -1621,7 +1591,7 @@ class ContourViewer(ProcessImage):
         self.contour_canny(event)
         self.size_the_contours(self.contours['selected_thresh'], 'thresh sized')
         self.size_the_contours(self.contours['selected_canny'], 'canny sized')
-        self.report()
+        self.report_contour()
 
         return event
 
@@ -1644,11 +1614,15 @@ class ShapeViewer(tk.Canvas):  # or tk.Frame
         report_shape
     """
 
-    # Note: Need to inherit tk.Frame to gain access to tk attributes.
+    # TODO: FIX problem that shapeimg does not update with changes
+    #   in contour settings by making shapes a method in contour viewer
+    #  and just withdrawing and deiconifying the shape setting and img windows.
+
+    # Note: Need to inherit tk.Canvas (or Frame) to gain access to tk attributes.
     # Include 'tk' in __slots__ because the tk.Tk inherited in ProcessImage()
     #   is a different inheritance tree than tk.Frame inherited here?? IDK.
 
-    __slots__ = ('tk',
+    __slots__ = ('tk',  # < remove tk if inherit ProcessImage or ContourViewer.
                  'choose_shape', 'choose_shape_lbl', 'close_button',
                  'contours4shape', 'filtered4shape', 'frame_shape_report',
                  'frame_shape_selectors', 'line_thickness', 'num_shapes',
@@ -1658,9 +1632,10 @@ class ShapeViewer(tk.Canvas):  # or tk.Frame
                  'shapeimg_lbl', 'slider',
                  )
 
-    def __init__(self, contours, filtered, find_in=None):
+    def __init__(self, contours, filtered, find_in: str):
         super().__init__()
 
+        # self.destroy()  # Removes the new tk.Tk inherited from ProcessImage()
         self.contours4shape = contours
         self.filtered4shape = filtered
         self.find_in = find_in  # Should be either 'thresh' or 'canny'.
@@ -1738,17 +1713,24 @@ class ShapeViewer(tk.Canvas):  # or tk.Frame
         Shape settings and reporting frame configuration, keybindings,
         and grids.
         """
-
         # Note that ttk.Styles are already set by ContourViewer.setup_styles().
 
+        # Need different window names descriptive of selected options.
         self.shape_settings_win = tk.Toplevel()
-        self.shape_settings_win.title(const.WIN_NAME['shape report'])
-        #  ^^title('Shape Approximation, Settings Report')
-        self.shape_settings_win.minsize(200, 200)
-
         self.shaped_img_window = tk.Toplevel()
-        self.shaped_img_window.title(const.WIN_NAME[self.find_in])
+        self.shape_settings_win.minsize(200, 200)
         self.shaped_img_window.minsize(200, 200)
+
+        # Need to position window toward right of screen, overlapping
+        #   contour settings window, so that it does not cover the shape img window.
+        self.shape_settings_win.geometry(f'+{self.winfo_screenwidth() - 800}+100')
+
+        if self.find_in == 'thresh':
+            self.shape_settings_win.title(const.WIN_NAME['shape report_th'])
+        else:  # is for Canny
+            self.shape_settings_win.title(const.WIN_NAME['shape report_can'])
+
+        self.shaped_img_window.title(const.WIN_NAME[self.find_in])
 
         self.frame_shape_report = tk.Frame(master=self.shape_settings_win)
         self.frame_shape_selectors = tk.Frame(master=self.shape_settings_win)
@@ -1760,21 +1742,21 @@ class ShapeViewer(tk.Canvas):  # or tk.Frame
         def no_exit_on_x():
             """Notice in Terminal. Called from .protocol() in loop."""
             print('The Shape window cannot be closed from the window bar.\n'
-                  'It can closed from the "Close" button.\n'
+                  'It can be closed with the "Close" button.\n'
                   'You may quit the program from the OpenCV Settings Report window bar'
                   ' or Esc or Ctrl-Q key.'
                   )
 
         self.shape_settings_win.protocol('WM_DELETE_WINDOW', no_exit_on_x)
 
-        # OS-specific window size ranges set in Controller __init__
-        # Need to color in all the master Frame and use near-white border;
-        #   bd changes to darker shade for click-drag and loss of focus.
+        # Need to color in all the master Frame and use yellow border;
+        #   border highlightcolor changes to dark grey when click-dragged
+        #   and loss of focus.
         self.shape_settings_win.config(
-            bg='gray80',  # gray80 matches report() txt fg.
-            # bg=const.CBLIND_COLOR_TK['sky blue'],
+            bg='gray80',  # gray80 matches report_contour() txt fg.
+            # bg=const.CBLIND_COLOR_TK['sky blue'],  # for dev.
             highlightthickness=5,
-            highlightcolor='grey95',
+            highlightcolor=const.CBLIND_COLOR_TK['yellow'],
             highlightbackground='grey65'
         )
 
@@ -2251,7 +2233,6 @@ class ShapeViewer(tk.Canvas):  # or tk.Frame
 
         Returns: An array of HoughCircles contours.
         """
-        print('now in find_circles()')
         shaped_img = INPUT_IMG.copy()
 
         mindist = self.select_val['circle_mindist'].get()
@@ -2377,32 +2358,8 @@ class ShapeViewer(tk.Canvas):  # or tk.Frame
             f'{shape_type.ljust(18)}{poly_choice}, found: {self.num_shapes}\n'
         )
 
-        max_line = len(max(self.shape_settings_txt.splitlines(), key=len))
-
-        # Note: TkFixedFont only works when not in a tuple, so no font size.
-        #  The goal is to get a suitable platform-independent mono font.
-        #  font=('Courier', 10) should also work, if you need font size.
-        reporttxt = tk.Text(self.frame_shape_report,
-                            font='TkFixedFont',
-                            bg=const.DARK_BG,
-                            fg='gray80',  # gray80 matches master self bg.
-                            width=max_line,
-                            height=self.shape_settings_txt.count('\n'),
-                            relief='flat',
-                            padx=8, pady=8
-                            )
-        # Replace prior Text with current text;
-        #   hide cursor in Text; (re-)grid in-place.
-        reporttxt.delete('1.0', tk.END)
-        reporttxt.insert(tk.INSERT, self.shape_settings_txt)
-        # Indent helps center text in the Frame.
-        reporttxt.tag_config('leftmargin', lmargin1=25)
-        reporttxt.tag_add('leftmargin', '1.0', tk.END)
-        reporttxt.configure(state=tk.DISABLED)
-
-        reporttxt.grid(column=0, row=0,
-                       columnspan=2,
-                       sticky=tk.EW)
+        utils.display_report(frame=self.frame_shape_report,
+                             report=self.shape_settings_txt)
 
 
 if __name__ == "__main__":
@@ -2418,7 +2375,7 @@ if __name__ == "__main__":
     GRAY_IMG = infile_dict['gray_img']
 
     try:
-        app = ContourViewer()
+        app = ContourViewer(tk.Tk)
         app.title('OpenCV Settings Report')
         # Need to prevent errant window resize becoming too small to see.
         app.resizable(False, False)
