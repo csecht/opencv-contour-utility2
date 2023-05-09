@@ -167,15 +167,14 @@ elif MY_OS == 'dar':
 else:  # is Windows
     TEXT_SCALER = 0.6
 
+TEXT_THICKNESS = 1
+TEXT_COLOR = 180, 180, 180  # light gray for a dark gray background
+
 # Scaling factors for contours, circles and text, empirically determined;
 #  used in manage_input().
 LINE_SCALE = 1e-03
 FONT_SCALE = 7.7e-04
 CENTER_XSCALE = 0.035
-
-
-TEXT_THICKNESS = 1
-TEXT_COLOR = 180, 180, 180  # light gray for a dark gray background
 
 if MY_OS == 'lin':
     WIDGET_FONT = 'TkTooltipFont', 8
@@ -202,7 +201,7 @@ LABEL_PARAMETERS = dict(
 )
 
 SCALE_PARAMETERS = dict(
-    length=450,
+    length=400,
     width=10,
     orient='horizontal',
     showvalue=False,
@@ -216,9 +215,9 @@ SCALE_PARAMETERS = dict(
 RADIO_PARAMETERS = dict(
     font=WIDGET_FONT,
     bg='gray50',
-    bd=3,
+    bd=2,
     indicatoron=False,
-    **radio_params
+    **radio_params  # are OS-specific.
 
 )
 

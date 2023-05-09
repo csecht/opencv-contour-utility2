@@ -201,8 +201,8 @@ def display_report(frame: tk.Frame, report: str) -> None:
                         # font='TkFixedFont',
                         font=txt_font,
                         bg=const.DARK_BG,
-                        # fg=const.MASTER_BG,  # gray80 matches master self bg.
-                        fg=const.CBLIND_COLOR_TK['yellow'],  # Matches slider labels.
+                        fg=const.MASTER_BG,  # gray80 matches master self bg.
+                        # fg=const.CBLIND_COLOR_TK['yellow'],  # Matches slider labels.
                         width=max_line,
                         height=report.count('\n'),
                         relief='flat',

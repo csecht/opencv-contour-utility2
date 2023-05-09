@@ -1529,7 +1529,7 @@ class ContourViewer(ProcessImage):
         self.contour_settings_txt = (
             f'Image: {image_file} (alpha SD: {start_std})\n\n'
             f'{"Contrast:".ljust(21)}convertScaleAbs alpha={alpha},'
-            f' beta={beta} (adjusted alpha SD {new_std})\n'
+            f' beta={beta} (new alpha SD {new_std})\n'
             f'{"Noise reduction:".ljust(21)}cv2.getStructuringElement ksize={noise_k},\n'
             f'{tab}cv2.getStructuringElement shape={morph_shape}\n'
             f'{tab}cv2.morphologyEx iterations={noise_iter}\n'
@@ -1656,6 +1656,7 @@ class ShapeViewer(tk.Canvas):  # or tk.Frame
 
         self.choose_shape_lbl = tk.Label()
         self.choose_shape = ttk.Combobox()
+        self.circle_msg_lbl = tk.Label()
 
         self.select_val = {
             'polygon': tk.StringVar(),
@@ -1753,7 +1754,7 @@ class ShapeViewer(tk.Canvas):  # or tk.Frame
         #   border highlightcolor changes to dark grey when click-dragged
         #   and loss of focus.
         self.shape_settings_win.config(
-            bg='gray80',  # gray80 matches report_contour() txt fg.
+            bg=const.MASTER_BG,  # gray80 matches report_contour() txt fg.
             # bg=const.CBLIND_COLOR_TK['sky blue'],  # for dev.
             highlightthickness=5,
             highlightcolor=const.CBLIND_COLOR_TK['yellow'],
@@ -1885,10 +1886,12 @@ class ShapeViewer(tk.Canvas):  # or tk.Frame
         self.choose_shape.bind('<<ComboboxSelected>>',
                                func=self.process_shapes)
 
-        self.circle_msg_lbl.configure(text=
-                                      ('Note: Circles are found in the filtered image or'
-                                       ' an Otsu threshold of it, not from previously found contours.'),
-                                      **const.LABEL_PARAMETERS)
+        self.circle_msg_lbl.configure(
+            text=
+            ('Note: Circles are found in the filtered image or'
+             ' an Otsu threshold of it, not from previously found contours.'),
+            **const.LABEL_PARAMETERS)
+
         # Scale sliders:
         self.slider['epsilon_lbl'].configure(text='% polygon contour length (epsilon):',
                                              **const.LABEL_PARAMETERS)
