@@ -131,10 +131,10 @@ def save_settings_and_img(img2save,
         if imgpil.mode in ("RGBA", "P"):
             imgpil = imgpil.convert("RGB")
 
-        if first_word == 'Image:':  # First word is from main report window.
+        if first_word == 'Image:':  # First word is from main report_contour window.
             img_name = Path(f'{img_stem}_{caller}_contoured_{curr_time}{img_ext}')
             imgpil.save(img_name)
-        else:  # ...is from shaped report window
+        else:  # ...is from shaped report_contour window
             img_name = Path(f'{img_stem}_{caller}_shaped_{curr_time}{img_ext}')
             imgpil.save(img_name)
 

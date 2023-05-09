@@ -187,8 +187,8 @@ class ProcessImage(tk.Tk):
         Create and configure all Toplevel windows and their Labels
         needed to display processed images.
         Called from ContourViewer() __init__ so that new Toplevels are
-        not created when ProcessImage() __init__ is called from
-        ShapeViewer().
+        not created from ProcessImage() __init__, which may be inherited
+        from multiple Classes.
 
         Returns: None
         """
@@ -711,7 +711,7 @@ class ContourViewer(ProcessImage):
         config_radiobuttons
         grid_selector_widgets
         default_settings
-        report
+        report_contour
         process_all
         process_contours
     """
@@ -721,8 +721,9 @@ class ContourViewer(ProcessImage):
                  'slider', 'contour_settings_txt',
                  )
 
-    def __init__(self):
+    def __init__(self, tk1):
         super().__init__()
+        # Note: the tk1 param represents the inherited tk.Tk base class.
         # self.configure(bg='green')
         self.frame_report = tk.Frame()
         self.frame_selectors = tk.Frame()
@@ -797,7 +798,7 @@ class ContourViewer(ProcessImage):
         self.config_radiobuttons()
         self.grid_selector_widgets()
         self.default_settings()
-        self.report()
+        self.report_contour()
 
     def master_layout(self) -> None:
         """
@@ -805,7 +806,7 @@ class ContourViewer(ProcessImage):
         for settings and reporting frames, and utility buttons.
         """
 
-        # The expected width of the settings report window (app Toplevel)
+        # The expected width of the settings report_contour window (app Toplevel)
         #  is 729. Need to set this window near the top right corner
         #  of the screen so that it doesn't cover up the img windows; also
         #  so that the bottom of it is, hopefully, not below the bottom
@@ -816,7 +817,7 @@ class ContourViewer(ProcessImage):
         #   border highlightcolor changes to dark grey when click-dragged
         #   and loss of focus.
         self.config(
-            bg=const.MASTER_BG,  # gray80 matches report() txt fg.
+            bg=const.MASTER_BG,  # gray80 matches report_contour() txt fg.
             # bg=const.CBLIND_COLOR_TK['sky blue'],  # for dev.
             highlightthickness=5,
             highlightcolor=const.CBLIND_COLOR_TK['yellow'],
@@ -865,7 +866,7 @@ class ContourViewer(ProcessImage):
         # There are problems of tk.Button text showing up on macOS, so use ttk.
         # Explicit styles are needed for buttons to show properly on MacOS.
         #  ... even then, background and pressed colors won't be recognized.
-        # ttk.Style().theme_use('alt')
+        ttk.Style().theme_use('alt')
 
         # Use fancy buttons and comboboxes for Linux;
         #   standard theme for Windows and macOS, but with custom font.
@@ -930,6 +931,9 @@ class ContourViewer(ProcessImage):
                 self.contours['selected_thresh'],
                 self.filtered_img,
                 find_in='thresh')
+            # TODO: make it so the shape images are drawn with others at
+            #  stateup, but their windows are deiconified or hidden
+            #  each time btn is clicked.
             id_th_shapes_btn.grid_remove()
             if not id_canny_shapes_btn.winfo_ismapped():
                 id_shapes_label.grid_remove()
@@ -1469,7 +1473,7 @@ class ContourViewer(ProcessImage):
         # Apply the default settings.
         self.process_all()
 
-    def report(self) -> None:
+    def report_contour(self) -> None:
         """
         Write the current settings and cv2 metrics in a Text widget of
         the report_frame. Same text is printed in Terminal from "Save"
@@ -1548,6 +1552,7 @@ class ContourViewer(ProcessImage):
 
         max_line = len(max(self.contour_settings_txt.splitlines(), key=len))
 
+        # TODO: Put all this below in a utility module.
         # Note: TkFixedFont only works when not in a tuple, so no font size.
         #  The goal is to get a suitable platform-independent mono font.
         #  font=('Courier', 10) should also work, if you need font size.
@@ -1587,10 +1592,10 @@ class ContourViewer(ProcessImage):
     def process_all(self, event=None) -> None:
         """
         Runs all image processing methods from ProcessImage() and the
-        settings report.
+        settings report_contour.
         Calls adjust_contrast(), reduce_noise(), filter_image(), and
         contour_threshold() from ProcessImage.
-        Calls report() from ContourViewer.
+        Calls report_contour() from ContourViewer.
         Args:
             event: The implicit mouse button event.
 
@@ -1604,14 +1609,14 @@ class ContourViewer(ProcessImage):
         self.contour_canny(event)
         self.size_the_contours(self.contours['selected_thresh'], 'thresh sized')
         self.size_the_contours(self.contours['selected_canny'], 'canny sized')
-        self.report()
+        self.report_contour()
 
         return event
 
     def process_contours(self, event=None) -> None:
         """
         Calls contour_threshold() from ProcessImage.
-        Calls report() from ContourViewer.
+        Calls report_contour() from ContourViewer.
         Args:
             event: The implicit mouse button event.
 
@@ -1622,7 +1627,7 @@ class ContourViewer(ProcessImage):
         self.contour_canny(event)
         self.size_the_contours(self.contours['selected_thresh'], 'thresh sized')
         self.size_the_contours(self.contours['selected_canny'], 'canny sized')
-        self.report()
+        self.report_contour()
 
         return event
 
@@ -1645,7 +1650,11 @@ class ShapeViewer(tk.Canvas):  # or tk.Frame
         report_shape
     """
 
-    # Note: Need to inherit tk.Frame to gain access to tk attributes.
+    # TODO: FIX problem that shapeimg does not update with changes
+    #   in contour settings by making shapes a method in contour viewer
+    #  and just withdrawing and deiconifying the shape setting and img windows.
+
+    # Note: Need to inherit tk.Canvas (or Frame) to gain access to tk attributes.
     # Include 'tk' in __slots__ because the tk.Tk inherited in ProcessImage()
     #   is a different inheritance tree than tk.Frame inherited here?? IDK.
 
@@ -1659,9 +1668,10 @@ class ShapeViewer(tk.Canvas):  # or tk.Frame
                  'shapeimg_lbl', 'slider',
                  )
 
-    def __init__(self, contours, filtered, find_in=None):
+    def __init__(self, contours, filtered, find_in: str):
         super().__init__()
 
+        # self.destroy()  # Removes the new tk.Tk inherited from ProcessImage()
         self.contours4shape = contours
         self.filtered4shape = filtered
         self.find_in = find_in  # Should be either 'thresh' or 'canny'.
@@ -1741,14 +1751,22 @@ class ShapeViewer(tk.Canvas):  # or tk.Frame
         """
         # Note that ttk.Styles are already set by ContourViewer.setup_styles().
 
+        # Need different window names descriptive of selected options.
         self.shape_settings_win = tk.Toplevel()
-        self.shape_settings_win.title(const.WIN_NAME['shape report'])
-        #  ^^title('Shape Approximation, Settings Report')
-        self.shape_settings_win.minsize(200, 200)
-
         self.shaped_img_window = tk.Toplevel()
-        self.shaped_img_window.title(const.WIN_NAME[self.find_in])
+        self.shape_settings_win.minsize(200, 200)
         self.shaped_img_window.minsize(200, 200)
+
+        # Need to position window toward right of screen, overlapping
+        #   contour settings window, so that it does not cover the shape img window.
+        self.shape_settings_win.geometry(f'+{self.winfo_screenwidth() - 800}+100')
+
+        if self.find_in == 'thresh':
+            self.shape_settings_win.title(const.WIN_NAME['shape report_th'])
+        else:  # is for Canny
+            self.shape_settings_win.title(const.WIN_NAME['shape report_can'])
+
+        self.shaped_img_window.title(const.WIN_NAME[self.find_in])
 
         self.frame_shape_report = tk.Frame(master=self.shape_settings_win)
         self.frame_shape_selectors = tk.Frame(master=self.shape_settings_win)
@@ -1771,7 +1789,7 @@ class ShapeViewer(tk.Canvas):  # or tk.Frame
         #   border highlightcolor changes to dark grey when click-dragged
         #   and loss of focus.
         self.shape_settings_win.config(
-            bg='gray80',  # gray80 matches report() txt fg.
+            bg='gray80',  # gray80 matches report_contour() txt fg.
             # bg=const.CBLIND_COLOR_TK['sky blue'],  # for dev.
             highlightthickness=5,
             highlightcolor=const.CBLIND_COLOR_TK['yellow'],
@@ -2378,9 +2396,12 @@ class ShapeViewer(tk.Canvas):  # or tk.Frame
 
         max_line = len(max(self.shape_settings_txt.splitlines(), key=len))
 
+        # TODO: Put all this below in a utility module (see CV.report_contours).
         # Note: TkFixedFont only works when not in a tuple, so no font size.
         #  The goal is to get a suitable platform-independent mono font.
         #  font=('Courier', 10) should also work, if you need font size.
+        #  A smaller font is needed to shorten the window as lines & rows are added.
+        #  With smaller font, need better fg font contrast, e.g. yellow, not MASTER_BG.
         reporttxt = tk.Text(self.frame_shape_report,
                             font='TkFixedFont',
                             bg=const.DARK_BG,
@@ -2417,7 +2438,7 @@ if __name__ == "__main__":
     GRAY_IMG = infile_dict['gray_img']
 
     try:
-        app = ContourViewer()
+        app = ContourViewer(tk.Tk)
         app.title('OpenCV Settings Report')
         # Need to prevent errant window resize becoming too small to see.
         app.resizable(False, False)
