@@ -931,9 +931,6 @@ class ContourViewer(ProcessImage):
                 self.contours['selected_thresh'],
                 self.filtered_img,
                 find_in='thresh')
-            # TODO: make it so the shape images are drawn with others at
-            #  stateup, but their windows are deiconified or hidden
-            #  each time btn is clicked.
             id_th_shapes_btn.grid_remove()
             if not id_canny_shapes_btn.winfo_ismapped():
                 id_shapes_label.grid_remove()
@@ -1614,13 +1611,9 @@ class ShapeViewer(tk.Canvas):  # or tk.Frame
         report_shape
     """
 
-    # TODO: FIX problem that shapeimg does not update with changes
-    #   in contour settings by making shapes a method in contour viewer
-    #  and just withdrawing and deiconifying the shape setting and img windows.
-
     # Note: Need to inherit tk.Canvas (or Frame) to gain access to tk attributes.
-    # Include 'tk' in __slots__ because the tk.Tk inherited in ProcessImage()
-    #   is a different inheritance tree than tk.Frame inherited here?? IDK.
+    # Include 'tk' in __slots__ because the tk.Tk in ProcessImage() is not
+    #  inherited here.
 
     __slots__ = ('tk',  # < remove tk if inherit ProcessImage or ContourViewer.
                  'choose_shape', 'choose_shape_lbl', 'close_button',
