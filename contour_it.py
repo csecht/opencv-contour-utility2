@@ -2018,11 +2018,12 @@ class ShapeViewer(tk.Canvas):  # or tk.Frame
                                **selector_grid_params)
 
         self.radiobtn['hull_lbl'].grid(column=1, row=0,
-                                       padx=(230, 0),
-                                       sticky=tk.W)
+                                       padx=(0, 110),
+                                       pady=(7, 0),
+                                       sticky=tk.E)
         self.radiobtn['hull_yes'].grid(column=1, row=0,
-                                       padx=(0, 75),
-                                       pady=(5, 0),
+                                       padx=(0, 70),
+                                       pady=(7, 0),
                                        sticky=tk.E)
         self.radiobtn['hull_no'].grid(column=1, row=0,
                                       padx=(0, 35),
