@@ -2209,7 +2209,8 @@ class ImageViewer(ProcessImage):
             f'{tab}(1:{canny_th_ratio} threshold ratio), L2gradient=True\n'
             f'{"cv2.findContours:".ljust(21)}mode={c_mode}\n'
             f'{tab}method={c_method}\n'
-            f'{"Contour chain size:".ljust(21)}type is {c_type}, minimum is {c_limit} pixels\n\n'
+            f'{"Contour chain size:".ljust(21)}type is {c_type},\n'
+            f'{tab}minimum is {c_limit} pixels\n'
             f'{"# contours selected:".ljust(21)}Threshold {num_th_c_select}'
             f' (from {num_th_c_all} total)\n'
             f'{tab}Canny {num_canny_c_select} (from {num_canny_c_all} total)\n'
@@ -2337,7 +2338,7 @@ if __name__ == "__main__":
 
     try:
         app = ImageViewer(tk.Tk)
-        app.title('OpenCV Settings Report')
+        app.title('OpenCV Contour Settings Report')
         # Need to prevent errant window resize becoming too small to see.
         app.resizable(False, False)
         print(f'{Path(__file__).name} is now running...')
