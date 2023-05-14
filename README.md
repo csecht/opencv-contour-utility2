@@ -1,4 +1,8 @@
 # Project: opencv-contour-util2
+
+| ![canny_crane.png](images/canny_crane.png) | ![canny_crane_contours.png](images/canny_crane_contours.png) |
+| ------------- | ------------- |
+
 A Python program with a tkinter GUI to explore OpenCV parameters used to draw image object contours and identify specific shapes. A variety of parameter values can be adjusted using sliders, drop down menus, and button toggles (see figures below). Live image updates are displayed in multiple windows for each image processing step leading to object or shape detection.
 
 The intention of this utility is to help OpenCV users understand the relevant parameters and value ranges needed to identify objects in their projects.
