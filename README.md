@@ -81,26 +81,25 @@ Alternative commands (system dependent):
     python -m pip install -r requirements.txt (Windows)
 
 ### Known Issues:
-When using the sample4.jpg (shapes) image, a white border around the black background will have a hexagon-shaped contour, but may be difficult to see, especially when using yellow contour lines. Consequently, it will be counted as a hexagon shape unless, in main settings, it counted as a contour by selecting the cv2.arcLength button instead of cv2.contourArea.
-
-The shape identification image windows (invoked with the "ID shapes from:" buttons) do not update with changes in the main OpenCV settings window. So, for example, if shape ID needs higher image contrast, then you need to exit the program and try again before selecting one a 'ID shape' buttong. The reason is an awkward Class architecture. A remedy is in the works. Suggestions are welcome.
-
 Waiting for user comments.
+
+This isn't a program issue, but a potential source of confusion when using the example image, sample4.jpg (shapes). With the default settings, the white border around the black background will display a hexagon-shaped contour, which may be difficult to see, especially when using yellow --color option. Consequently, it will be counted as a hexagon shape unless, in main settings, it is not recognized as a selected contour by clicking the cv2.arcLength button instead of cv2.contourArea.
 
 ### Screenshots:
 All screenshots are from an Ubuntu Linux platform. For Windows and macOS platforms, window and widget formats will be slightly different.
 
-![opening_windows](images/settings_report_window.png)
+![contour_settings_window](images/contour_report_window.png)
 
-Opening window for settings report_contour and contour selectors for with the default file `sample1.jpg` input file.
+Opening window for settings report_contour and contour selectors for with the minimum invocation command line that uses default arguments: `python3 -m contour_it`.
 
 ![ID_image_windows](images/all_image_windows.png)
 
 All image windows for contour processing at default settings, using a scale factor of 0.3. Command line: `python3 -m contour_it  -i images/sample2.jpg -s 0.3`.
 
-![shapes_settings&image](images/shapes_screenshot.png)
+![shapes_settings_and_report](images/shape_report_window.png)
+![hexagon_shape_found](images/found_hexagon_screenshot.png)
 
-Additional windows that appear when the "ID shapes from" Threshold button is selected. Command line: `python3 -m contour_it  -i images/sample4.jpg -s 0.3`.
+Additional windows that appear when the "Show Shapes windows" is clicked and settings adjusted to find hexagon shapes. Command line: `python3 -m contour_it  -i images/sample4.jpg -s 0.3 --color yellow`.
 
 ![clahe_histograms](images/clahe_screenshot.png)
 
