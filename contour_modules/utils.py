@@ -25,7 +25,6 @@ from pathlib import Path
 import cv2
 import numpy as np
 import tkinter as tk
-from tkinter import ttk
 from PIL import ImageTk
 
 # Local application imports.
@@ -78,7 +77,7 @@ def save_settings_and_img(img2save,
     Print to terminal/console and to file current settings and
     calculated image processing values.
     Save current result image.
-    Called from ContourViewer.master_layout().
+    Called from ContourViewer.master_setup().
 
     Args:
         img2save: The current resulting image array; can be a np.ndarray

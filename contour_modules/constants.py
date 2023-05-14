@@ -25,6 +25,8 @@ WIN_NAME = {
     'thresh sized': 'Threshold objects, with relative px sizes',
     'canny sized': 'Canny edged objects, with relative px sizes',
     'canny+contours': 'Edges <- | -> Selected Canny contours',
+    'shapes': 'Shaped found',
+    'shape_report': 'Shape Report Settings',
     'shape report_th': 'Shape Report, using threshold contours',
     'shape report_can': 'Shape Report, using Canny contours',
     'thresh': 'Shapes found in threshold contours',
@@ -200,8 +202,30 @@ LABEL_PARAMETERS = dict(
     fg=widget_fg,
 )
 
+if MY_OS == 'lin':
+    scale_len = 400
+    shape_scale_len = 400
+elif MY_OS == 'dar':
+    scale_len = 400
+    shape_scale_len = 320
+else:  # is Windows
+    scale_len = 450
+    shape_scale_len = 450
+
 SCALE_PARAMETERS = dict(
-    length=400,
+    length=scale_len,
+    width=10,
+    orient='horizontal',
+    showvalue=False,
+    sliderlength=20,
+    font=WIDGET_FONT,
+    bg=CBLIND_COLOR_TK['dark blue'],
+    fg=widget_fg,
+    troughcolor=MASTER_BG,
+)
+
+SHAPE_SCALE_PARAMS = dict(
+    length=shape_scale_len,
     width=10,
     orient='horizontal',
     showvalue=False,

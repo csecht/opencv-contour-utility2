@@ -72,29 +72,24 @@ class ProcessImage(tk.Tk):
     """
     A suite of OpenCV methods for applying various image processing
     functions involved in identifying objects from an image file.
+
     OpenCV's methods used: cv2.convertScaleAbs, cv2.getStructuringElement,
     cv2.morphologyEx, cv2 filters, cv2.threshold, cv2.Canny,
     cv2.findContours, cv2.contourArea,cv2.arcLength, cv2.drawContours,
     cv2.minEnclosingCircle.
-    Class methods:
-        adjust_contrast
-        reduce_noise
-        filter_image
-        contour_threshold
-        contour_canny
-        size_the_contours
-    """
 
-    __slots__ = ('tk',
-                 'cbox_val', 'computed_threshold',
-                 'contour_color', 'contour_limit', 'contours',
-                 'curr_contrast_std', 'filtered_img',
-                 'img_window', 'img_label',
-                 'input_contrast_std', 'num_contours',
-                 'radio_val', 'reduced_noise_img',
-                 'sigma_color', 'sigma_space', 'sigma_x', 'sigma_y',
-                 'slider_val', 'tkimg',
-                 )
+    Class methods and internal functions:
+    setup_image_windows > no_exit_on_x
+    adjust_contrast
+    reduce_noise
+    filter_image
+    contour_threshold
+    contour_canny
+    size_the_contours
+    select_shape > find_poly
+    draw_shapes
+    find_circles
+    """
 
     def __init__(self):
         super().__init__()
@@ -102,6 +97,7 @@ class ProcessImage(tk.Tk):
         # Note: The matching selector widgets for the following 15
         #  control variables are in ContourViewer __init__.
         self.slider_val = {
+            # Used for contours.
             'alpha': tk.DoubleVar(),
             'beta': tk.IntVar(),
             'noise_k': tk.IntVar(),
@@ -110,19 +106,34 @@ class ProcessImage(tk.Tk):
             'canny_th_ratio': tk.DoubleVar(),
             'canny_th_min': tk.IntVar(),
             'c_limit': tk.IntVar(),
+            # Used for shapes.
+            'epsilon': tk.DoubleVar(),
+            'circle_mindist': tk.IntVar(),
+            'circle_param1': tk.IntVar(),
+            'circle_param2': tk.IntVar(),
+            'circle_minradius': tk.IntVar(),
+            'circle_maxradius': tk.IntVar(),
         }
         self.cbox_val = {
+            # Used for contours.
             'morphop_pref': tk.StringVar(),
             'morphshape_pref': tk.StringVar(),
             'border_pref': tk.StringVar(),
             'filter_pref': tk.StringVar(),
             'th_type_pref': tk.StringVar(),
             'c_method_pref': tk.StringVar(),
+            # Used for shapes.
+            'polygon': tk.StringVar(),
         }
         self.radio_val = {
+            # Used for contours.
             'c_mode_pref': tk.StringVar(),
             'c_type_pref': tk.StringVar(),
             'hull_pref': tk.BooleanVar(),
+            # Used for shapes.
+            'hull_shape': tk.StringVar(),
+            'find_circle_in': tk.StringVar(),
+            'find_shape_in': tk.StringVar(),
         }
 
         self.input_contrast_std = tk.DoubleVar()
@@ -140,10 +151,11 @@ class ProcessImage(tk.Tk):
             'filter': None,
             'thresh': None,
             'canny': None,
-            'drawn_th': None,
-            'drawn_can': None,
+            'drawn_thresh': None,
+            'drawn_canny': None,
             'circled_th': None,
-            'circled_can': None
+            'circled_can': None,
+            'shaped': None,
         }
 
         # Contour lists populated with cv2.findContours point sets.
@@ -172,15 +184,13 @@ class ProcessImage(tk.Tk):
         self.sigma_y = 1
         self.computed_threshold = 0
         self.contour_limit = 0
+        self.num_shapes = 0
 
         self.img_window = None
         self.img_label = None
+        self.shape_settings_win = None
 
-        # (Statement is duplicated in ShapeViewer.__init__)
-        if arguments['color'] == 'yellow':
-            self.contour_color = const.CBLIND_COLOR_CV['yellow']
-        else:  # is default CV2 contour color option, green, as (BGR).
-            self.contour_color = arguments['color']
+        self.contour_color = ''
 
     def setup_image_windows(self) -> None:
         """
@@ -211,6 +221,7 @@ class ProcessImage(tk.Tk):
             'canny': tk.Toplevel(),
             'thresh sized': tk.Toplevel(),
             'canny sized': tk.Toplevel(),
+            'shaped': tk.Toplevel(),
         }
 
         # Prevent user from inadvertently resizing a window too small to use.
@@ -227,6 +238,7 @@ class ProcessImage(tk.Tk):
         self.img_window['canny'].title(const.WIN_NAME['canny+contours'])
         self.img_window['thresh sized'].title(const.WIN_NAME['thresh sized'])
         self.img_window['canny sized'].title(const.WIN_NAME['canny sized'])
+        self.img_window['shaped'].title(const.WIN_NAME['shapes'])
 
         # The Labels to display scaled images, which are updated using
         #  .configure() for 'image=' in their respective processing methods.
@@ -242,7 +254,14 @@ class ProcessImage(tk.Tk):
             'can_contour': tk.Label(self.img_window['canny']),
             'circled_th': tk.Label(self.img_window['thresh sized']),
             'circled_can': tk.Label(self.img_window['canny sized']),
+            'shaped': tk.Label(self.img_window['shaped']),
         }
+
+        # The highlight color used to draw contours and shapes.
+        if arguments['color'] == 'yellow':
+            self.contour_color = const.CBLIND_COLOR_CV['yellow']
+        else:  # is default CV2 contour color option, green, as (B,G,R).
+            self.contour_color = arguments['color']
 
     def adjust_contrast(self) -> None:
         """
@@ -434,7 +453,6 @@ class ProcessImage(tk.Tk):
         c_method = const.CONTOUR_METHOD[self.cbox_val['c_method_pref'].get()]
         c_type = self.radio_val['c_type_pref'].get()
         c_limit = self.slider_val['c_limit'].get()
-        line_thickness = infile_dict['line_thickness']
 
         # Set values to exclude threshold contours that may include
         #  contrasting borders on the image; an arbitrary 90% length
@@ -492,7 +510,7 @@ class ProcessImage(tk.Tk):
                              contours=hull_list,
                              contourIdx=-1,  # all hulls.
                              color=const.CBLIND_COLOR_CV['sky blue'],
-                             thickness=line_thickness * 3,
+                             thickness=LINE_THICKNESS * 3,
                              lineType=cv2.LINE_AA)
 
         # NOTE: drawn_thresh is what is saved with the 'Save' button.
@@ -501,7 +519,7 @@ class ProcessImage(tk.Tk):
             contours=self.contours['selected_thresh'],
             contourIdx=-1,  # all contours.
             color=self.contour_color,
-            thickness=line_thickness * 2,
+            thickness=LINE_THICKNESS * 2,
             lineType=cv2.LINE_AA)
 
         # Need to use self.*_img to keep attribute reference and thus
@@ -512,8 +530,8 @@ class ProcessImage(tk.Tk):
                                       padx=5, pady=5,
                                       sticky=tk.NSEW)
 
-        self.tkimg['drawn_th'] = manage.tkimage(self.contours['drawn_thresh'])
-        self.img_label['th_contour'].configure(image=self.tkimg['drawn_th'])
+        self.tkimg['drawn_thresh'] = manage.tkimage(self.contours['drawn_thresh'])
+        self.img_label['th_contour'].configure(image=self.tkimg['drawn_thresh'])
         self.img_label['th_contour'].grid(column=1, row=0,
                                           padx=5, pady=5,
                                           sticky=tk.NSEW)
@@ -544,7 +562,6 @@ class ProcessImage(tk.Tk):
         c_method = const.CONTOUR_METHOD[self.cbox_val['c_method_pref'].get()]
         c_type = self.radio_val['c_type_pref'].get()
         c_limit = self.slider_val['c_limit'].get()
-        line_thickness = infile_dict['line_thickness']
 
         # Set values to exclude threshold contours that may include
         #  contrasting borders on the image; an arbitrary 90% length
@@ -601,7 +618,7 @@ class ProcessImage(tk.Tk):
                              contours=hull_list,
                              contourIdx=-1,  # all hulls.
                              color=const.CBLIND_COLOR_CV['sky blue'],
-                             thickness=line_thickness * 3,
+                             thickness=LINE_THICKNESS * 3,
                              lineType=cv2.LINE_AA)
 
         # NOTE: drawn_canny is what is saved with the 'Save' button.
@@ -609,7 +626,7 @@ class ProcessImage(tk.Tk):
                                                         contours=self.contours['selected_canny'],
                                                         contourIdx=-1,  # all contours.
                                                         color=self.contour_color,
-                                                        thickness=line_thickness * 2,
+                                                        thickness=LINE_THICKNESS * 2,
                                                         lineType=cv2.LINE_AA)
 
         self.tkimg['canny'] = manage.tkimage(canny_img)
@@ -618,8 +635,8 @@ class ProcessImage(tk.Tk):
                                      padx=5, pady=5,
                                      sticky=tk.NSEW)
 
-        self.tkimg['drawn_can'] = manage.tkimage(self.contours['drawn_canny'])
-        self.img_label['can_contour'].configure(image=self.tkimg['drawn_can'])
+        self.tkimg['drawn_canny'] = manage.tkimage(self.contours['drawn_canny'])
+        self.img_label['can_contour'].configure(image=self.tkimg['drawn_canny'])
         self.img_label['can_contour'].grid(column=1, row=0,
                                            padx=5, pady=5,
                                            sticky=tk.NSEW)
@@ -640,7 +657,6 @@ class ProcessImage(tk.Tk):
         """
 
         circled_contours = INPUT_IMG.copy()
-        line_thickness = infile_dict['line_thickness']
         font_scale = infile_dict['font_scale']
         center_xoffset = infile_dict['center_xoffset']
 
@@ -652,7 +668,7 @@ class ProcessImage(tk.Tk):
                        center=center,
                        radius=radius,
                        color=self.contour_color,
-                       thickness=line_thickness * 2,
+                       thickness=LINE_THICKNESS * 2,
                        lineType=cv2.LINE_AA)
 
             # Display pixel diameter of each circled contour.
@@ -671,7 +687,7 @@ class ProcessImage(tk.Tk):
                         fontFace=const.FONT_TYPE,
                         fontScale=font_scale,
                         color=self.contour_color,
-                        thickness=line_thickness,
+                        thickness=LINE_THICKNESS,
                         lineType=cv2.LINE_AA)  # LINE_AA is anti-aliased
 
         # cv2.mEC returns circled radius of contour as last element.
@@ -696,30 +712,256 @@ class ProcessImage(tk.Tk):
                                                padx=5, pady=5,
                                                sticky=tk.NSEW)
 
+    def select_shape(self, contour_list: list) -> None:
+        """
+        Filter contoured objects of a specific approximated shape.
+        Called from the process_shapes() handler that determines whether
+        to pass contours from a point set list of selected contours from
+        either the threshold or Canny image.
+        Calls draw_shapes() with selected polygon contours.
 
-class ContourViewer(ProcessImage):
+        Args:
+            contour_list: List of selected contours from cv2.findContours.
+
+        Returns: None
+        """
+
+        # Inspiration from Adrian Rosebrock's
+        #  https://pyimagesearch.com/2016/02/08/opencv-shape-detection/
+
+        poly_choice = self.cbox_val['polygon'].get()
+
+        num_vertices = {
+            'Triangle': 3,
+            'Rectangle': 4,
+            'Pentagon': 5,
+            'Hexagon': 6,
+            'Heptagon': 7,
+            'Octagon': 8,
+            '5-pointed Star': 10,
+            'Circle': 0,
+        }
+
+        # Finding circles is a special condition that uses Hough Transform
+        #   on either the filtered or an Ostu threshold input image and thus
+        #   sidesteps cv2.findContours and cv2.drawContours. Otherwise,
+        #   proceed with finding one of the other selected shapes in either
+        #   (or both) input contour set.
+        if poly_choice == 'Circle':
+            self.find_circles()
+            return
+
+        # Draw hulls around selected contours when hull area is 10% or
+        #   more than contour area. This prevents obfuscation of outlines
+        #   when hulls and contours are similar. 10% limit is arbitrary.
+        hull_list = []
+        for i, _ in enumerate(contour_list):
+            hull = cv2.convexHull(contour_list[i])
+            if cv2.contourArea(hull) >= cv2.contourArea(contour_list[i]) * 1.1:
+                hull_list.append(hull)
+
+        # Need to remove prior contours before finding new selected polygon.
+        selected_polygon_contours = []
+        self.num_shapes = len(selected_polygon_contours)
+        self.draw_shapes(selected_polygon_contours)
+
+        # NOTE: When using the sample4.jpg (shapes) image, the white border
+        #  around the black background has a hexagon-shaped contour, but is
+        #  difficult to see with the yellow contour lines. It will be counted
+        #  as a hexagon shape unless, in main settings, it is not selected as
+        #  a contour by setting cv2.arcLength instead of cv2.contourArea.
+        def find_poly(point_set):
+            len_arc = cv2.arcLength(point_set, True)
+            epsilon = self.slider_val['epsilon'].get() * len_arc
+            approx_poly = cv2.approxPolyDP(curve=point_set,
+                                           epsilon=epsilon,
+                                           closed=True)
+
+            # Need to cover shapes with 3 to 8 vertices (sides).
+            for _v in range(2, 8):
+                if len(approx_poly) == num_vertices[poly_choice] == _v + 1:
+                    selected_polygon_contours.append(point_set)
+
+            # Special case for a star:
+            if len(approx_poly) == (num_vertices[poly_choice] == 10
+                                    and not cv2.isContourConvex(point_set)):
+                selected_polygon_contours.append(point_set)
+
+        # The main engine for contouring the selected shape.
+        if self.radio_val['hull_shape'].get() == 'yes' and hull_list:
+            for _h in hull_list:
+                find_poly(_h)
+        else:
+            for _c in contour_list:
+                find_poly(_c)
+
+        self.num_shapes = len(selected_polygon_contours)
+        self.draw_shapes(selected_polygon_contours)
+
+    def draw_shapes(self, selected_contours: list) -> None:
+        """
+        Draw *contours* around detected polygons, hulls, or circles.
+        Calls show_settings(). Called from select_shape()
+
+        Args:
+            selected_contours: Contour list of polygons or circles.
+
+        Returns: None
+        """
+        img4shaping = INPUT_IMG.copy()
+
+        if self.radio_val['find_shape_in'].get() == 'threshold':
+            shapeimg_win_name = 'thresh'
+        else:  # == 'canny'
+            shapeimg_win_name = 'canny'
+        self.img_window['shaped'].title(const.WIN_NAME[shapeimg_win_name])
+
+        use_hull = self.radio_val['hull_shape'].get()
+        if use_hull == 'yes':
+            cnt_color = const.CBLIND_COLOR_CV['sky blue']
+        else:
+            cnt_color = self.contour_color
+        thickness_factor = 3 if use_hull == 'yes' else 2
+
+        if selected_contours:
+            for _c in selected_contours:
+                cv2.drawContours(img4shaping,
+                                 contours=[_c],
+                                 contourIdx=-1,
+                                 color=cnt_color,
+                                 thickness=LINE_THICKNESS * thickness_factor,
+                                 lineType=cv2.LINE_AA
+                                 )
+
+        self.tkimg['shaped'] = manage.tkimage(img4shaping)
+        self.img_label['shaped'].configure(image=self.tkimg['shaped'])
+        self.img_label['shaped'].grid(column=0, row=0,
+                                      padx=5, pady=5,
+                                      sticky=tk.NSEW)
+
+    def find_circles(self):
+        """
+        Implements the cv2.HOUGH_GRADIENT_ALT method of cv2.HoughCircles()
+        to approximate circles in a filtered/blured threshold image, then
+        displays them on the input image.
+        Called from select_shape(). Calls utils.text_array().
+
+        Returns: An array of HoughCircles contours.
+        """
+        img4shaping = INPUT_IMG.copy()
+
+        mindist = self.slider_val['circle_mindist'].get()
+        param1 = self.slider_val['circle_param1'].get()
+        param2 = self.slider_val['circle_param2'].get()
+        min_radius = self.slider_val['circle_minradius'].get()
+        max_radius = self.slider_val['circle_maxradius'].get()
+
+        # Note: 'thresholded' needs to match the "value" kw value as configured for
+        #  self.radiobtn['find_circle_in_th'] and self.radiobtn['find_circle_in_filtered'].
+        if self.radio_val['find_circle_in'].get() == 'thresholded':
+            self.img_window['shaped'].title(const.WIN_NAME['circle in thresh'])
+
+            _, img4houghcircles = cv2.threshold(
+                src=self.filter_image(),  # or use self.filter_image()
+                thresh=0,
+                maxval=255,
+                type=8  # 8 == cv2.THRESH_OTSU, 16 == cv2.THRESH_TRIANGLE
+            )
+
+            # Here HoughCircles works on the threshold image, not found
+            #  contours.
+            # Note: the printed 'type' needs to agree with the above type= value.
+
+            # self.tkimg['shaped'] = manage.tkimage(img4houghcircles)
+            # self.img_label['shaped'].configure(image=self.tkimg['shaped'])
+            # self.img_label['shaped'].grid(column=0, row=0,
+            #                               padx=5, pady=5,
+            #                               sticky=tk.NSEW)
+
+        else:  # is 'filtered', the default value.
+            # Here HoughCircles works on the filtered image, not threshold or contours.
+            self.img_window['shaped'].title(const.WIN_NAME['circle in filtered'])
+            img4houghcircles = self.filter_image()
+
+        # source: https://www.geeksforgeeks.org/circle-detection-using-opencv-python/
+        # https://docs.opencv.org/4.x/dd/d1a/group__imgproc__feature.html#ga47849c3be0d0406ad3ca45db65a25d2d
+        # Docs general recommendations for HOUGH_GRADIENT_ALT with good image contrast:
+        #    param1=300, param2=0.9, minRadius=20, maxRadius=400
+        found_circles = cv2.HoughCircles(image=img4houghcircles,
+                                         method=cv2.HOUGH_GRADIENT_ALT,
+                                         dp=1.5,
+                                         minDist=mindist,
+                                         param1=param1,
+                                         param2=param2,
+                                         minRadius=min_radius,
+                                         maxRadius=max_radius)
+
+        if found_circles is not None:
+            # Convert the circle parameters to integers to get the right data type.
+            found_circles = np.uint16(np.round(found_circles))
+
+            self.num_shapes = len(found_circles[0, :])
+
+            for _circle in found_circles[0, :]:
+                _x, _y, _r = _circle
+                # Draw the circumference of the found circle.
+                cv2.circle(img4shaping,
+                           center=(_x, _y),
+                           radius=_r,
+                           color=self.contour_color,
+                           thickness=LINE_THICKNESS * 2,
+                           lineType=cv2.LINE_AA
+                           )
+                # Draw its center.
+                cv2.circle(img4shaping,
+                           center=(_x, _y),
+                           radius=4,
+                           color=self.contour_color,
+                           thickness=LINE_THICKNESS * 2,
+                           lineType=cv2.LINE_AA
+                           )
+
+                # Show found circles marked on the input image.
+                self.tkimg['shaped'] = manage.tkimage(img4shaping)
+                self.img_label['shaped'].configure(image=self.tkimg['shaped'])
+                self.img_label['shaped'].grid(column=0, row=0,
+                                              padx=5, pady=5,
+                                              sticky=tk.NSEW)
+
+        else:
+            self.tkimg['shaped'] = manage.tkimage(img4shaping)
+            self.img_label['shaped'].configure(image=self.tkimg['shaped'])
+            self.img_label['shaped'].grid(column=0, row=0,
+                                          padx=5, pady=5,
+                                          sticky=tk.NSEW)
+
+        # Note: reporting of current metrics and settings is handled by
+        #  ImageViewer.process_shapes().
+
+
+class ImageViewer(ProcessImage):
     """
     A suite of methods to display cv2 contours based on chosen settings
     and parameters as applied in ProcessImage().
     Methods:
-        master_layout
-        setup_styles
-        setup_buttons
-        display_input_images
-        config_sliders
-        config_comboboxes
-        config_radiobuttons
-        grid_selector_widgets
-        default_settings
-        report_contour
-        process_all
-        process_contours
+    master_setup
+    shape_win_setup
+    setup_styles
+    setup_buttons
+    display_input_images
+    config_sliders
+    config_comboboxes
+    config_radiobuttons
+    grid_contour_widgets
+    grid_shape_widgets
+    set_defaults
+    set_shape_defaults
+    report_contour
+    report_shape
+    process_all
+    process_contours
+    process_shapes
     """
-
-    __slots__ = ('cbox', 'radio',
-                 'report_frame', 'selector_frame',
-                 'slider', 'contour_settings_txt',
-                 )
 
     def __init__(self, tk1):
         super().__init__()
@@ -727,6 +969,12 @@ class ContourViewer(ProcessImage):
         # self.configure(bg='green')
         self.frame_report = tk.Frame()
         self.frame_selectors = tk.Frame()
+
+        # Need different window names descriptive of selected options.
+        self.shape_settings_win = tk.Toplevel()
+
+        self.frame_shape_report = tk.Frame(master=self.shape_settings_win)
+        self.frame_shape_selectors = tk.Frame(master=self.shape_settings_win)
 
         # Note: The matching control variable attributes for the
         #   following 15 selector widgets are in ProcessImage __init__.
@@ -747,6 +995,19 @@ class ContourViewer(ProcessImage):
             'canny_min_lbl': tk.Label(master=self.frame_selectors),
             'c_limit': tk.Scale(master=self.frame_selectors),
             'c_limit_lbl': tk.Label(master=self.frame_selectors),
+            # for shapes
+            'epsilon': tk.Scale(master=self.frame_shape_selectors),
+            'epsilon_lbl': tk.Label(master=self.frame_shape_selectors),
+            'circle_mindist': tk.Scale(master=self.frame_shape_selectors),
+            'circle_mindist_lbl': tk.Label(master=self.frame_shape_selectors),
+            'circle_param1': tk.Scale(master=self.frame_shape_selectors),
+            'circle_param1_lbl': tk.Label(master=self.frame_shape_selectors),
+            'circle_param2': tk.Scale(master=self.frame_shape_selectors),
+            'circle_param2_lbl': tk.Label(master=self.frame_shape_selectors),
+            'circle_minradius': tk.Scale(master=self.frame_shape_selectors),
+            'circle_minradius_lbl': tk.Label(master=self.frame_shape_selectors),
+            'circle_maxradius': tk.Scale(master=self.frame_shape_selectors),
+            'circle_maxradius_lbl': tk.Label(master=self.frame_shape_selectors),
         }
 
         self.cbox = {
@@ -767,6 +1028,10 @@ class ContourViewer(ProcessImage):
 
             'choose_c_method': ttk.Combobox(master=self.frame_selectors),
             'choose_c_method_lbl': tk.Label(master=self.frame_selectors),
+
+            # for shapes
+            'choose_shape_lbl': tk.Label(master=self.frame_shape_selectors),
+            'choose_shape': ttk.Combobox(master=self.frame_shape_selectors),
         }
 
         # Note: c_ is for contour, th_ is for threshold.
@@ -782,25 +1047,53 @@ class ContourViewer(ProcessImage):
             'hull_lbl': tk.Label(master=self.frame_selectors),
             'hull_yes': tk.Radiobutton(master=self.frame_selectors),
             'hull_no': tk.Radiobutton(master=self.frame_selectors),
+
+            # for shapes
+            'shape_hull_lbl': tk.Label(master=self.frame_shape_selectors),
+            'shape_hull_yes': tk.Radiobutton(master=self.frame_shape_selectors),
+            'shape_hull_no': tk.Radiobutton(master=self.frame_shape_selectors),
+
+            'find_circle_lbl': tk.Label(master=self.frame_shape_selectors),
+            'find_circle_in_th': tk.Radiobutton(master=self.frame_shape_selectors),
+            'find_circle_in_filtered': tk.Radiobutton(master=self.frame_shape_selectors),
+
+            'find_shape_lbl': tk.Label(master=self.frame_shape_selectors),
+            'find_shape_in_thresh': tk.Radiobutton(master=self.frame_shape_selectors),
+            'find_shape_in_canny': tk.Radiobutton(master=self.frame_shape_selectors),
         }
 
         # Is an instance attribute here only because it is used in call
         #  to utils.save_settings_and_img() from the Save button.
         self.contour_settings_txt = ''
+        self.shape_settings_txt = ''
+
+        # Separator used in shape report window.
+        self.separator = ttk.Separator(master=self.frame_shape_selectors,
+                                       orient='horizontal')
+
+        # Attributes for shape windows.
+        self.circle_msg_lbl = tk.Label(master=self.frame_shape_selectors)
+        self.shapeimg_lbl = None
+        # self.saveshape_button = None  # ttk.Button(master=self.img_window['shaped'])
 
         self.setup_image_windows()  # called from ProcessImage base Class.
         self.display_input_images()
-        self.master_layout()
+        self.master_setup()
         self.setup_styles()
         self.setup_buttons()
         self.config_sliders()
         self.config_comboboxes()
         self.config_radiobuttons()
-        self.grid_selector_widgets()
-        self.default_settings()
+        self.grid_contour_widgets()
+        self.set_defaults()
+        self.set_shape_defaults()
         self.report_contour()
 
-    def master_layout(self) -> None:
+        self.shape_win_setup()
+        self.grid_shape_widgets()
+        self.report_shape()
+
+    def master_setup(self) -> None:
         """
         Master (main tk window) keybindings, configurations, and grids
         for settings and reporting frames, and utility buttons.
@@ -810,8 +1103,16 @@ class ContourViewer(ProcessImage):
         #  is 729. Need to set this window near the top right corner
         #  of the screen so that it doesn't cover up the img windows; also
         #  so that the bottom of it is, hopefully, not below the bottom
-        #  of the screen.
-        self.geometry(f'+{self.winfo_screenwidth() - 740}+0')
+        #  of the screen.:
+        if const.MY_OS in 'lin, dar':
+            adjust_width = 740
+        else:  # is Windows
+            adjust_width = 760
+
+        self.geometry(f'+{self.winfo_screenwidth() - adjust_width}+0')
+
+        if const.MY_OS == 'win':
+            self.minsize(750, 400)
 
         # Need to color in all the master Frame and use yellow border;
         #   border highlightcolor changes to dark grey when click-dragged
@@ -827,7 +1128,7 @@ class ContourViewer(ProcessImage):
         self.protocol('WM_DELETE_WINDOW', lambda: utils.quit_gui(app))
 
         self.bind_all('<Escape>', lambda _: utils.quit_gui(app))
-        self.bind('<Control-q>', lambda _: utils.quit_gui(app))
+        self.bind_all('<Control-q>', lambda _: utils.quit_gui(app))
         # ^^ Note: macOS Command-q will quit program without utils.quit_gui info msg.
 
         self.columnconfigure(0, weight=1)
@@ -841,7 +1142,7 @@ class ContourViewer(ProcessImage):
 
         self.frame_selectors.configure(relief='raised',
                                        bg=const.DARK_BG,
-                                       borderwidth=5, )
+                                       borderwidth=5)
         self.frame_selectors.columnconfigure(0, weight=1)
         self.frame_selectors.columnconfigure(1, weight=1)
 
@@ -855,10 +1156,118 @@ class ContourViewer(ProcessImage):
                                   ipadx=4, ipady=4,
                                   sticky=tk.EW)
 
+        # At startup, try to reduce screen clutter, so
+        #  do not show the Shape settings or image windows.
+        #  Subsequent show and hide are controlled with Buttons in setup_buttons().
+        self.shape_settings_win.withdraw()
+        self.img_window['shaped'].withdraw()
+
+    def shape_win_setup(self) -> None:
+        """
+        Shape settings and reporting frame configuration, keybindings,
+        and grids.
+        """
+
+        def no_exit_on_x():
+            """Notice in Terminal. Called from .protocol() in loop."""
+            print('The Shape window cannot be closed from the window bar.\n'
+                  'It can be closed with the "Close" button.\n'
+                  'You may quit the program from the OpenCV Settings Report window bar'
+                  ' or Esc or Ctrl-Q key.'
+                  )
+
+        self.separator = ttk.Separator(master=self.frame_shape_selectors,
+                                       orient='horizontal')
+
+        self.shape_settings_win.title(const.WIN_NAME['shape_report'])
+        self.shape_settings_win.resizable(False, False)
+
+        # Need to position window toward right of screen, overlapping
+        #   contour settings window, so that it does not cover the img window.
+        # Need to position window toward right of screen, overlapping
+        #   contour settings window, so that it does not cover the img window.
+        self.shape_settings_win.geometry(f'+{self.winfo_screenwidth() - 800}+100')
+
+        # Configure Shapes report window to match that of app (contour) window.
+        self.shape_settings_win.config(
+            bg=const.MASTER_BG,  # gray80 matches report_contour() txt fg.
+            # bg=const.CBLIND_COLOR_TK['sky blue'],  # for dev.
+            highlightthickness=5,
+            highlightcolor=const.CBLIND_COLOR_TK['yellow'],
+            highlightbackground='grey65'
+        )
+
+        self.frame_shape_report.configure(relief='flat',
+                                          bg=const.CBLIND_COLOR_TK['sky blue']
+                                          )  # bg won't show with grid sticky EW.
+        self.frame_shape_report.columnconfigure(1, weight=1)
+        self.frame_shape_report.rowconfigure(0, weight=1)
+
+        self.frame_shape_selectors.configure(relief='raised',
+                                             bg=const.DARK_BG,
+                                             borderwidth=5, )
+        self.frame_shape_selectors.columnconfigure(0, weight=1)
+        self.frame_shape_selectors.columnconfigure(1, weight=1)
+
+        resetshape_button = ttk.Button(master=self.shape_settings_win)
+        saveshape_button = ttk.Button(master=self.shape_settings_win)
+
+        self.img_window['shaped'].geometry(f'+{self.winfo_screenwidth() - 830}+150')
+        self.img_window['shaped'].title(const.WIN_NAME['shapes'])
+        self.img_window['shaped'].protocol('WM_DELETE_WINDOW', no_exit_on_x)
+        self.img_window['shaped'].columnconfigure(0, weight=1)
+        self.img_window['shaped'].columnconfigure(1, weight=1)
+
+        self.shapeimg_lbl = tk.Label(master=self.img_window['shaped'])
+
+        def save_shape_cmd():
+            if self.radio_val['find_shape_in'].get() == 'threshold':
+                utils.save_settings_and_img(
+                    img2save=self.tkimg['shaped'],
+                    txt2save=self.shape_settings_txt,
+                    caller='thresh_shape')
+            else:  # == 'canny'
+                utils.save_settings_and_img(
+                    img2save=self.tkimg['shaped'],
+                    txt2save=self.shape_settings_txt,
+                    caller='canny_shape')
+
+        # Note that ttk.Styles are defined in ContourViewer.setup_styles().
+        resetshape_button.configure(text='Reset shape settings',
+                                    style='My.TButton',
+                                    width=0,
+                                    command=self.set_shape_defaults)
+
+        saveshape_button.configure(text='Save shape settings and image',
+                                   style='My.TButton',
+                                   width=0,
+                                   command=save_shape_cmd)
+
+        self.frame_shape_report.grid(column=0, row=0,
+                                     columnspan=2,
+                                     padx=5, pady=5,
+                                     sticky=tk.EW)
+        self.frame_shape_selectors.grid(column=0, row=1,
+                                        columnspan=2,
+                                        padx=5, pady=(0, 5),
+                                        ipadx=4, ipady=4,
+                                        sticky=tk.EW)
+
+        # Reset button should be centered under slider labels.
+        # Save button should be on same row (bottom of frame), right side.
+        resetshape_button.grid(column=0, row=3,
+                               padx=(70, 0),
+                               pady=(0, 5),
+                               sticky=tk.W)
+        saveshape_button.grid(column=1, row=3,
+                              padx=(0, 5),
+                              pady=(0, 5),
+                              sticky=tk.E)
+
     def setup_styles(self):
         """
         Configure ttk.Style for Buttons and Comboboxes.
-        Called by __init__ and ShapeViewer.shape_settings_layout().
+        Called by __init__ and ShapeViewer.shape_win_setup().
 
         Returns: None
         """
@@ -923,26 +1332,13 @@ class ContourViewer(ProcessImage):
                                         txt2save=self.contour_settings_txt,
                                         caller='Canny')
 
-        # Need to remove the buttons that call ShapeViewer() once used.
-        #  Once both buttons have been used (not visible), also remove
-        #  their label.
-        def find_shape_from_thresh():
-            ShapeViewer(
-                self.contours['selected_thresh'],
-                self.filtered_img,
-                find_in='thresh')
-            id_th_shapes_btn.grid_remove()
-            if not id_canny_shapes_btn.winfo_ismapped():
-                id_shapes_label.grid_remove()
+        def show_shapes_windows():
+            self.shape_settings_win.deiconify()
+            self.img_window['shaped'].deiconify()
 
-        def find_shape_from_canny():
-            ShapeViewer(
-                self.contours['selected_canny'],
-                self.filtered_img,
-                find_in='canny')
-            id_canny_shapes_btn.grid_remove()
-            if not id_th_shapes_btn.winfo_ismapped():
-                id_shapes_label.grid_remove()
+        def hide_shapes_windows():
+            self.shape_settings_win.withdraw()
+            self.img_window['shaped'].withdraw()
 
         if const.MY_OS in 'lin, win':
             label_font = const.WIDGET_FONT
@@ -952,20 +1348,7 @@ class ContourViewer(ProcessImage):
         reset_btn = ttk.Button(text='Reset settings',
                                style='My.TButton',
                                width=0,
-                               command=self.default_settings)
-
-        id_shapes_label = tk.Label(text='ID shapes from:',
-                                   font=label_font,
-                                   bg=const.MASTER_BG)
-        id_th_shapes_btn = ttk.Button(text='Threshold',
-                                      style='My.TButton',
-                                      width=0,
-                                      command=find_shape_from_thresh)
-
-        id_canny_shapes_btn = ttk.Button(text='Canny',
-                                         style='My.TButton',
-                                         width=0,
-                                         command=find_shape_from_canny)
+                               command=self.set_defaults)
 
         save_btn_label = tk.Label(text='Save settings & contoured image for:',
                                   font=label_font,
@@ -980,25 +1363,21 @@ class ContourViewer(ProcessImage):
                                     width=0,
                                     command=save_can_settings)
 
+        show_shapes_win = ttk.Button(text='Show Shapes windows',
+                                     style='My.TButton',
+                                     width=0,
+                                     command=show_shapes_windows)
+        hide_shapes_win = ttk.Button(text='Hide Shapes windows',
+                                     style='My.TButton',
+                                     width=0,
+                                     command=hide_shapes_windows)
+
         # Widget grid for the main window.
         # Note: these grid assignments are a bit shambolic; needs improvement.
         reset_btn.grid(row=2, column=0,
                        padx=(70, 0),
                        pady=(0, 5),
                        sticky=tk.W)
-
-        id_shapes_label.grid(row=3, column=1,
-                             padx=(0, 170),
-                             pady=(0, 5),
-                             sticky=tk.E)
-        id_th_shapes_btn.grid(row=3, column=1,
-                              padx=(0, 90),
-                              pady=(0, 5),
-                              sticky=tk.E)
-        id_canny_shapes_btn.grid(row=3, column=1,
-                                 padx=(0, 35),
-                                 pady=(0, 5),
-                                 sticky=tk.E)
 
         save_btn_label.grid(row=3, column=0,
                             padx=(10, 0),
@@ -1012,6 +1391,15 @@ class ContourViewer(ProcessImage):
                             padx=(310, 0),
                             pady=(0, 5),
                             sticky=tk.W)
+
+        show_shapes_win.grid(row=2, column=1,
+                             padx=(0, 5),
+                             pady=(0, 5),
+                             sticky=tk.E)
+        hide_shapes_win.grid(row=3, column=1,
+                             padx=(0, 5),
+                             pady=(0, 5),
+                             sticky=tk.E)
 
     def display_input_images(self):
         """
@@ -1121,6 +1509,61 @@ class ContourViewer(ProcessImage):
 
         self.slider['c_limit'].bind("<ButtonRelease-1>", self.process_contours)
 
+        # Sliders for shape settings ##########################################
+        self.slider['epsilon_lbl'].configure(text='% polygon contour length (epsilon):',
+                                             **const.LABEL_PARAMETERS)
+        self.slider['epsilon'].configure(from_=0.001, to=0.06,
+                                         resolution=0.001,
+                                         tickinterval=0.01,
+                                         variable=self.slider_val['epsilon'],
+                                         **const.SHAPE_SCALE_PARAMS)
+
+        self.slider['circle_mindist_lbl'].configure(text='Minimum px dist between circles:',
+                                                    **const.LABEL_PARAMETERS)
+        self.slider['circle_mindist'].configure(from_=10, to=200,
+                                                resolution=1,
+                                                tickinterval=20,
+                                                variable=self.slider_val['circle_mindist'],
+                                                **const.SHAPE_SCALE_PARAMS)
+
+        self.slider['circle_param1_lbl'].configure(text='cv2.HoughCircles, param1:',
+                                                   **const.LABEL_PARAMETERS)
+        self.slider['circle_param1'].configure(from_=100, to=500,
+                                               resolution=100,
+                                               tickinterval=100,
+                                               variable=self.slider_val['circle_param1'],
+                                               **const.SHAPE_SCALE_PARAMS)
+
+        self.slider['circle_param2_lbl'].configure(text='cv2.HoughCircles, param2:',
+                                                   **const.LABEL_PARAMETERS)
+        self.slider['circle_param2'].configure(from_=0.1, to=0.98,
+                                               resolution=0.1,
+                                               tickinterval=0.1,
+                                               variable=self.slider_val['circle_param2'],
+                                               **const.SHAPE_SCALE_PARAMS)
+
+        self.slider['circle_minradius_lbl'].configure(text='cv2.HoughCircles, min px radius):',
+                                                      **const.LABEL_PARAMETERS)
+        self.slider['circle_minradius'].configure(from_=10, to=200,
+                                                  resolution=10,
+                                                  tickinterval=20,
+                                                  variable=self.slider_val['circle_minradius'],
+                                                  **const.SHAPE_SCALE_PARAMS)
+
+        self.slider['circle_maxradius_lbl'].configure(text='cv2.HoughCircles, max px radius:',
+                                                      **const.LABEL_PARAMETERS)
+        self.slider['circle_maxradius'].configure(from_=10, to=1000,
+                                                  resolution=10,
+                                                  tickinterval=100,
+                                                  variable=self.slider_val['circle_maxradius'],
+                                                  **const.SHAPE_SCALE_PARAMS)
+
+        # Bind shape sliders to call processing and reporting on button release.
+        sliders = ('epsilon', 'circle_mindist', 'circle_param1', 'circle_param2',
+                   'circle_minradius', 'circle_maxradius')
+        for _s in sliders:
+            self.slider[_s].bind('<ButtonRelease-1>', self.process_contours)
+
     def config_comboboxes(self):
 
         if const.MY_OS == 'win':
@@ -1137,20 +1580,18 @@ class ContourViewer(ProcessImage):
                                                    'cv2.MORPH_GRADIENT',  # cv2 returns 4
                                                    'cv2.MORPH_BLACKHAT',  # cv2 returns 6
                                                    'cv2.MORPH_HITMISS'),  # cv2 returns 7
-                                           **const.COMBO_PARAMETERS
-                                           )
+                                           **const.COMBO_PARAMETERS)
         self.cbox['choose_morphop'].bind('<<ComboboxSelected>>',
                                          func=self.process_all)
 
-        self.cbox['choose_morphshape_lbl'].configure(text='morphology shape:',
+        self.cbox['choose_morphshape_lbl'].configure(text='... shape:',
                                                      **const.LABEL_PARAMETERS)
         self.cbox['choose_morphshape'].config(textvariable=self.cbox_val['morphshape_pref'],
                                               width=16 + width_correction,
                                               values=('cv2.MORPH_RECT',  # cv2 returns 0
                                                       'cv2.MORPH_CROSS',  # cv2 returns 1
                                                       'cv2.MORPH_ELLIPSE'),  # cv2 returns 2
-                                              **const.COMBO_PARAMETERS
-                                              )
+                                              **const.COMBO_PARAMETERS)
         self.cbox['choose_morphshape'].bind('<<ComboboxSelected>>',
                                             func=self.process_all)
 
@@ -1163,8 +1604,7 @@ class ContourViewer(ProcessImage):
                                               'cv2.BORDER_REFLECT',  # cv2 returns 2
                                               'cv2.BORDER_REPLICATE',  # cv2 returns 1
                                               'cv2.BORDER_ISOLATED'),  # cv2 returns 16
-                                          **const.COMBO_PARAMETERS
-                                          )
+                                          **const.COMBO_PARAMETERS)
         self.cbox['choose_border'].bind(
             '<<ComboboxSelected>>', lambda _: self.process_all())
 
@@ -1177,8 +1617,7 @@ class ContourViewer(ProcessImage):
                                               'cv2.bilateralFilter',  # cv2 returns 1
                                               'cv2.GaussianBlur',  # cv2 returns 2
                                               'cv2.medianBlur'),  # cv2 returns 3
-                                          **const.COMBO_PARAMETERS
-                                          )
+                                          **const.COMBO_PARAMETERS)
         self.cbox['choose_filter'].bind(
             '<<ComboboxSelected>>', lambda _: self.process_all())
 
@@ -1192,8 +1631,7 @@ class ContourViewer(ProcessImage):
                                                    'cv2.THRESH_OTSU_INVERSE',  # cv2 returns 9
                                                    'cv2.THRESH_TRIANGLE',  # cv2 returns 16
                                                    'cv2.THRESH_TRIANGLE_INVERSE'),  # returns 17
-                                           **const.COMBO_PARAMETERS
-                                           )
+                                           **const.COMBO_PARAMETERS)
         self.cbox['choose_th_type'].bind(
             '<<ComboboxSelected>>', lambda _: self.process_contours())
 
@@ -1205,10 +1643,33 @@ class ContourViewer(ProcessImage):
                                                     'cv2.CHAIN_APPROX_SIMPLE',  # cv2 returns 2
                                                     'cv2.CHAIN_APPROX_TC89_L1',  # cv2 returns 3
                                                     'cv2.CHAIN_APPROX_TC89_KCOS'),  # cv2 returns 4
-                                            **const.COMBO_PARAMETERS
-                                            )
+                                            **const.COMBO_PARAMETERS)
         self.cbox['choose_c_method'].bind(
             '<<ComboboxSelected>>', lambda _: self.process_contours())
+
+        # Shape Comboboxes:
+        self.cbox['choose_shape_lbl'].configure(text='Select shape to find:',
+                                                **const.LABEL_PARAMETERS)
+        self.cbox['choose_shape'].configure(
+            textvariable=self.cbox_val['polygon'],
+            width=12,
+            values=('Triangle',
+                    'Rectangle',
+                    'Pentagon',
+                    'Hexagon',
+                    'Heptagon',
+                    'Octagon',
+                    '5-pointed Star',
+                    'Circle'),
+            **const.COMBO_PARAMETERS)
+        self.cbox['choose_shape'].bind('<<ComboboxSelected>>',
+                                       func=self.process_all)
+        self.cbox['choose_shape'].current(0)
+
+        self.circle_msg_lbl.configure(
+            text=('Note: Circles are found in the filtered image or'
+                  ' an Otsu threshold of it, not from previously found contours.'),
+            **const.LABEL_PARAMETERS)
 
     def config_radiobuttons(self):
 
@@ -1263,7 +1724,59 @@ class ContourViewer(ProcessImage):
             **const.RADIO_PARAMETERS,
         )
 
-    def grid_selector_widgets(self):
+        # Shape window Radiobuttons
+        self.radio['shape_hull_lbl'].config(text='Find shapes as hull?',
+                                            **const.LABEL_PARAMETERS)
+        self.radio['shape_hull_yes'].configure(
+            text='Yes',
+            variable=self.radio_val['hull_shape'],
+            value='yes',
+            command=self.process_all,
+            **const.RADIO_PARAMETERS
+        )
+        self.radio['shape_hull_no'].configure(
+            text='No',
+            variable=self.radio_val['hull_shape'],
+            value='no',
+            command=self.process_all,
+            **const.RADIO_PARAMETERS,
+        )
+
+        self.radio['find_shape_lbl'].config(text='Find shapes in contours from:',
+                                            **const.LABEL_PARAMETERS)
+        self.radio['find_shape_in_thresh'].configure(
+            text='Threshold',
+            variable=self.radio_val['find_shape_in'],
+            value='threshold',
+            command=self.process_all,
+            **const.RADIO_PARAMETERS
+        )
+        self.radio['find_shape_in_canny'].configure(
+            text='Canny',
+            variable=self.radio_val['find_shape_in'],
+            value='canny',
+            command=self.process_all,
+            **const.RADIO_PARAMETERS
+        )
+
+        self.radio['find_circle_lbl'].config(text='Find Hough circles in:',
+                                             **const.LABEL_PARAMETERS)
+        self.radio['find_circle_in_th'].configure(
+            text='Threshold img',  # Need to say 'Edged' if/when use cv2.Canny.
+            variable=self.radio_val['find_circle_in'],
+            value='thresholded',
+            command=self.process_all,
+            **const.RADIO_PARAMETERS
+        )
+        self.radio['find_circle_in_filtered'].configure(
+            text='Filtered img',
+            variable=self.radio_val['find_circle_in'],
+            value='filtered',
+            command=self.process_all,
+            **const.RADIO_PARAMETERS
+        )
+
+    def grid_contour_widgets(self):
         """
         Developer: Grid as a group to make clear spatial relationships.
         """
@@ -1271,7 +1784,8 @@ class ContourViewer(ProcessImage):
         if const.MY_OS in 'lin, win':
             slider_grid_params = dict(
                 padx=5,
-                pady=(7, 0))
+                pady=(7, 0),
+                sticky=tk.W,)
 
             label_grid_params = dict(
                 padx=5,
@@ -1283,6 +1797,29 @@ class ContourViewer(ProcessImage):
                 padx=(8, 0),
                 pady=(5, 0),
                 sticky=tk.W)
+
+            # Parameters for specific widgets:
+            shape_lbl_param = dict(
+                padx=(0, 180),
+                pady=(5, 0),
+                sticky=tk.E)
+            shape_cbox_param = dict(
+                padx=(0, 15),
+                pady=(5, 0),
+                sticky=tk.E)
+            filter_lbl_param = dict(
+                padx=(0, 150),
+                pady=(5, 0),
+                sticky=tk.E)
+            filter_cbox_param = dict(
+                padx=(0, 15),
+                pady=(5, 0),
+                sticky=tk.E)
+            c_method_lbl_params = dict(
+                padx=(135, 0),
+                pady=(5, 0),
+                sticky=tk.W)
+
         else:  # is macOS
             slider_grid_params = dict(
                 padx=5,
@@ -1296,6 +1833,40 @@ class ContourViewer(ProcessImage):
             # Used for some Combobox and Radiobutton widgets.
             grid_params = dict(
                 padx=(8, 0),
+                pady=(4, 0),
+                sticky=tk.W)
+
+            # Parameters for specific widgets:
+            shape_lbl_param = dict(
+                padx=(190, 0),
+                pady=(5, 0),
+                sticky=tk.W)
+            shape_cbox_param = dict(
+                padx=(245, 0),
+                pady=(5, 0),
+                sticky=tk.W)
+            filter_lbl_param = dict(
+                padx=(190, 0),
+                pady=(5, 0),
+                sticky=tk.W)
+            filter_cbox_param = dict(
+                padx=(245, 0),
+                pady=(5, 0),
+                sticky=tk.W)
+
+        if const.MY_OS == 'lin':
+            c_method_lbl_params = dict(
+                padx=(135, 0),
+                pady=(5, 0),
+                sticky=tk.W)
+        elif const.MY_OS == 'win':
+            c_method_lbl_params = dict(
+                padx=(0, 240),
+                pady=(5, 0),
+                sticky=tk.E)
+        else:  # is macOS
+            c_method_lbl_params = dict(
+                padx=(160, 0),
                 pady=(4, 0),
                 sticky=tk.W)
 
@@ -1318,14 +1889,10 @@ class ContourViewer(ProcessImage):
 
         # Note: Put morph shape on same row as morph op.
         self.cbox['choose_morphshape_lbl'].grid(column=1, row=2,
-                                                padx=(200, 0),
-                                                pady=(5, 0),
-                                                sticky=tk.W)
+                                                **shape_lbl_param)
 
         self.cbox['choose_morphshape'].grid(column=1, row=2,
-                                            padx=(0, 5),
-                                            pady=(5, 0),
-                                            sticky=tk.E)
+                                            **shape_cbox_param)
 
         self.slider['noise_k_lbl'].grid(column=0, row=4,
                                         **label_grid_params)
@@ -1343,13 +1910,9 @@ class ContourViewer(ProcessImage):
                                         **grid_params)
 
         self.cbox['choose_filter_lbl'].grid(column=1, row=6,
-                                            padx=(0, 150),
-                                            pady=(5, 0),
-                                            sticky=tk.E)
+                                            **filter_lbl_param)
         self.cbox['choose_filter'].grid(column=1, row=6,
-                                        padx=(0, 5),
-                                        pady=(5, 0),
-                                        sticky=tk.E)
+                                        **filter_cbox_param)
 
         self.slider['filter_k_lbl'].grid(column=0, row=8,
                                          **label_grid_params)
@@ -1402,26 +1965,10 @@ class ContourViewer(ProcessImage):
                                        pady=(5, 0),
                                        sticky=tk.W)
 
-        if const.MY_OS == 'lin':
-            c_method_param = dict(
-                padx=(185, 0),
-                pady=(5, 0),
-                sticky=tk.W)
-        elif const.MY_OS == 'win':
-            c_method_param = dict(
-                padx=(170, 0),
-                pady=(5, 0),
-                sticky=tk.W)
-        else:  # is macOS
-            c_method_param = dict(
-                padx=(220, 0),
-                pady=(4, 0),
-                sticky=tk.W)
-
         self.cbox['choose_c_method_lbl'].grid(column=1, row=13,
-                                              **c_method_param)
+                                              **c_method_lbl_params)
         self.cbox['choose_c_method'].grid(column=1, row=13,
-                                          padx=(0, 10),
+                                          padx=(0, 15),
                                           pady=(5, 0),
                                           sticky=tk.E)
 
@@ -1430,10 +1977,107 @@ class ContourViewer(ProcessImage):
         self.slider['c_limit'].grid(column=1, row=15,
                                     **slider_grid_params)
 
-    def default_settings(self) -> None:
+    def grid_shape_widgets(self):
+        """
+        Grid all selector widgets in the frame_shape_selectors Frame.
+
+        Returns: None
+        """
+
+        label_grid_params = dict(
+            padx=5,
+            pady=(7, 0),
+            sticky=tk.E)
+
+        selector_grid_params = dict(
+            padx=5,
+            pady=(7, 0),
+            sticky=tk.W)
+
+        self.cbox['choose_shape_lbl'].grid(column=0, row=0,
+                                           **label_grid_params)
+        self.cbox['choose_shape'].grid(column=1, row=0,
+                                       **selector_grid_params)
+
+        self.radio['shape_hull_lbl'].grid(column=1, row=0,
+                                          padx=(0, 110),
+                                          pady=(7, 0),
+                                          sticky=tk.E)
+        self.radio['shape_hull_yes'].grid(column=1, row=0,
+                                          padx=(0, 70),
+                                          pady=(7, 0),
+                                          sticky=tk.E)
+        self.radio['shape_hull_no'].grid(column=1, row=0,
+                                         padx=(0, 35),
+                                         pady=(7, 0),
+                                         sticky=tk.E)
+
+        self.radio['find_shape_lbl'].grid(column=0, row=1,
+                                          **label_grid_params)
+        self.radio['find_shape_in_thresh'].grid(column=1, row=1,
+                                                **selector_grid_params)
+        self.radio['find_shape_in_canny'].grid(column=1, row=1,
+                                               padx=(80, 0),
+                                               pady=(7, 0),
+                                               sticky=tk.W)
+
+        self.slider['epsilon_lbl'].grid(column=0, row=2,
+                                        **label_grid_params)
+        self.slider['epsilon'].grid(column=1, row=2,
+                                    **selector_grid_params)
+
+        self.separator.grid(column=0, row=3,
+                            columnspan=2,
+                            padx=10,
+                            pady=(8, 5),
+                            sticky=tk.EW)
+
+        self.circle_msg_lbl.grid(column=0, row=4,
+                                 columnspan=2,
+                                 padx=5,
+                                 pady=(7, 0),
+                                 sticky=tk.EW)
+
+        self.radio['find_circle_lbl'].grid(column=0, row=5,
+                                           **label_grid_params)
+        self.radio['find_circle_in_th'].grid(column=1, row=5,
+                                             **selector_grid_params)
+        self.radio['find_circle_in_filtered'].grid(column=1, row=5,
+                                                   padx=100,
+                                                   pady=(7, 0),
+                                                   sticky=tk.W)
+
+        self.slider['circle_mindist_lbl'].grid(column=0, row=6,
+                                               **label_grid_params)
+        self.slider['circle_mindist'].grid(column=1, row=6,
+                                           **selector_grid_params)
+
+        self.slider['circle_param1_lbl'].grid(column=0, row=7,
+                                              **label_grid_params)
+        self.slider['circle_param1'].grid(column=1, row=7,
+                                          **selector_grid_params)
+
+        self.slider['circle_param2_lbl'].grid(column=0, row=8,
+                                              **label_grid_params)
+        self.slider['circle_param2'].grid(column=1, row=8,
+                                          **selector_grid_params)
+
+        self.slider['circle_minradius_lbl'].grid(column=0, row=9,
+                                                 **label_grid_params)
+        self.slider['circle_minradius'].grid(column=1, row=9,
+                                             **selector_grid_params)
+
+        self.slider['circle_maxradius_lbl'].grid(column=0, row=10,
+                                                 **label_grid_params)
+        self.slider['circle_maxradius'].grid(column=1, row=10,
+                                             **selector_grid_params)
+
+    def set_defaults(self) -> None:
         """
         Sets controller widgets at startup. Called from "Reset" button.
         """
+
+        # Set defaults for contour settings:
         # Note: These 3 statement are duplicated in adjust_contrast().
         contrasted = (
             cv2.convertScaleAbs(
@@ -1460,15 +2104,39 @@ class ContourViewer(ProcessImage):
         self.cbox['choose_border'].current(0)
         self.cbox['choose_filter'].current(0)
         self.cbox['choose_th_type'].current(2)  # cv2.THRESH_OTSU
+        self.cbox['choose_c_method'].current(1)  # cv2.CHAIN_APPROX_SIMPLE
 
         # Set/Reset Radiobutton widgets:
         self.radio['hull_no'].select()
         self.radio['c_type_area'].select()
-        self.cbox['choose_c_method'].current(1)  # cv2.CHAIN_APPROX_SIMPLE
         self.radio['c_mode_external'].select()
 
         # Apply the default settings.
         self.process_all()
+
+    def set_shape_defaults(self):
+        """
+        Set default values for selectors. Called at startup.
+        Returns: None
+        """
+        # Combobox starting value.
+        self.cbox['choose_shape'].current(0)
+        self.cbox_val['polygon'].set('Triangle')
+
+        # Scale starting positions.
+        self.slider['epsilon'].set(0.01)
+        self.slider['circle_mindist'].set(100)
+        self.slider['circle_param1'].set(300)
+        self.slider['circle_param2'].set(0.9)
+        self.slider['circle_minradius'].set(20)
+        self.slider['circle_maxradius'].set(500)
+
+        # Radiobutton starting values.
+        self.radio['shape_hull_no'].select()
+        self.radio['find_shape_in_thresh'].select()
+        self.radio['find_circle_in_filtered'].select()
+
+        self.process_shapes()
 
     def report_contour(self) -> None:
         """
@@ -1550,793 +2218,21 @@ class ContourViewer(ProcessImage):
         utils.display_report(frame=self.frame_report,
                              report=self.contour_settings_txt)
 
-    def process_all(self, event=None) -> None:
-        """
-        Runs all image processing methods from ProcessImage() and the
-        settings report_contour.
-        Calls adjust_contrast(), reduce_noise(), filter_image(), and
-        contour_threshold() from ProcessImage.
-        Calls report_contour() from ContourViewer.
-        Args:
-            event: The implicit mouse button event.
-
-        Returns: *event* as a formality; is functionally None.
-
-        """
-        self.adjust_contrast()
-        self.reduce_noise()
-        self.filter_image()
-        self.contour_threshold(event)
-        self.contour_canny(event)
-        self.size_the_contours(self.contours['selected_thresh'], 'thresh sized')
-        self.size_the_contours(self.contours['selected_canny'], 'canny sized')
-        self.report_contour()
-
-        return event
-
-    def process_contours(self, event=None) -> None:
-        """
-        Calls contour_threshold() from ProcessImage.
-        Calls report_contour() from ContourViewer.
-        Args:
-            event: The implicit mouse button event.
-
-        Returns: *event* as a formality; is functionally None.
-
-        """
-        self.contour_threshold(event)
-        self.contour_canny(event)
-        self.size_the_contours(self.contours['selected_thresh'], 'thresh sized')
-        self.size_the_contours(self.contours['selected_canny'], 'canny sized')
-        self.report_contour()
-
-        return event
-
-
-class ShapeViewer(tk.Canvas):  # or tk.Frame
-    """
-    A suite of methods to identify selected basic shapes: Triangle,
-    Rectangle, Pentagon, Hexagon, Heptagon, Octagon, 5-pointed Star,
-    Circle.  Identification is based on chosen settings and parameters
-    for cv2.approxPolyDP and cv2.HoughCircles.
-    Methods:
-        shape_settings_layout
-        config_selector_widgets
-        set_defaults
-        grid_shape_widgets
-        process_shapes
-        select_shape
-        draw_shapes
-        find_circles
-        report_shape
-    """
-
-    # Note: Need to inherit tk.Canvas (or Frame) to gain access to tk attributes.
-    # Include 'tk' in __slots__ because the tk.Tk in ProcessImage() is not
-    #  inherited here.
-
-    __slots__ = ('tk',  # < remove tk if inherit ProcessImage or ContourViewer.
-                 'choose_shape', 'choose_shape_lbl', 'close_button',
-                 'contours4shape', 'filtered4shape', 'frame_shape_report',
-                 'frame_shape_selectors', 'line_thickness', 'num_shapes',
-                 'radiobtn', 'saveshape_button', 'select_val',
-                 'separator', 'shape_settings_txt', 'shape_settings_win',
-                 'shape_tkimg', 'shaped_img', 'shaped_img_window',
-                 'shapeimg_lbl', 'slider',
-                 )
-
-    def __init__(self, contours, filtered, find_in: str):
-        super().__init__()
-
-        # self.destroy()  # Removes the new tk.Tk inherited from ProcessImage()
-        self.contours4shape = contours
-        self.filtered4shape = filtered
-        self.find_in = find_in  # Should be either 'thresh' or 'canny'.
-
-        self.shape_settings_win = None
-        self.frame_shape_report = None
-        self.frame_shape_selectors = None
-        self.separator = None
-        self.saveshape_button = None
-        self.close_button = None
-
-        self.shaped_img_window = None
-        self.shaped_img = None
-        self.shape_tkimg = None
-        self.shapeimg_lbl = None
-
-        self.shape_settings_txt = ''
-
-        self.choose_shape_lbl = tk.Label()
-        self.choose_shape = ttk.Combobox()
-        self.circle_msg_lbl = tk.Label()
-
-        self.select_val = {
-            'polygon': tk.StringVar(),
-            'hull': tk.StringVar(),
-            'find_circle_in': tk.StringVar(),
-            'epsilon': tk.DoubleVar(),
-            'circle_mindist': tk.IntVar(),
-            'circle_param1': tk.IntVar(),
-            'circle_param2': tk.IntVar(),
-            'circle_minradius': tk.IntVar(),
-            'circle_maxradius': tk.IntVar(),
-        }
-
-        self.radiobtn = {
-            'hull_yes': tk.Radiobutton(),
-            'hull_no': tk.Radiobutton(),
-            'find_circle_in_th': tk.Radiobutton(),
-            'find_circle_in_filtered': tk.Radiobutton(),
-            'hull_lbl': tk.Label(),
-            'find_circle_in_lbl': tk.Label(),
-        }
-
-        self.slider = {
-            'epsilon': tk.Scale(),
-            'epsilon_lbl': tk.Label(),
-            'circle_mindist': tk.Scale(),
-            'circle_mindist_lbl': tk.Label(),
-            'circle_param1': tk.Scale(),
-            'circle_param1_lbl': tk.Label(),
-            'circle_param2': tk.Scale(),
-            'circle_param2_lbl': tk.Label(),
-            'circle_minradius': tk.Scale(),
-            'circle_minradius_lbl': tk.Label(),
-            'circle_maxradius': tk.Scale(),
-            'circle_maxradius_lbl': tk.Label(),
-        }
-
-        self.line_thickness = 0
-        self.num_shapes = 0
-
-        # (Statement is duplicated in ProcessImage.__init__)
-        if arguments['color'] == 'yellow':
-            self.contour_color = const.CBLIND_COLOR_CV['yellow']
-        else:  # is default CV2 contour color option, green, as (BGR).
-            self.contour_color = arguments['color']
-
-        self.shape_settings_layout()
-        self.config_selector_widgets()
-        self.set_defaults()
-        self.grid_shape_widgets()
-        self.process_shapes()
-
-    def shape_settings_layout(self) -> None:
-        """
-        Shape settings and reporting frame configuration, keybindings,
-        and grids.
-        """
-        # Note that ttk.Styles are already set by ContourViewer.setup_styles().
-
-        # Need different window names descriptive of selected options.
-        self.shape_settings_win = tk.Toplevel()
-        self.shaped_img_window = tk.Toplevel()
-        self.shape_settings_win.minsize(200, 200)
-        self.shaped_img_window.minsize(200, 200)
-
-        # Need to position window toward right of screen, overlapping
-        #   contour settings window, so that it does not cover the shape img window.
-        self.shape_settings_win.geometry(f'+{self.winfo_screenwidth() - 800}+100')
-
-        if self.find_in == 'thresh':
-            self.shape_settings_win.title(const.WIN_NAME['shape report_th'])
-        else:  # is for Canny
-            self.shape_settings_win.title(const.WIN_NAME['shape report_can'])
-
-        self.shaped_img_window.title(const.WIN_NAME[self.find_in])
-
-        self.frame_shape_report = tk.Frame(master=self.shape_settings_win)
-        self.frame_shape_selectors = tk.Frame(master=self.shape_settings_win)
-        self.shapeimg_lbl = tk.Label(master=self.shaped_img_window)
-
-        self.close_button = ttk.Button(master=self.shape_settings_win)
-        self.saveshape_button = ttk.Button(master=self.shape_settings_win)
-
-        def no_exit_on_x():
-            """Notice in Terminal. Called from .protocol() in loop."""
-            print('The Shape window cannot be closed from the window bar.\n'
-                  'It can be closed with the "Close" button.\n'
-                  'You may quit the program from the OpenCV Settings Report window bar'
-                  ' or Esc or Ctrl-Q key.'
-                  )
-
-        self.shape_settings_win.protocol('WM_DELETE_WINDOW', no_exit_on_x)
-
-        # Need to color in all the master Frame and use yellow border;
-        #   border highlightcolor changes to dark grey when click-dragged
-        #   and loss of focus.
-        self.shape_settings_win.config(
-            bg=const.MASTER_BG,  # gray80 matches report_contour() txt fg.
-            # bg=const.CBLIND_COLOR_TK['sky blue'],  # for dev.
-            highlightthickness=5,
-            highlightcolor=const.CBLIND_COLOR_TK['yellow'],
-            highlightbackground='grey65'
-        )
-
-        self.shape_settings_win.bind_all('<Escape>', lambda _: utils.quit_gui(app))
-        self.shape_settings_win.bind('<Control-q>', lambda _: utils.quit_gui(app))
-        # ^^ Note: macOS Command-q will quit program without utils.quit_gui info msg.
-
-        self.shape_settings_win.columnconfigure(0, weight=1)
-        self.shape_settings_win.columnconfigure(1, weight=1)
-
-        self.frame_shape_report.configure(relief='flat',
-                                          bg=const.CBLIND_COLOR_TK['sky blue']
-                                          )  # bg won't show with grid sticky EW.
-        self.frame_shape_report.columnconfigure(1, weight=1)
-        self.frame_shape_report.rowconfigure(0, weight=1)
-
-        self.frame_shape_selectors.configure(relief='raised',
-                                             bg=const.DARK_BG,
-                                             borderwidth=5, )
-        self.frame_shape_selectors.columnconfigure(0, weight=1)
-        self.frame_shape_selectors.columnconfigure(1, weight=1)
-
-        def save_shape_cmd():
-            if self.find_in == 'thresh':
-                utils.save_settings_and_img(
-                    img2save=self.shape_tkimg,
-                    txt2save=self.shape_settings_txt,
-                    caller='thresh_shape')
-            else:  # is for canny
-                utils.save_settings_and_img(
-                    img2save=self.shape_tkimg,
-                    txt2save=self.shape_settings_txt,
-                    caller='canny_shape')
-
-        self.saveshape_button.configure(text='Save shape settings and image',
-                                        style='My.TButton',
-                                        width=0,
-                                        command=save_shape_cmd)
-
-        self.close_button.configure(text='Close Shapes window',
-                                    style='My.TButton',
-                                    width=0,
-                                    command=self.shape_settings_win.destroy)
-
-        self.frame_shape_report.grid(row=0, column=0,
-                                     columnspan=2,
-                                     padx=(5, 5), pady=(5, 5),
-                                     sticky=tk.EW)
-        self.frame_shape_selectors.grid(row=1, column=0,
-                                        columnspan=2,
-                                        padx=5, pady=(0, 5),
-                                        ipadx=4, ipady=4,
-                                        sticky=tk.EW)
-        self.saveshape_button.grid(column=0, row=3,
-                                   padx=(5, 0),
-                                   pady=(0, 5),
-                                   sticky=tk.W)
-        self.close_button.grid(column=1, row=3,
-                               padx=(5, 5),
-                               pady=(0, 5),
-                               sticky=tk.E)
-
-    def config_selector_widgets(self) -> None:
-        """
-        Configure all selector widgets and their Labels in the
-        frame_shape_selectors Frame.
-
-        Returns: None
-        """
-
-        self.line_thickness = infile_dict['line_thickness']
-
-        self.separator = ttk.Separator(master=self.frame_shape_selectors,
-                                       orient='horizontal')
-
-        self.circle_msg_lbl = tk.Label(master=self.frame_shape_selectors)
-
-        # For reasons not fully understood, need to assign master= here
-        #   and not in __init__.
-        self.choose_shape_lbl = tk.Label(master=self.frame_shape_selectors)
-        self.choose_shape = ttk.Combobox(master=self.frame_shape_selectors)
-
-        self.radiobtn['hull_lbl'] = tk.Label(master=self.frame_shape_selectors)
-        self.radiobtn['hull_yes'] = tk.Radiobutton(master=self.frame_shape_selectors)
-        self.radiobtn['hull_no'] = tk.Radiobutton(master=self.frame_shape_selectors)
-
-        self.radiobtn['find_circle_in_lbl'] = tk.Label(master=self.frame_shape_selectors)
-        self.radiobtn['find_circle_in_th'] = tk.Radiobutton(master=self.frame_shape_selectors)
-        self.radiobtn['find_circle_in_filtered'] = tk.Radiobutton(
-            master=self.frame_shape_selectors)
-
-        self.slider['epsilon'] = tk.Scale(master=self.frame_shape_selectors)
-        self.slider['epsilon_lbl'] = tk.Label(master=self.frame_shape_selectors)
-
-        self.slider['circle_mindist'] = tk.Scale(master=self.frame_shape_selectors)
-        self.slider['circle_mindist_lbl'] = tk.Label(master=self.frame_shape_selectors)
-
-        self.slider['circle_param1'] = tk.Scale(master=self.frame_shape_selectors)
-        self.slider['circle_param1_lbl'] = tk.Label(master=self.frame_shape_selectors)
-
-        self.slider['circle_param2'] = tk.Scale(master=self.frame_shape_selectors)
-        self.slider['circle_param2_lbl'] = tk.Label(master=self.frame_shape_selectors)
-
-        self.slider['circle_minradius'] = tk.Scale(master=self.frame_shape_selectors)
-        self.slider['circle_minradius_lbl'] = tk.Label(master=self.frame_shape_selectors)
-
-        self.slider['circle_maxradius'] = tk.Scale(master=self.frame_shape_selectors)
-        self.slider['circle_maxradius_lbl'] = tk.Label(master=self.frame_shape_selectors)
-
-        # Comboboxes:
-        self.choose_shape_lbl.configure(text='Select shape to find:',
-                                        **const.LABEL_PARAMETERS)
-        self.choose_shape.configure(
-            textvariable=self.select_val['polygon'],
-            width=12,
-            values=('Triangle',
-                    'Rectangle',
-                    'Pentagon',
-                    'Hexagon',
-                    'Heptagon',
-                    'Octagon',
-                    '5-pointed Star',
-                    'Circle'),
-            **const.COMBO_PARAMETERS
-        )
-        self.choose_shape.bind('<<ComboboxSelected>>',
-                               func=self.process_shapes)
-
-        self.circle_msg_lbl.configure(
-            text=
-            ('Note: Circles are found in the filtered image or'
-             ' an Otsu threshold of it, not from previously found contours.'),
-            **const.LABEL_PARAMETERS)
-
-        # Scale sliders:
-        self.slider['epsilon_lbl'].configure(text='% polygon contour length (epsilon):',
-                                             **const.LABEL_PARAMETERS)
-        self.slider['epsilon'].configure(from_=0.001, to=0.06,
-                                         resolution=0.001,
-                                         tickinterval=0.01,
-                                         variable=self.select_val['epsilon'],
-                                         **const.SCALE_PARAMETERS)
-
-        self.slider['circle_mindist_lbl'].configure(text='Minimum px dist between circles:',
-                                                    **const.LABEL_PARAMETERS)
-        self.slider['circle_mindist'].configure(from_=10, to=200,
-                                                resolution=1,
-                                                tickinterval=20,
-                                                variable=self.select_val['circle_mindist'],
-                                                **const.SCALE_PARAMETERS)
-
-        self.slider['circle_param1_lbl'].configure(text='cv2.HoughCircles, param1:',
-                                                   **const.LABEL_PARAMETERS)
-        self.slider['circle_param1'].configure(from_=100, to=500,
-                                               resolution=100,
-                                               tickinterval=100,
-                                               variable=self.select_val['circle_param1'],
-                                               **const.SCALE_PARAMETERS)
-
-        self.slider['circle_param2_lbl'].configure(text='cv2.HoughCircles, param2:',
-                                                   **const.LABEL_PARAMETERS)
-        self.slider['circle_param2'].configure(from_=0.1, to=0.98,
-                                               resolution=0.1,
-                                               tickinterval=0.1,
-                                               variable=self.select_val['circle_param2'],
-                                               **const.SCALE_PARAMETERS)
-
-        self.slider['circle_minradius_lbl'].configure(text='cv2.HoughCircles, min px radius):',
-                                                      **const.LABEL_PARAMETERS)
-        self.slider['circle_minradius'].configure(from_=10, to=200,
-                                                  resolution=10,
-                                                  tickinterval=20,
-                                                  variable=self.select_val['circle_minradius'],
-                                                  **const.SCALE_PARAMETERS)
-
-        self.slider['circle_maxradius_lbl'].configure(text='cv2.HoughCircles, max px radius:',
-                                                      **const.LABEL_PARAMETERS)
-        self.slider['circle_maxradius'].configure(from_=10, to=1000,
-                                                  resolution=10,
-                                                  tickinterval=100,
-                                                  variable=self.select_val['circle_maxradius'],
-                                                  **const.SCALE_PARAMETERS)
-
-        # Bind sliders to call processing and reporting on button release.
-        sliders = ('epsilon', 'circle_mindist', 'circle_param1', 'circle_param2',
-                   'circle_minradius', 'circle_maxradius')
-        for _s in sliders:
-            self.slider[_s].bind('<ButtonRelease-1>', self.process_shapes)
-
-        # Radiobuttons:
-        self.radiobtn['hull_lbl'].config(text='Find shapes as hull?',
-                                         **const.LABEL_PARAMETERS)
-        self.radiobtn['hull_yes'].configure(
-            text='Yes',
-            variable=self.select_val['hull'],
-            value='yes',
-            command=self.process_shapes,
-            **const.RADIO_PARAMETERS
-        )
-        self.radiobtn['hull_no'].configure(
-            text='No',
-            variable=self.select_val['hull'],
-            value='no',
-            command=self.process_shapes,
-            **const.RADIO_PARAMETERS,
-        )
-
-        self.radiobtn['find_circle_in_lbl'].config(text='Find Hough circles in:',
-                                                   **const.LABEL_PARAMETERS)
-        self.radiobtn['find_circle_in_th'].configure(
-            text='Threshold img',  # Need to say 'Edged' if/when use cv2.Canny.
-            variable=self.select_val['find_circle_in'],
-            value='thresholded',
-            command=self.process_shapes,
-            **const.RADIO_PARAMETERS
-        )
-        self.radiobtn['find_circle_in_filtered'].configure(
-            text='Filtered img',
-            variable=self.select_val['find_circle_in'],
-            value='filtered',
-            command=self.process_shapes,
-            **const.RADIO_PARAMETERS
-        )
-
-    def set_defaults(self):
-        """
-        Set default values for selectors. Called at startup.
-        Returns: None
-        """
-        # Set Combobox starting value.
-        self.choose_shape.current(0)
-
-        # Set slider starting positions.
-        self.slider['epsilon'].set(0.01)
-        self.slider['circle_mindist'].set(100)
-        self.slider['circle_param1'].set(300)
-        self.slider['circle_param2'].set(0.9)
-        self.slider['circle_minradius'].set(20)
-        self.slider['circle_maxradius'].set(500)
-
-        # Set Radiobutton starting values.
-        self.select_val['hull'].set('no')
-        self.select_val['find_circle_in'].set('filtered')
-
-    def grid_shape_widgets(self):
-        """
-        Grid all selector widgets in the frame_shape_selectors Frame.
-
-        Returns: None
-        """
-
-        label_grid_params = dict(
-            padx=5,
-            pady=(7, 0),
-            sticky=tk.E)
-
-        selector_grid_params = dict(
-            padx=5,
-            pady=(7, 0),
-            sticky=tk.W)
-
-        self.choose_shape_lbl.grid(column=0, row=0,
-                                   **label_grid_params)
-        self.choose_shape.grid(column=1, row=0,
-                               **selector_grid_params)
-
-        self.radiobtn['hull_lbl'].grid(column=1, row=0,
-                                       padx=(0, 110),
-                                       pady=(7, 0),
-                                       sticky=tk.E)
-        self.radiobtn['hull_yes'].grid(column=1, row=0,
-                                       padx=(0, 70),
-                                       pady=(7, 0),
-                                       sticky=tk.E)
-        self.radiobtn['hull_no'].grid(column=1, row=0,
-                                      padx=(0, 35),
-                                      pady=(7, 0),
-                                      sticky=tk.E)
-
-        self.slider['epsilon_lbl'].grid(column=0, row=1,
-                                        **label_grid_params)
-        self.slider['epsilon'].grid(column=1, row=1,
-                                    **selector_grid_params)
-
-        self.separator.grid(column=0, row=2,
-                            columnspan=2,
-                            padx=10,
-                            pady=(8, 5),
-                            sticky=tk.EW)
-
-        self.circle_msg_lbl.grid(column=0, row=3,
-                                 columnspan=2,
-                                 padx=5,
-                                 pady=(7, 0),
-                                 sticky=tk.EW)
-
-        self.radiobtn['find_circle_in_lbl'].grid(column=0, row=4,
-                                                 **label_grid_params)
-        self.radiobtn['find_circle_in_th'].grid(column=1, row=4,
-                                                **selector_grid_params)
-        self.radiobtn['find_circle_in_filtered'].grid(column=1, row=4,
-                                                      padx=100,
-                                                      pady=(7, 0),
-                                                      sticky=tk.W)
-
-        self.slider['circle_mindist_lbl'].grid(column=0, row=5,
-                                               **label_grid_params)
-        self.slider['circle_mindist'].grid(column=1, row=5,
-                                           **selector_grid_params)
-
-        self.slider['circle_param1_lbl'].grid(column=0, row=6,
-                                              **label_grid_params)
-        self.slider['circle_param1'].grid(column=1, row=6,
-                                          **selector_grid_params)
-
-        self.slider['circle_param2_lbl'].grid(column=0, row=7,
-                                              **label_grid_params)
-        self.slider['circle_param2'].grid(column=1, row=7,
-                                          **selector_grid_params)
-
-        self.slider['circle_minradius_lbl'].grid(column=0, row=8,
-                                                 **label_grid_params)
-        self.slider['circle_minradius'].grid(column=1, row=8,
-                                             **selector_grid_params)
-
-        self.slider['circle_maxradius_lbl'].grid(column=0, row=9,
-                                                 **label_grid_params)
-        self.slider['circle_maxradius'].grid(column=1, row=9,
-                                             **selector_grid_params)
-
-    def process_shapes(self, event=None):
-        """
-        A handler for the command kw and button binding for the settings
-        control widgets to call multiple methods.
-        Args:
-            event: An implicit mouse button event.
-
-        Returns: *event* as a formality; is functionally None.
-
-        """
-        self.select_shape(self.contours4shape)
-        self.report_shape()
-
-        return event
-
-    def select_shape(self, contour_list: list) -> None:
-        """
-        Filter contoured objects of a specific approximated shape.
-        Called from contour_threshold().
-        Calls draw_shapes() with selected polygon contours.
-
-        Args:
-            contour_list: List of selected contours from cv2.findContours.
-
-        Returns: None
-        """
-
-        # Inspiration from Adrian Rosebrock's
-        #  https://pyimagesearch.com/2016/02/08/opencv-shape-detection/
-
-        poly_choice = self.select_val['polygon'].get()
-
-        # Finding circles is a special condition that uses Hough Transform
-        #   on either the filtered or an Ostu threshold image and thus
-        #   sidesteps cv2.findContours and cv2.drawContours.
-        num_vertices = {
-            'Triangle': 3,
-            'Rectangle': 4,
-            'Pentagon': 5,
-            'Hexagon': 6,
-            'Heptagon': 7,
-            'Octagon': 8,
-            '5-pointed Star': 10,
-            'Circle': 0,
-        }
-
-        if poly_choice == 'Circle':
-            self.find_circles()
-            return
-        else:
-            # Need to change title back to default after title change in find_circles().
-            # self.shaped_img_window.title(const.WIN_NAME['shape img'])
-            self.shaped_img_window.title(const.WIN_NAME[self.find_in])
-
-        # Draw hulls around selected contours when hull area is 10% or
-        #   more than contour area. This prevents obfuscation of outlines
-        #   when hulls and contours are similar. 10% limit is arbitrary.
-        hull_list = []
-        for i, _ in enumerate(contour_list):
-            hull = cv2.convexHull(contour_list[i])
-            if cv2.contourArea(hull) >= cv2.contourArea(contour_list[i]) * 1.1:
-                hull_list.append(hull)
-
-        selected_polygon_contours = []
-        self.num_shapes = len(selected_polygon_contours)
-
-        # Need to remove prior contours before finding new selected polygon.
-        self.draw_shapes(selected_polygon_contours)
-
-        # NOTE: When using the sample4.jpg (shapes) image, the white border
-        #  around the black background has a hexagon-shaped contour, but is
-        #  difficult to see with the yellow contour lines. It will be counted
-        #  as a hexagon shape unless, in main settings, it is not selected as
-        #  a contour by setting cv2.arcLength instead of cv2.contourArea.
-        def find_poly(point_set):
-            len_arc = cv2.arcLength(point_set, True)
-            epsilon = self.select_val['epsilon'].get() * len_arc
-            approx_poly = cv2.approxPolyDP(curve=point_set,
-                                           epsilon=epsilon,
-                                           closed=True)
-
-            # Need to cover shapes with 3 to 8 vertices (sides).
-            for _v in range(2, 8):
-                if len(approx_poly) == num_vertices[poly_choice] == _v + 1:
-                    selected_polygon_contours.append(point_set)
-
-            # Special case for a star:
-            if len(approx_poly) == (num_vertices[poly_choice] == 10
-                                    and not cv2.isContourConvex(point_set)):
-                selected_polygon_contours.append(point_set)
-
-        if self.select_val['hull'].get() == 'yes' and hull_list:
-            for _h in hull_list:
-                find_poly(_h)
-        else:
-            for _c in contour_list:
-                find_poly(_c)
-
-        self.num_shapes = len(selected_polygon_contours)
-        self.draw_shapes(selected_polygon_contours)
-
-    def draw_shapes(self, contours: list) -> None:
-        """
-        Draw *contours* around detected polygons, hulls, or circles.
-        Calls show_settings(). Called from select_shape()
-
-        Args:
-            contours: Contour list of polygons or circles.
-
-        Returns: None
-        """
-
-        shaped_img = INPUT_IMG.copy()
-        use_hull = self.select_val['hull'].get()
-
-        if use_hull == 'yes':
-            cnt_color = const.CBLIND_COLOR_CV['sky blue']
-        else:
-            cnt_color = self.contour_color
-
-        thick_x = 3 if use_hull == 'yes' else 2
-        if contours:
-            for _c in contours:
-                cv2.drawContours(shaped_img,
-                                 contours=[_c],
-                                 contourIdx=-1,
-                                 color=cnt_color,
-                                 thickness=self.line_thickness * thick_x,
-                                 lineType=cv2.LINE_AA
-                                 )
-
-        self.shape_tkimg = manage.tkimage(shaped_img)
-        self.shapeimg_lbl.configure(image=self.shape_tkimg)
-        self.shapeimg_lbl.grid(column=0, row=0,
-                               padx=5, pady=5,
-                               sticky=tk.NSEW)
-
-        # Now update the settings text with current values.
-        self.report_shape()
-
-    def find_circles(self):
-        """
-        Implements the cv2.HOUGH_GRADIENT_ALT method of cv2.HoughCircles()
-        to approximate circles in a filtered/blured threshold image, then
-        displays them on the input image.
-        Called from select_shape(). Calls utils.text_array().
-
-        Returns: An array of HoughCircles contours.
-        """
-        shaped_img = INPUT_IMG.copy()
-
-        mindist = self.select_val['circle_mindist'].get()
-        param1 = self.select_val['circle_param1'].get()
-        param2 = self.select_val['circle_param2'].get()
-        min_radius = self.select_val['circle_minradius'].get()
-        max_radius = self.select_val['circle_maxradius'].get()
-
-        # Note: 'thresholded' needs to match the "value" kw value as configured for
-        #  self.radiobtn['find_circle_in_th'] and self.radiobtn['find_circle_in_filtered'].
-        if self.select_val['find_circle_in'].get() == 'thresholded':
-            _, circle_this_img = cv2.threshold(
-                self.filtered4shape,
-                thresh=0,
-                maxval=255,
-                type=8  # 8 == cv2.THRESH_OTSU, 16 == cv2.THRESH_TRIANGLE
-            )
-
-            # Here HoughCircles works on the threshold image, not found
-            #  contours.
-            # Note: the printed 'type' needs to agree with the above type= value.
-            # print('Circles are being found using a threshold image'
-            #       ' with type=cv2.THRESH_OTSU; contours are not used.')
-            self.shaped_img_window.title(const.WIN_NAME['circle in thresh'])
-
-            self.shape_tkimg = manage.tkimage(circle_this_img)
-            self.shapeimg_lbl.configure(image=self.shape_tkimg)
-            self.shapeimg_lbl.grid(column=0, row=0,
-                                   padx=5, pady=5,
-                                   sticky=tk.NSEW)
-
-        else:  # is 'filtered', the default value.
-            circle_this_img = self.filtered4shape
-            # Here HoughCircles works on the filtered image, not threshold or contours.
-            # print("Circles are being found using the filtered image;"
-            #       " contours are not used.")
-            self.shaped_img_window.title(const.WIN_NAME['circle in filtered'])
-
-        # source: https://www.geeksforgeeks.org/circle-detection-using-opencv-python/
-        # https://docs.opencv.org/4.x/dd/d1a/group__imgproc__feature.html#ga47849c3be0d0406ad3ca45db65a25d2d
-        # Docs general recommendations for HOUGH_GRADIENT_ALT with good image contrast:
-        #    param1=300, param2=0.9, minRadius=20, maxRadius=400
-        found_circles = cv2.HoughCircles(image=circle_this_img,
-                                         method=cv2.HOUGH_GRADIENT_ALT,
-                                         dp=1.5,
-                                         minDist=mindist,
-                                         param1=param1,
-                                         param2=param2,
-                                         minRadius=min_radius,
-                                         maxRadius=max_radius)
-
-        if found_circles is not None:
-            # Convert the circle parameters to integers to get the right data type.
-            found_circles = np.uint16(np.round(found_circles))
-
-            self.num_shapes = len(found_circles[0, :])
-
-            for _circle in found_circles[0, :]:
-                _x, _y, _r = _circle
-                # Draw the circumference of the found circle.
-                cv2.circle(shaped_img,
-                           center=(_x, _y),
-                           radius=_r,
-                           color=self.contour_color,
-                           thickness=self.line_thickness * 2,
-                           lineType=cv2.LINE_AA
-                           )
-                # Draw its center.
-                cv2.circle(shaped_img,
-                           center=(_x, _y),
-                           radius=4,
-                           color=self.contour_color,
-                           thickness=self.line_thickness * 2,
-                           lineType=cv2.LINE_AA
-                           )
-
-                # Show found circles marked on the input image.
-                self.shape_tkimg = manage.tkimage(shaped_img)
-                self.shapeimg_lbl.configure(image=self.shape_tkimg)
-                self.shapeimg_lbl.grid(column=0, row=0,
-                                       padx=5, pady=5,
-                                       sticky=tk.NSEW)
-
-        else:
-            self.shape_tkimg = manage.tkimage(shaped_img)
-            self.shapeimg_lbl.configure(image=self.shape_tkimg)
-            self.shapeimg_lbl.grid(column=0, row=0,
-                                   padx=5, pady=5,
-                                   sticky=tk.NSEW)
-
-        # Now update the settings text with current values.
-        self.report_shape()
-
     def report_shape(self):
 
-        epsilon = self.select_val['epsilon'].get()
-        epsilon_pct = round(self.select_val['epsilon'].get() * 100, 2)
-        use_image = self.select_val['find_circle_in'].get()
-        mindist = self.select_val['circle_mindist'].get()
-        param1 = self.select_val['circle_param1'].get()
-        param2 = self.select_val['circle_param2'].get()
-        min_radius = self.select_val['circle_minradius'].get()
-        max_radius = self.select_val['circle_maxradius'].get()
+        epsilon = self.slider_val['epsilon'].get()
+        epsilon_pct = round(self.slider_val['epsilon'].get() * 100, 2)
+        use_image = self.radio_val['find_circle_in'].get()
+        mindist = self.slider_val['circle_mindist'].get()
+        param1 = self.slider_val['circle_param1'].get()
+        param2 = self.slider_val['circle_param2'].get()
+        min_radius = self.slider_val['circle_minradius'].get()
+        max_radius = self.slider_val['circle_maxradius'].get()
 
-        shape_type = 'Hull shape:' if self.select_val['hull'].get() == 'yes' else 'Contour shape:'
+        shape_type = 'Hull shape:' if self.radio_val[
+                                          'hull_shape'].get() == 'yes' else 'Contour shape:'
         # poly_choice = self.choose_shape_pref.get()
-        poly_choice = self.select_val['polygon'].get()
+        poly_choice = self.cbox_val['polygon'].get()
 
         # Text is formatted for clarity in window, terminal, and saved file.
         indent = " ".ljust(18)
@@ -2358,6 +2254,73 @@ class ShapeViewer(tk.Canvas):  # or tk.Frame
         utils.display_report(frame=self.frame_shape_report,
                              report=self.shape_settings_txt)
 
+    def process_all(self, event=None) -> None:
+        """
+        Runs all image processing methods from ProcessImage() and the
+        settings report_contour.
+        Calls adjust_contrast(), reduce_noise(), filter_image(), and
+        contour_threshold() from ProcessImage.
+        Calls report_contour() from ContourViewer.
+        Args:
+            event: The implicit mouse button event.
+
+        Returns: *event* as a formality; is functionally None.
+
+        """
+        self.adjust_contrast()
+        self.reduce_noise()
+        self.filter_image()
+        self.contour_threshold(event)
+        self.contour_canny(event)
+        self.size_the_contours(self.contours['selected_thresh'], 'thresh sized')
+        self.size_the_contours(self.contours['selected_canny'], 'canny sized')
+        self.report_contour()
+        self.process_shapes(event)
+
+        return event
+
+    def process_contours(self, event=None) -> None:
+        """
+        Calls contour_threshold() from ProcessImage.
+        Calls report_contour() from ContourViewer.
+        Args:
+            event: The implicit mouse button event.
+
+        Returns: *event* as a formality; is functionally None.
+
+        """
+        self.contour_threshold(event)
+        self.contour_canny(event)
+        self.size_the_contours(self.contours['selected_thresh'], 'thresh sized')
+        self.size_the_contours(self.contours['selected_canny'], 'canny sized')
+        self.report_contour()
+        self.process_shapes(event)
+
+        return event
+
+    def process_shapes(self, event=None):
+        """
+        A handler for the command kw and button binding for the settings
+        control widgets to call multiple methods.
+        The contours object passed to select_shape() are those inherited
+        from ProcessImage().
+        Args:
+            event: An implicit mouse button event.
+
+        Returns: *event* as a formality; is functionally None.
+
+        """
+        self.update_idletasks()
+        if self.radio_val['find_shape_in'].get() == 'threshold':
+            contours = self.contours['selected_thresh']
+        else:  # is 'canny'
+            contours = self.contours['selected_canny']
+
+        self.select_shape(contours)
+        self.report_shape()
+
+        return event
+
 
 if __name__ == "__main__":
     # Program exits here if the system platform or Python version check fails.
@@ -2370,14 +2333,14 @@ if __name__ == "__main__":
     infile_dict = manage.infile()
     INPUT_IMG = infile_dict['input_img']
     GRAY_IMG = infile_dict['gray_img']
+    LINE_THICKNESS = infile_dict['line_thickness']
 
     try:
-        app = ContourViewer(tk.Tk)
+        app = ImageViewer(tk.Tk)
         app.title('OpenCV Settings Report')
         # Need to prevent errant window resize becoming too small to see.
         app.resizable(False, False)
         print(f'{Path(__file__).name} is now running...')
         app.mainloop()
     except KeyboardInterrupt:
-        _msg = '*** User quit the program from Terminal/Console ***\n'
-        print(_msg)
+        print('*** User quit the program from Terminal/Console ***\n')
