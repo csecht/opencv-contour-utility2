@@ -1103,8 +1103,12 @@ class ImageViewer(ProcessImage):
 
         self.geometry(f'+{self.winfo_screenwidth() - adjust_width}+0')
 
+        # Need to set min width so that entire contrast reporting line
+        #  fits its maximum length., e.g, beta == -120 and SD == 39.0.
         if const.MY_OS == 'win':
             self.minsize(750, 400)
+        elif const.MY_OS == 'lin':
+            self.minsize(690, 400)
 
         # Need to color in all the master Frame and use yellow border;
         #   border highlightcolor changes to dark grey when click-dragged
@@ -1138,11 +1142,11 @@ class ImageViewer(ProcessImage):
         self.frame_selectors.columnconfigure(0, weight=1)
         self.frame_selectors.columnconfigure(1, weight=1)
 
-        self.frame_report.grid(row=0, column=0,
+        self.frame_report.grid(column=0, row=0,
                                columnspan=2,
                                padx=(5, 5), pady=(5, 5),
                                sticky=tk.EW)
-        self.frame_selectors.grid(row=1, column=0,
+        self.frame_selectors.grid(column=0, row=1,
                                   columnspan=2,
                                   padx=5, pady=(0, 5),
                                   ipadx=4, ipady=4,
@@ -1365,29 +1369,29 @@ class ImageViewer(ProcessImage):
                                      command=hide_shapes_windows)
 
         # Widget grid for the main window.
-        reset_btn.grid(row=2, column=0,
+        reset_btn.grid(column=0, row=2,
                        padx=(70, 0),
                        pady=(0, 5),
                        sticky=tk.W)
 
-        save_btn_label.grid(row=3, column=0,
+        save_btn_label.grid(column=0, row=3,
                             padx=(10, 0),
                             pady=(0, 5),
                             sticky=tk.W)
-        save_th_btn.grid(row=3, column=0,
-                         padx=(230, 0),
+        save_th_btn.grid(column=0, row=3,
+                         padx=(0, 75),
                          pady=(0, 5),
-                         sticky=tk.W)
-        save_canny_btn.grid(row=3, column=0,
-                            padx=(310, 0),
+                         sticky=tk.E)
+        save_canny_btn.grid(column=0, row=3,
+                            padx=(0, 15),
                             pady=(0, 5),
-                            sticky=tk.W)
+                            sticky=tk.E)
 
-        show_shapes_win.grid(row=2, column=1,
+        show_shapes_win.grid(column=1, row=2,
                              padx=(0, 5),
                              pady=(0, 5),
                              sticky=tk.E)
-        hide_shapes_win.grid(row=3, column=1,
+        hide_shapes_win.grid(column=1, row=3,
                              padx=(0, 5),
                              pady=(0, 5),
                              sticky=tk.E)
@@ -1777,7 +1781,6 @@ class ImageViewer(ProcessImage):
                 padx=5,
                 pady=(7, 0),
                 sticky=tk.W, )
-
             label_grid_params = dict(
                 padx=5,
                 pady=(5, 0),
@@ -1799,23 +1802,18 @@ class ImageViewer(ProcessImage):
                 pady=(5, 0),
                 sticky=tk.E)
             filter_lbl_param = dict(
-                padx=(0, 150),
+                padx=(0, 140),
                 pady=(5, 0),
                 sticky=tk.E)
             filter_cbox_param = dict(
                 padx=(0, 15),
                 pady=(5, 0),
                 sticky=tk.E)
-            c_method_lbl_params = dict(
-                padx=(135, 0),
-                pady=(5, 0),
-                sticky=tk.W)
 
         else:  # is macOS
             slider_grid_params = dict(
                 padx=5,
                 pady=(4, 0))
-
             label_grid_params = dict(
                 padx=5,
                 pady=(4, 0),
@@ -1845,9 +1843,10 @@ class ImageViewer(ProcessImage):
                 pady=(5, 0),
                 sticky=tk.W)
 
+        # A special case where each platform is different. Messy, but, oh well.
         if const.MY_OS == 'lin':
             c_method_lbl_params = dict(
-                padx=(135, 0),
+                padx=(145, 0),
                 pady=(5, 0),
                 sticky=tk.W)
         elif const.MY_OS == 'win':

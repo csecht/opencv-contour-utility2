@@ -201,7 +201,7 @@ LABEL_PARAMETERS = dict(
 )
 
 if MY_OS == 'lin':
-    scale_len = 400
+    scale_len = 410
     shape_scale_len = 400
 elif MY_OS == 'dar':
     scale_len = 400
