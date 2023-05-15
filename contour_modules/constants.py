@@ -192,12 +192,12 @@ else:  # is macOS
 
 MASTER_BG = 'gray80'
 DARK_BG = 'gray20'
-widget_fg = CBLIND_COLOR_TK['yellow']
+WIDGET_FG = CBLIND_COLOR_TK['yellow']
 
 LABEL_PARAMETERS = dict(
     font=WIDGET_FONT,
     bg=DARK_BG,
-    fg=widget_fg,
+    fg=WIDGET_FG,
 )
 
 if MY_OS == 'lin':
@@ -218,7 +218,7 @@ SCALE_PARAMETERS = dict(
     sliderlength=20,
     font=WIDGET_FONT,
     bg=CBLIND_COLOR_TK['dark blue'],
-    fg=widget_fg,
+    fg=WIDGET_FG,
     troughcolor=MASTER_BG,
 )
 
@@ -230,7 +230,7 @@ SHAPE_SCALE_PARAMS = dict(
     sliderlength=20,
     font=WIDGET_FONT,
     bg=CBLIND_COLOR_TK['dark blue'],
-    fg=widget_fg,
+    fg=WIDGET_FG,
     troughcolor=MASTER_BG,
 )
 

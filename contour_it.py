@@ -439,7 +439,7 @@ class ProcessImage(tk.Tk):
         Args:
             event: An implicit mouse button event.
 
-        Returns: None
+        Returns: *event* as a formality; is functionally None.
         """
         # https://docs.opencv.org/3.4/dd/d49/tutorial_py_contour_features.html
         # https://towardsdatascience.com/clahe-and-thresholding-in-python-3bf690303e40
@@ -536,7 +536,7 @@ class ProcessImage(tk.Tk):
                                           padx=5, pady=5,
                                           sticky=tk.NSEW)
 
-        return th_type
+        return event
 
     def contour_canny(self, event=None) -> None:
         """
@@ -544,7 +544,7 @@ class ProcessImage(tk.Tk):
         Args:
             event: An implicit mouse button event.
 
-        Returns: None
+        Returns: *event* as a formality; is functionally None.
         """
 
         # Source of coding ideas:
@@ -640,6 +640,8 @@ class ProcessImage(tk.Tk):
         self.img_label['can_contour'].grid(column=1, row=0,
                                            padx=5, pady=5,
                                            sticky=tk.NSEW)
+
+        return event
 
     def size_the_contours(self,
                           contour_list: list,
@@ -867,16 +869,6 @@ class ProcessImage(tk.Tk):
                 maxval=255,
                 type=8  # 8 == cv2.THRESH_OTSU, 16 == cv2.THRESH_TRIANGLE
             )
-
-            # Here HoughCircles works on the threshold image, not found
-            #  contours.
-            # Note: the printed 'type' needs to agree with the above type= value.
-
-            # self.tkimg['shaped'] = manage.tkimage(img4houghcircles)
-            # self.img_label['shaped'].configure(image=self.tkimg['shaped'])
-            # self.img_label['shaped'].grid(column=0, row=0,
-            #                               padx=5, pady=5,
-            #                               sticky=tk.NSEW)
 
         else:  # is 'filtered', the default value.
             # Here HoughCircles works on the filtered image, not threshold or contours.
@@ -1164,8 +1156,8 @@ class ImageViewer(ProcessImage):
 
     def shape_win_setup(self) -> None:
         """
-        Shape settings and reporting frame configuration, keybindings,
-        and grids.
+        Shape settings and reporting frames, buttons, configuration,
+         keybindings, and grids.
         """
 
         def no_exit_on_x():
@@ -1373,7 +1365,6 @@ class ImageViewer(ProcessImage):
                                      command=hide_shapes_windows)
 
         # Widget grid for the main window.
-        # Note: these grid assignments are a bit shambolic; needs improvement.
         reset_btn.grid(row=2, column=0,
                        padx=(70, 0),
                        pady=(0, 5),
@@ -1584,8 +1575,8 @@ class ImageViewer(ProcessImage):
         self.cbox['choose_morphop'].bind('<<ComboboxSelected>>',
                                          func=self.process_all)
 
-        self.cbox['choose_morphshape_lbl'].configure(text='... shape:',
-                                                     **const.LABEL_PARAMETERS)
+        self.cbox['choose_morphshape_lbl'].config(text='... shape:',
+                                                  **const.LABEL_PARAMETERS)
         self.cbox['choose_morphshape'].config(textvariable=self.cbox_val['morphshape_pref'],
                                               width=16 + width_correction,
                                               values=('cv2.MORPH_RECT',  # cv2 returns 0
@@ -1595,8 +1586,8 @@ class ImageViewer(ProcessImage):
         self.cbox['choose_morphshape'].bind('<<ComboboxSelected>>',
                                             func=self.process_all)
 
-        self.cbox['choose_border_lbl'].configure(text='Border type:',
-                                                 **const.LABEL_PARAMETERS)
+        self.cbox['choose_border_lbl'].config(text='Border type:',
+                                              **const.LABEL_PARAMETERS)
         self.cbox['choose_border'].config(textvariable=self.cbox_val['border_pref'],
                                           width=22 + width_correction,
                                           values=(
@@ -1608,8 +1599,8 @@ class ImageViewer(ProcessImage):
         self.cbox['choose_border'].bind(
             '<<ComboboxSelected>>', lambda _: self.process_all())
 
-        self.cbox['choose_filter_lbl'].configure(text='Filter type:',
-                                                 **const.LABEL_PARAMETERS)
+        self.cbox['choose_filter_lbl'].config(text='Filter type:',
+                                              **const.LABEL_PARAMETERS)
         self.cbox['choose_filter'].config(textvariable=self.cbox_val['filter_pref'],
                                           width=14 + width_correction,
                                           values=(
@@ -1621,8 +1612,8 @@ class ImageViewer(ProcessImage):
         self.cbox['choose_filter'].bind(
             '<<ComboboxSelected>>', lambda _: self.process_all())
 
-        self.cbox['choose_th_type_lbl'].configure(text='Threshold type:',
-                                                  **const.LABEL_PARAMETERS)
+        self.cbox['choose_th_type_lbl'].config(text='Threshold type:',
+                                               **const.LABEL_PARAMETERS)
         self.cbox['choose_th_type'].config(textvariable=self.cbox_val['th_type_pref'],
                                            width=26 + width_correction,
                                            values=('cv2.THRESH_BINARY',  # cv2 returns 0
@@ -1635,8 +1626,8 @@ class ImageViewer(ProcessImage):
         self.cbox['choose_th_type'].bind(
             '<<ComboboxSelected>>', lambda _: self.process_contours())
 
-        self.cbox['choose_c_method_lbl'].configure(text='... method:',
-                                                   **const.LABEL_PARAMETERS)
+        self.cbox['choose_c_method_lbl'].config(text='... method:',
+                                                **const.LABEL_PARAMETERS)
         self.cbox['choose_c_method'].config(textvariable=self.cbox_val['c_method_pref'],
                                             width=26 + width_correction,
                                             values=('cv2.CHAIN_APPROX_NONE',  # cv2 returns 1
@@ -1648,9 +1639,9 @@ class ImageViewer(ProcessImage):
             '<<ComboboxSelected>>', lambda _: self.process_contours())
 
         # Shape Comboboxes:
-        self.cbox['choose_shape_lbl'].configure(text='Select shape to find:',
-                                                **const.LABEL_PARAMETERS)
-        self.cbox['choose_shape'].configure(
+        self.cbox['choose_shape_lbl'].config(text='Select shape to find:',
+                                             **const.LABEL_PARAMETERS)
+        self.cbox['choose_shape'].config(
             textvariable=self.cbox_val['polygon'],
             width=12,
             values=('Triangle',
@@ -1666,7 +1657,7 @@ class ImageViewer(ProcessImage):
                                        func=self.process_all)
         self.cbox['choose_shape'].current(0)
 
-        self.circle_msg_lbl.configure(
+        self.circle_msg_lbl.config(
             text=('Note: Circles are found in the filtered image or'
                   ' an Otsu threshold of it, not from previously found contours.'),
             **const.LABEL_PARAMETERS)
@@ -1785,7 +1776,7 @@ class ImageViewer(ProcessImage):
             slider_grid_params = dict(
                 padx=5,
                 pady=(7, 0),
-                sticky=tk.W,)
+                sticky=tk.W, )
 
             label_grid_params = dict(
                 padx=5,
@@ -2299,7 +2290,7 @@ class ImageViewer(ProcessImage):
 
         return event
 
-    def process_shapes(self, event=None):
+    def process_shapes(self, event=None) -> None:
         """
         A handler for the command kw and button binding for the settings
         control widgets to call multiple methods.

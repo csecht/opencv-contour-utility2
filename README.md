@@ -29,7 +29,7 @@ The module `equalize_it.py` does not involve contours, but explores parameters f
 
 Equalization is by cv2.createCLAHE. CLAHE is a contrast-limited adaptive histogram equalization method. Live updates of the CLAHE histogram are controlled by slide bars for the clipLimit and tileGridSize parameter values. All processing is carried out on a grayscale version of the input file. The grayscale equalized image can be saved to use as input for `contour_it.py`. For most contour operations, however, the contrast and brightness controls provided in `contour_it.py` should be sufficient.
 
-Be aware that CLAHE works best on images that have a full range of pixel values across the image, as in sample2.jpg (shells). In other words, it does not work well with images that have large areas of similar colors, as in sample1.jpg (pills), sample3.jpg (rummikub), or sample4.jgp (shapes). Nonetheless, this module can be fun to play with. Live histogram updating may be less responsive with larger image files.
+Be aware that CLAHE works best on images that have a full range of pixel values across the image, as in sample2.jpg (shells). In other words, it does not work well with images that have large areas of similar colors, as in sample1.jpg (pills), sample3.jpg (rummikub), or sample4.jpg (shapes). Nonetheless, this module can be fun to play with. Live histogram updating may be less responsive with larger image files.
 
 A known issue is that, while `equalize_it.py` should work on all systems, some Linux installations may not show histograms. If that's the case, then try `equalize_tk.py` or `equalize_qt.py` found in https://github.com/csecht/opencv-contour-utility. The problem may be with the specific version of the required python packages.
 
@@ -62,7 +62,7 @@ The Esc or Q key will quit any running module (except if "Histograms" window in 
 
 Images that are too large to fit on the screen can have their display size adjusted with the `--scale` command line argument. All image processing is performed at the original image resolution.
 
-Image files provided in the `images` folder:
+Files provided as examples in the `images` folder:
 * sample1.jpg (pills, 800x600 692 kB),
 * sample2.jpg (shells, 1050x750, 438 kB),
 * sample3.jpg (rummikub, 4032x3024, 2.94 MB)
