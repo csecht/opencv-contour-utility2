@@ -157,6 +157,9 @@ STD_CONTOUR_COLOR = {'green': (0, 255, 0)}
 #   cv::FONT_HERSHEY_SCRIPT_COMPLEX = 7,
 #   cv::FONT_ITALIC = 16
 # }
+
+# Need to adjust text length across platform's for the cv2.getTextSize()
+# function used in utils.text_array() module.
 # https://vovkos.github.io/doxyrest-showcase/opencv/sphinx_rtd_theme/enum_cv_HersheyFonts.html
 FONT_TYPE = cv2.FONT_HERSHEY_SIMPLEX
 
@@ -174,6 +177,8 @@ TEXT_COLOR = 180, 180, 180  # light gray for a dark gray background
 #  used in manage_input().
 LINE_SCALE = 1e-03
 FONT_SCALE = 7.7e-04
+
+# Used in manage.infile() module.
 CENTER_XSCALE = 0.035
 
 if MY_OS == 'lin':
@@ -194,12 +199,9 @@ MASTER_BG = 'gray80'
 DARK_BG = 'gray20'
 WIDGET_FG = CBLIND_COLOR_TK['yellow']
 
-LABEL_PARAMETERS = dict(
-    font=WIDGET_FONT,
-    bg=DARK_BG,
-    fg=WIDGET_FG,
-)
-
+# Need to customize tk.Scale lengths for each platform's specific
+#   pixel length, thus achieving (mostly) proper spacing and alignment
+#   across platforms.
 if MY_OS == 'lin':
     scale_len = 410
     shape_scale_len = 400
@@ -209,6 +211,14 @@ elif MY_OS == 'dar':
 else:  # is Windows
     scale_len = 450
     shape_scale_len = 450
+
+# Use the dict() function with keyword arguments to mimic the
+#  keyword parameter structure of the configure() function.
+LABEL_PARAMETERS = dict(
+    font=WIDGET_FONT,
+    bg=DARK_BG,
+    fg=WIDGET_FG,
+)
 
 SCALE_PARAMETERS = dict(
     length=scale_len,
@@ -222,7 +232,7 @@ SCALE_PARAMETERS = dict(
     troughcolor=MASTER_BG,
 )
 
-SHAPE_SCALE_PARAMS = dict(
+SHAPE_SCALE_PARAMETERS = dict(
     length=shape_scale_len,
     width=10,
     orient='horizontal',

@@ -1406,7 +1406,7 @@ class ImageViewer(ProcessImage):
 
         # Display the input image and its grayscale; both are static, so
         #  do not need updating, but retain the image display statement
-        #  structure of processed images that need updating.
+        #  structure of processed images that do need updating.
         # Note: Use 'self' to scope the ImageTk.PhotoImage in the Class,
         #  otherwise it will/may not show b/c of garbage collection.
         self.tkimg['input'] = manage.tkimage(INPUT_IMG)
@@ -1511,7 +1511,7 @@ class ImageViewer(ProcessImage):
                                          resolution=0.001,
                                          tickinterval=0.01,
                                          variable=self.slider_val['epsilon'],
-                                         **const.SHAPE_SCALE_PARAMS)
+                                         **const.SHAPE_SCALE_PARAMETERS)
 
         self.slider['circle_mindist_lbl'].configure(text='Minimum px dist between circles:',
                                                     **const.LABEL_PARAMETERS)
@@ -1519,7 +1519,7 @@ class ImageViewer(ProcessImage):
                                                 resolution=1,
                                                 tickinterval=20,
                                                 variable=self.slider_val['circle_mindist'],
-                                                **const.SHAPE_SCALE_PARAMS)
+                                                **const.SHAPE_SCALE_PARAMETERS)
 
         self.slider['circle_param1_lbl'].configure(text='cv2.HoughCircles, param1:',
                                                    **const.LABEL_PARAMETERS)
@@ -1527,7 +1527,7 @@ class ImageViewer(ProcessImage):
                                                resolution=100,
                                                tickinterval=100,
                                                variable=self.slider_val['circle_param1'],
-                                               **const.SHAPE_SCALE_PARAMS)
+                                               **const.SHAPE_SCALE_PARAMETERS)
 
         self.slider['circle_param2_lbl'].configure(text='cv2.HoughCircles, param2:',
                                                    **const.LABEL_PARAMETERS)
@@ -1535,7 +1535,7 @@ class ImageViewer(ProcessImage):
                                                resolution=0.1,
                                                tickinterval=0.1,
                                                variable=self.slider_val['circle_param2'],
-                                               **const.SHAPE_SCALE_PARAMS)
+                                               **const.SHAPE_SCALE_PARAMETERS)
 
         self.slider['circle_minradius_lbl'].configure(text='cv2.HoughCircles, min px radius):',
                                                       **const.LABEL_PARAMETERS)
@@ -1543,7 +1543,7 @@ class ImageViewer(ProcessImage):
                                                   resolution=10,
                                                   tickinterval=20,
                                                   variable=self.slider_val['circle_minradius'],
-                                                  **const.SHAPE_SCALE_PARAMS)
+                                                  **const.SHAPE_SCALE_PARAMETERS)
 
         self.slider['circle_maxradius_lbl'].configure(text='cv2.HoughCircles, max px radius:',
                                                       **const.LABEL_PARAMETERS)
@@ -1551,7 +1551,7 @@ class ImageViewer(ProcessImage):
                                                   resolution=10,
                                                   tickinterval=100,
                                                   variable=self.slider_val['circle_maxradius'],
-                                                  **const.SHAPE_SCALE_PARAMS)
+                                                  **const.SHAPE_SCALE_PARAMETERS)
 
         # Bind shape sliders to call processing and reporting on button release.
         sliders = ('epsilon', 'circle_mindist', 'circle_param1', 'circle_param2',
@@ -1776,11 +1776,13 @@ class ImageViewer(ProcessImage):
         Developer: Grid as a group to make clear spatial relationships.
         """
 
+        # Use the dict() function with keyword arguments to mimic the
+        #  keyword parameter structure of the grid() function.
         if const.MY_OS in 'lin, win':
             slider_grid_params = dict(
                 padx=5,
                 pady=(7, 0),
-                sticky=tk.W, )
+                sticky=tk.W)
             label_grid_params = dict(
                 padx=5,
                 pady=(5, 0),

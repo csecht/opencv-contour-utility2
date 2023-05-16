@@ -224,6 +224,7 @@ def display_report(frame: tk.Frame, report: str) -> None:
 def text_array(text_shape: iter, do_text: str) -> np.ndarray:
     """
     Generate an array image of text to display in a cv2 window.
+    Called by equalize_it.py.
     Usage example:
       text_img = utils.text_array((150, 500), my_text)
       cv2.imshow(my_text_window, text_img)
