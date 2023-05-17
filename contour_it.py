@@ -947,7 +947,7 @@ class ImageViewer(ProcessImage):
     config_radiobuttons
     grid_contour_widgets
     grid_shape_widgets
-    set_defaults
+    set_contour_defaults
     set_shape_defaults
     report_contour
     report_shape
@@ -1078,7 +1078,7 @@ class ImageViewer(ProcessImage):
         self.config_comboboxes()
         self.config_radiobuttons()
         self.grid_contour_widgets()
-        self.set_defaults()
+        self.set_contour_defaults()
         self.set_shape_defaults()
         self.report_contour()
 
@@ -1305,7 +1305,7 @@ class ImageViewer(ProcessImage):
 
     def setup_buttons(self):
         """
-        Assign and grid Buttons in the main (app) window.
+        Assign and grid Buttons in the main (app) and shape windows.
         Called from __init__.
 
         Returns: None
@@ -1342,31 +1342,31 @@ class ImageViewer(ProcessImage):
         else:  # is macOS
             label_font = 'TkTooltipFont', 11
 
+        button_params = dict(
+            style='My.TButton',
+            width=0,
+        )
+
         reset_btn = ttk.Button(text='Reset settings',
-                               style='My.TButton',
-                               width=0,
-                               command=self.set_defaults)
+                               command=self.set_contour_defaults,
+                               **button_params)
 
         save_btn_label = tk.Label(text='Save settings & contoured image for:',
                                   font=label_font,
                                   bg=const.MASTER_BG)
         save_th_btn = ttk.Button(text='Threshold',
-                                 style='My.TButton',
-                                 width=0,
-                                 command=save_th_settings)
+                                 command=save_th_settings,
+                                 **button_params)
         save_canny_btn = ttk.Button(text='Canny',
-                                    style='My.TButton',
-                                    width=0,
-                                    command=save_can_settings)
+                                    command=save_can_settings,
+                                    **button_params)
 
         show_shapes_btn = ttk.Button(text='Show Shapes windows',
-                                     style='My.TButton',
-                                     width=0,
-                                     command=show_shapes_windows)
+                                     command=show_shapes_windows,
+                                     **button_params)
         hide_shapes_btn = ttk.Button(text='Hide Shapes windows',
-                                     style='My.TButton',
-                                     width=0,
-                                     command=hide_shapes_windows)
+                                     command=hide_shapes_windows,
+                                     **button_params)
 
         # Widget grid for the main window.
         reset_btn.grid(column=0, row=2,
@@ -1505,7 +1505,8 @@ class ImageViewer(ProcessImage):
         self.slider['c_limit'].bind("<ButtonRelease-1>", self.process_contours)
 
         # Sliders for shape settings ##########################################
-        self.slider['epsilon_lbl'].configure(text='% polygon contour length (epsilon):',
+        self.slider['epsilon_lbl'].configure(text='% polygon contour length\n'
+                                                  '(epsilon coef.):',
                                              **const.LABEL_PARAMETERS)
         self.slider['epsilon'].configure(from_=0.001, to=0.06,
                                          resolution=0.001,
@@ -2064,7 +2065,7 @@ class ImageViewer(ProcessImage):
         self.slider['circle_maxradius'].grid(column=1, row=10,
                                              **selector_grid_params)
 
-    def set_defaults(self) -> None:
+    def set_contour_defaults(self) -> None:
         """
         Sets controller widgets at startup. Called from "Reset" button.
         """
@@ -2226,7 +2227,7 @@ class ImageViewer(ProcessImage):
             shape_type = 'Hull shape'
         else:
             shape_type = 'Contour shape'
-        # poly_choice = self.choose_shape_pref.get()
+
         poly_choice = self.cbox_val['polygon'].get()
 
         # Text is formatted for clarity in window, terminal, and saved file.
@@ -2308,6 +2309,25 @@ class ImageViewer(ProcessImage):
 
         """
         self.update_idletasks()
+
+        # Need to disable and gray out contour-related selectors when looking
+        #  for circles b/c 'Circle' uses Hough transform on the filtered
+        #  image or its threshold, not selected contours.
+        if self.cbox_val['polygon'].get() == 'Circle':
+            self.radio['find_shape_in_thresh'].config(state=tk.DISABLED)
+            self.radio['find_shape_in_canny'].config(state=tk.DISABLED)
+            self.radio['shape_hull_yes'].configure(state=tk.DISABLED)
+            self.radio['shape_hull_no'].configure(state=tk.DISABLED)
+            self.slider['epsilon'].config(state=tk.DISABLED,
+                                          fg=const.MASTER_BG)
+        else:
+            self.radio['find_shape_in_thresh'].config(state=tk.NORMAL)
+            self.radio['find_shape_in_canny'].config(state=tk.NORMAL)
+            self.radio['shape_hull_yes'].configure(state=tk.NORMAL)
+            self.radio['shape_hull_no'].configure(state=tk.NORMAL)
+            self.slider['epsilon'].config(state=tk.NORMAL,
+                                          fg=const.CBLIND_COLOR_TK['yellow'])
+
         if self.radio_val['find_shape_in'].get() == 'threshold':
             contours = self.contours['selected_found_thresh']
         else:  # is 'canny'
