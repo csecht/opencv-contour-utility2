@@ -163,8 +163,8 @@ class ProcessImage(tk.Tk):
         self.contours = {
             'drawn_thresh': stub_array,
             'drawn_canny': stub_array,
-            'selected_thresh': [],
-            'selected_canny': [],
+            'selected_found_thresh': [],
+            'selected_found_canny': [],
         }
 
         self.num_contours = {
@@ -481,17 +481,17 @@ class ProcessImage(tk.Tk):
                                               mode=c_mode,
                                               method=c_method)
         if c_type == 'cv2.contourArea':
-            self.contours['selected_thresh'] = [
+            self.contours['selected_found_thresh'] = [
                 _c for _c in found_contours
                 if max_area > cv2.contourArea(_c) >= c_limit]
         else:  # c_type is cv2.arcLength; aka "perimeter"
-            self.contours['selected_thresh'] = [
+            self.contours['selected_found_thresh'] = [
                 _c for _c in found_contours
                 if max_length > cv2.arcLength(_c, closed=False) >= c_limit]
 
         # Used only for reporting.
         self.num_contours['th_all'].set(len(found_contours))
-        self.num_contours['th_select'].set(len(self.contours['selected_thresh']))
+        self.num_contours['th_select'].set(len(self.contours['selected_found_thresh']))
 
         contoured_img = INPUT_IMG.copy()
 
@@ -499,15 +499,15 @@ class ProcessImage(tk.Tk):
         #   10% of contour area. This prevents obfuscation of drawn lines
         #   when hulls and contours are similar. 10% limit is arbitrary.
         if self.radio_val['hull_pref'].get():
-            hull_list = []
-            for i, _ in enumerate(self.contours['selected_thresh']):
-                hull = cv2.convexHull(self.contours['selected_thresh'][i])
+            hull_pointset = []
+            for i, _ in enumerate(self.contours['selected_found_thresh']):
+                hull = cv2.convexHull(self.contours['selected_found_thresh'][i])
                 if cv2.contourArea(hull) >= cv2.contourArea(
-                        self.contours['selected_thresh'][i]) * 1.1:
-                    hull_list.append(hull)
+                        self.contours['selected_found_thresh'][i]) * 1.1:
+                    hull_pointset.append(hull)
 
             cv2.drawContours(contoured_img,
-                             contours=hull_list,
+                             contours=hull_pointset,
                              contourIdx=-1,  # all hulls.
                              color=const.CBLIND_COLOR_CV['sky blue'],
                              thickness=LINE_THICKNESS * 3,
@@ -516,7 +516,7 @@ class ProcessImage(tk.Tk):
         # NOTE: drawn_thresh is what is saved with the 'Save' button.
         self.contours['drawn_thresh'] = cv2.drawContours(
             contoured_img,
-            contours=self.contours['selected_thresh'],
+            contours=self.contours['selected_found_thresh'],
             contourIdx=-1,  # all contours.
             color=self.contour_color,
             thickness=LINE_THICKNESS * 2,
@@ -589,17 +589,17 @@ class ProcessImage(tk.Tk):
                                               mode=c_mode,
                                               method=c_method)
         if c_type == 'cv2.contourArea':
-            self.contours['selected_canny'] = [
+            self.contours['selected_found_canny'] = [
                 _c for _c in found_contours
                 if max_area > cv2.contourArea(_c) >= c_limit]
         else:  # type is cv2.arcLength; aka "perimeter"
-            self.contours['selected_canny'] = [
+            self.contours['selected_found_canny'] = [
                 _c for _c in found_contours
                 if max_length > cv2.arcLength(_c, closed=False) >= self.contour_limit]
 
         # Used only for reporting.
         self.num_contours['canny_all'].set(len(found_contours))
-        self.num_contours['canny_select'].set(len(self.contours['selected_canny']))
+        self.num_contours['canny_select'].set(len(self.contours['selected_found_canny']))
 
         contoured_img = INPUT_IMG.copy()
 
@@ -607,15 +607,15 @@ class ProcessImage(tk.Tk):
         #   10% of contour area. This prevents obfuscation of drawn lines
         #   when hulls and contours are similar. 10% limit is arbitrary.
         if self.radio_val['hull_pref'].get():
-            hull_list = []
-            for i, _ in enumerate(self.contours['selected_canny']):
-                hull = cv2.convexHull(self.contours['selected_canny'][i])
+            hull_pointset = []
+            for i, _ in enumerate(self.contours['selected_found_canny']):
+                hull = cv2.convexHull(self.contours['selected_found_canny'][i])
                 if cv2.contourArea(hull) >= cv2.contourArea(
-                        self.contours['selected_canny'][i]) * 1.1:
-                    hull_list.append(hull)
+                        self.contours['selected_found_canny'][i]) * 1.1:
+                    hull_pointset.append(hull)
 
             cv2.drawContours(contoured_img,
-                             contours=hull_list,
+                             contours=hull_pointset,
                              contourIdx=-1,  # all hulls.
                              color=const.CBLIND_COLOR_CV['sky blue'],
                              thickness=LINE_THICKNESS * 3,
@@ -623,7 +623,8 @@ class ProcessImage(tk.Tk):
 
         # NOTE: drawn_canny is what is saved with the 'Save' button.
         self.contours['drawn_canny'] = cv2.drawContours(contoured_img,
-                                                        contours=self.contours['selected_canny'],
+                                                        contours=self.contours[
+                                                            'selected_found_canny'],
                                                         contourIdx=-1,  # all contours.
                                                         color=self.contour_color,
                                                         thickness=LINE_THICKNESS * 2,
@@ -644,13 +645,13 @@ class ProcessImage(tk.Tk):
         return event
 
     def size_the_contours(self,
-                          contour_list: list,
+                          contour_pointset: list,
                           called_by: str) -> None:
         """
         Draws a circles around contoured objects. Objects are expected
         to be oblong so that circle diameter can represent object length.
         Args:
-            contour_list: List of selected contours from cv2.findContours.
+            contour_pointset: List of selected contours from cv2.findContours.
             called_by: Descriptive name of calling function;
             e.g. 'thresh sized' or 'canny sized'. Needs to match string
             used for dict keys in const.WIN_NAME for the sized windows.
@@ -662,7 +663,7 @@ class ProcessImage(tk.Tk):
         font_scale = infile_dict['font_scale']
         center_xoffset = infile_dict['center_xoffset']
 
-        for _c in contour_list:
+        for _c in contour_pointset:
             (_x, _y), radius = cv2.minEnclosingCircle(_c)
             center = (int(_x), int(_y))
             radius = int(radius)
@@ -675,7 +676,7 @@ class ProcessImage(tk.Tk):
 
             # Display pixel diameter of each circled contour.
             #  Draw a filled black circle to use for text background.
-            cv2.circle(circled_contours,
+            cv2.circle(img=circled_contours,
                        center=center,
                        radius=int(radius * 0.7),
                        color=(0, 0, 0),
@@ -714,7 +715,7 @@ class ProcessImage(tk.Tk):
                                                padx=5, pady=5,
                                                sticky=tk.NSEW)
 
-    def select_shape(self, contour_list: list) -> None:
+    def select_shape(self, contour_pointset: list) -> None:
         """
         Filter contoured objects of a specific approximated shape.
         Called from the process_shapes() handler that determines whether
@@ -723,7 +724,7 @@ class ProcessImage(tk.Tk):
         Calls draw_shapes() with selected polygon contours.
 
         Args:
-            contour_list: List of selected contours from cv2.findContours.
+            contour_pointset: List of selected contours from cv2.findContours.
 
         Returns: None
         """
@@ -756,11 +757,11 @@ class ProcessImage(tk.Tk):
         # Draw hulls around selected contours when hull area is 10% or
         #   more than contour area. This prevents obfuscation of outlines
         #   when hulls and contours are similar. 10% limit is arbitrary.
-        hull_list = []
-        for i, _ in enumerate(contour_list):
-            hull = cv2.convexHull(contour_list[i])
-            if cv2.contourArea(hull) >= cv2.contourArea(contour_list[i]) * 1.1:
-                hull_list.append(hull)
+        hull_pointset = []
+        for i, _ in enumerate(contour_pointset):
+            hull = cv2.convexHull(contour_pointset[i])
+            if cv2.contourArea(hull) >= cv2.contourArea(contour_pointset[i]) * 1.1:
+                hull_pointset.append(hull)
 
         # Need to remove prior contours before finding new selected polygon.
         selected_polygon_contours = []
@@ -790,11 +791,11 @@ class ProcessImage(tk.Tk):
                 selected_polygon_contours.append(point_set)
 
         # The main engine for contouring the selected shape.
-        if self.radio_val['hull_shape'].get() == 'yes' and hull_list:
-            for _h in hull_list:
+        if self.radio_val['hull_shape'].get() == 'yes' and hull_pointset:
+            for _h in hull_pointset:
                 find_poly(_h)
         else:
-            for _c in contour_list:
+            for _c in contour_pointset:
                 find_poly(_c)
 
         self.num_shapes = len(selected_polygon_contours)
@@ -1348,8 +1349,7 @@ class ImageViewer(ProcessImage):
 
         save_btn_label = tk.Label(text='Save settings & contoured image for:',
                                   font=label_font,
-                                  bg=const.MASTER_BG,
-                                  )
+                                  bg=const.MASTER_BG)
         save_th_btn = ttk.Button(text='Threshold',
                                  style='My.TButton',
                                  width=0,
@@ -1359,11 +1359,11 @@ class ImageViewer(ProcessImage):
                                     width=0,
                                     command=save_can_settings)
 
-        show_shapes_win = ttk.Button(text='Show Shapes windows',
+        show_shapes_btn = ttk.Button(text='Show Shapes windows',
                                      style='My.TButton',
                                      width=0,
                                      command=show_shapes_windows)
-        hide_shapes_win = ttk.Button(text='Hide Shapes windows',
+        hide_shapes_btn = ttk.Button(text='Hide Shapes windows',
                                      style='My.TButton',
                                      width=0,
                                      command=hide_shapes_windows)
@@ -1387,11 +1387,11 @@ class ImageViewer(ProcessImage):
                             pady=(0, 5),
                             sticky=tk.E)
 
-        show_shapes_win.grid(column=1, row=2,
+        show_shapes_btn.grid(column=1, row=2,
                              padx=(0, 5),
                              pady=(0, 5),
                              sticky=tk.E)
-        hide_shapes_win.grid(column=1, row=3,
+        hide_shapes_btn.grid(column=1, row=3,
                              padx=(0, 5),
                              pady=(0, 5),
                              sticky=tk.E)
@@ -2213,7 +2213,7 @@ class ImageViewer(ProcessImage):
 
     def report_shape(self):
 
-        epsilon = self.slider_val['epsilon'].get()
+        epsilon_coef = self.slider_val['epsilon'].get()
         epsilon_pct = round(self.slider_val['epsilon'].get() * 100, 2)
         use_image = self.radio_val['find_circle_in'].get()
         mindist = self.slider_val['circle_mindist'].get()
@@ -2222,26 +2222,30 @@ class ImageViewer(ProcessImage):
         min_radius = self.slider_val['circle_minradius'].get()
         max_radius = self.slider_val['circle_maxradius'].get()
 
-        shape_type = 'Hull shape:' if self.radio_val[
-                                          'hull_shape'].get() == 'yes' else 'Contour shape:'
+        if self.radio_val['hull_shape'].get() == 'yes':
+            shape_type = 'Hull shape'
+        else:
+            shape_type = 'Contour shape'
         # poly_choice = self.choose_shape_pref.get()
         poly_choice = self.cbox_val['polygon'].get()
 
         # Text is formatted for clarity in window, terminal, and saved file.
-        indent = " ".ljust(18)
+        justify = 19
+        indent = " ".ljust(justify)
 
         self.shape_settings_txt = (
-            f'{"cv2.approxPolyDP".ljust(18)}epsilon={epsilon} ({epsilon_pct}% contour length)\n'
+            f'{"cv2.approxPolyDP:".ljust(justify)}epsilon coefficient is {epsilon_coef}\n'
+            f'{indent}({epsilon_pct}% contour length, cv2.arcLength)\n'
             f'{indent}closed=True\n'
-            f'{"cv2.HoughCircles".ljust(18)}image={use_image}\n'
+            f'{"cv2.HoughCircles:".ljust(justify)}image={use_image}\n'
             f'{indent}method=cv2.HOUGH_GRADIENT_ALT\n'
             f'{indent}dp=1.5\n'
             f'{indent}minDist={mindist}\n'
             f'{indent}param1={param1}\n'
             f'{indent}param2={param2}\n'
             f'{indent}minRadius={min_radius}\n'
-            f'{indent}maxRadius={max_radius}\n'
-            f'{shape_type.ljust(18)}{poly_choice}, found: {self.num_shapes}\n'
+            f'{indent}maxRadius={max_radius}\n\n'
+            f'{shape_type}: {poly_choice}, found: {self.num_shapes}\n'
         )
 
         utils.display_report(frame=self.frame_shape_report,
@@ -2265,8 +2269,8 @@ class ImageViewer(ProcessImage):
         self.filter_image()
         self.contour_threshold(event)
         self.contour_canny(event)
-        self.size_the_contours(self.contours['selected_thresh'], 'thresh sized')
-        self.size_the_contours(self.contours['selected_canny'], 'canny sized')
+        self.size_the_contours(self.contours['selected_found_thresh'], 'thresh sized')
+        self.size_the_contours(self.contours['selected_found_canny'], 'canny sized')
         self.report_contour()
         self.process_shapes(event)
 
@@ -2284,8 +2288,8 @@ class ImageViewer(ProcessImage):
         """
         self.contour_threshold(event)
         self.contour_canny(event)
-        self.size_the_contours(self.contours['selected_thresh'], 'thresh sized')
-        self.size_the_contours(self.contours['selected_canny'], 'canny sized')
+        self.size_the_contours(self.contours['selected_found_thresh'], 'thresh sized')
+        self.size_the_contours(self.contours['selected_found_canny'], 'canny sized')
         self.report_contour()
         self.process_shapes(event)
 
@@ -2305,9 +2309,9 @@ class ImageViewer(ProcessImage):
         """
         self.update_idletasks()
         if self.radio_val['find_shape_in'].get() == 'threshold':
-            contours = self.contours['selected_thresh']
+            contours = self.contours['selected_found_thresh']
         else:  # is 'canny'
-            contours = self.contours['selected_canny']
+            contours = self.contours['selected_found_canny']
 
         self.select_shape(contours)
         self.report_shape()
