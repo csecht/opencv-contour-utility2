@@ -1555,10 +1555,13 @@ class ImageViewer(ProcessImage):
                                                   **const.SHAPE_SCALE_PARAMETERS)
 
         # Bind shape sliders to call processing and reporting on button release.
-        sliders = ('epsilon', 'circle_mindist', 'circle_param1', 'circle_param2',
+        #  The circle selectors don't use contours, so skip that extra processing.
+        self.slider['epsilon'].bind('<ButtonRelease-1>', self.process_contours)
+
+        sliders = ('circle_mindist', 'circle_param1', 'circle_param2',
                    'circle_minradius', 'circle_maxradius')
         for _s in sliders:
-            self.slider[_s].bind('<ButtonRelease-1>', self.process_contours)
+            self.slider[_s].bind('<ButtonRelease-1>', self.process_shapes)
 
     def config_comboboxes(self):
 
@@ -2216,19 +2219,30 @@ class ImageViewer(ProcessImage):
 
         epsilon_coef = self.slider_val['epsilon'].get()
         epsilon_pct = round(self.slider_val['epsilon'].get() * 100, 2)
+        shape_found_in = self.radio_val['find_shape_in'].get()
         use_image = self.radio_val['find_circle_in'].get()
         mindist = self.slider_val['circle_mindist'].get()
         param1 = self.slider_val['circle_param1'].get()
         param2 = self.slider_val['circle_param2'].get()
         min_radius = self.slider_val['circle_minradius'].get()
         max_radius = self.slider_val['circle_maxradius'].get()
+        poly_choice = self.cbox_val['polygon'].get()
+
+        # Do not allow hull functions or reporting when Circle is selected.
+        if poly_choice == 'Circle':
+            self.radio_val['hull_shape'].set('no')
+            app.update_idletasks()
+            # Need to specify text based on selections.
+            if use_image == 'thresholded':
+                shape_found_in = ('\n     Hough transform of an Otsu threshold '
+                                  'from the filtered')
+            else:  # is 'filtered'
+                shape_found_in = '\n     Hough transform of the filtered'
 
         if self.radio_val['hull_shape'].get() == 'yes':
-            shape_type = 'Hull shape'
+            shape_type = 'Selected hull shape'
         else:
-            shape_type = 'Contour shape'
-
-        poly_choice = self.cbox_val['polygon'].get()
+            shape_type = 'Selected shape'
 
         # Text is formatted for clarity in window, terminal, and saved file.
         justify = 19
@@ -2246,7 +2260,8 @@ class ImageViewer(ProcessImage):
             f'{indent}param2={param2}\n'
             f'{indent}minRadius={min_radius}\n'
             f'{indent}maxRadius={max_radius}\n\n'
-            f'{shape_type}: {poly_choice}, found: {self.num_shapes}\n'
+            f'{shape_type}: {poly_choice}, found: {self.num_shapes} in the '
+            f'{shape_found_in} image.\n'
         )
 
         utils.display_report(frame=self.frame_shape_report,
@@ -2270,7 +2285,8 @@ class ImageViewer(ProcessImage):
         self.filter_image()
         self.contour_threshold(event)
         self.contour_canny(event)
-        self.size_the_contours(self.contours['selected_found_thresh'], 'thresh sized')
+        self.size_the_contours(contour_pointset=self.contours['selected_found_thresh'],
+                               called_by='thresh sized')
         self.size_the_contours(self.contours['selected_found_canny'], 'canny sized')
         self.report_contour()
         self.process_shapes(event)
@@ -2289,7 +2305,8 @@ class ImageViewer(ProcessImage):
         """
         self.contour_threshold(event)
         self.contour_canny(event)
-        self.size_the_contours(self.contours['selected_found_thresh'], 'thresh sized')
+        self.size_the_contours(contour_pointset=self.contours['selected_found_thresh'],
+                               called_by='thresh sized')
         self.size_the_contours(self.contours['selected_found_canny'], 'canny sized')
         self.report_contour()
         self.process_shapes(event)
@@ -2316,15 +2333,15 @@ class ImageViewer(ProcessImage):
         if self.cbox_val['polygon'].get() == 'Circle':
             self.radio['find_shape_in_thresh'].config(state=tk.DISABLED)
             self.radio['find_shape_in_canny'].config(state=tk.DISABLED)
-            self.radio['shape_hull_yes'].configure(state=tk.DISABLED)
-            self.radio['shape_hull_no'].configure(state=tk.DISABLED)
+            self.radio['shape_hull_yes'].config(state=tk.DISABLED)
+            self.radio['shape_hull_no'].config(state=tk.DISABLED)
             self.slider['epsilon'].config(state=tk.DISABLED,
-                                          fg=const.MASTER_BG)
+                                          fg=const.MASTER_BG)  # is gray
         else:
             self.radio['find_shape_in_thresh'].config(state=tk.NORMAL)
             self.radio['find_shape_in_canny'].config(state=tk.NORMAL)
-            self.radio['shape_hull_yes'].configure(state=tk.NORMAL)
-            self.radio['shape_hull_no'].configure(state=tk.NORMAL)
+            self.radio['shape_hull_yes'].config(state=tk.NORMAL)
+            self.radio['shape_hull_no'].config(state=tk.NORMAL)
             self.slider['epsilon'].config(state=tk.NORMAL,
                                           fg=const.CBLIND_COLOR_TK['yellow'])
 
