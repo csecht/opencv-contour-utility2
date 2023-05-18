@@ -2316,9 +2316,13 @@ class ImageViewer(ProcessImage):
     def process_shapes(self, event=None) -> None:
         """
         A handler for the command kw and button binding for the settings
-        control widgets to call multiple methods.
+        control widgets to call multiple methods. Also configures the
+        text and disables/enables widgets with respect to the 'Circle'
+        shape option.
+        Calls select_shape() and report_shape().
         The contours object passed to select_shape() are those inherited
         from ProcessImage().
+
         Args:
             event: An implicit mouse button event.
 
@@ -2327,23 +2331,53 @@ class ImageViewer(ProcessImage):
         """
         self.update_idletasks()
 
-        # Need to disable and gray out contour-related selectors when looking
-        #  for circles b/c 'Circle' uses Hough transform on the filtered
-        #  image or its threshold, not selected contours.
+        grayout = const.MASTER_BG
+        fg_default = const.CBLIND_COLOR_TK['yellow']
+
+        # To make things clear for the user, Need to disable and gray out
+        #  unrelated selectors when 'Circle' is selected or not.
         if self.cbox_val['polygon'].get() == 'Circle':
+            self.radio['find_shape_lbl'].config(fg=grayout)
             self.radio['find_shape_in_thresh'].config(state=tk.DISABLED)
             self.radio['find_shape_in_canny'].config(state=tk.DISABLED)
+            self.radio['shape_hull_lbl'].config(fg=grayout)
             self.radio['shape_hull_yes'].config(state=tk.DISABLED)
             self.radio['shape_hull_no'].config(state=tk.DISABLED)
+            self.slider['epsilon_lbl'].config(fg=grayout)
             self.slider['epsilon'].config(state=tk.DISABLED,
-                                          fg=const.MASTER_BG)  # is gray
+                                          fg=grayout)
+            self.radio['find_circle_lbl'].config(fg=fg_default)
+            self.radio['find_circle_in_th'].config(state=tk.NORMAL)
+            self.radio['find_circle_in_filtered'].config(state=tk.NORMAL)
+            for key, _ in self.slider.items():
+                if 'circle' in key:
+                    self.slider[key].config(state=tk.NORMAL,
+                                            fg=fg_default)
+            # Need to set Scale positions (as in set_shape_defaults())
+            #   so that they are not left at minimum (disabled) slider values.
+            # self.slider['epsilon'].set(0.01)
+            self.slider['circle_mindist'].set(100)
+            self.slider['circle_param1'].set(300)
+            self.slider['circle_param2'].set(0.9)
+            self.slider['circle_minradius'].set(20)
+            self.slider['circle_maxradius'].set(500)
         else:
+            self.radio['find_shape_lbl'].config(fg=fg_default)
             self.radio['find_shape_in_thresh'].config(state=tk.NORMAL)
             self.radio['find_shape_in_canny'].config(state=tk.NORMAL)
+            self.radio['shape_hull_lbl'].config(fg=fg_default)
             self.radio['shape_hull_yes'].config(state=tk.NORMAL)
             self.radio['shape_hull_no'].config(state=tk.NORMAL)
+            self.slider['epsilon_lbl'].config(fg=fg_default)
             self.slider['epsilon'].config(state=tk.NORMAL,
-                                          fg=const.CBLIND_COLOR_TK['yellow'])
+                                          fg=fg_default)
+            self.radio['find_circle_lbl'].config(fg=grayout)
+            self.radio['find_circle_in_th'].config(state=tk.DISABLED)
+            self.radio['find_circle_in_filtered'].config(state=tk.DISABLED)
+            for key, _ in self.slider.items():
+                if 'circle' in key:
+                    self.slider[key].config(state=tk.DISABLED,
+                                            fg=grayout)
 
         if self.radio_val['find_shape_in'].get() == 'threshold':
             contours = self.contours['selected_found_thresh']
