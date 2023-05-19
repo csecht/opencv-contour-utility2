@@ -141,8 +141,8 @@ class ProcessImage(tk.Tk):
 
         # Arrays of images to be processed. When used within a method,
         #  the purpose of self.tkimg* is to prevent losing the image var
-        #  through garbage collection. These are for panels of PIL
-        #  ImageTk.PhotoImage used for Label image display in windows.
+        #  through garbage collection. Dict values are for panels of PIL
+        #  ImageTk.PhotoImage used for Label image display in img windows.
         self.tkimg = {
             'input': None,
             'gray': None,
@@ -190,15 +190,20 @@ class ProcessImage(tk.Tk):
         self.img_label = None
         self.shape_settings_win = None
 
-        self.contour_color = ''
+        # The highlight color used to draw contours and shapes.
+        if arguments['color'] == 'yellow':
+            self.contour_color = const.CBLIND_COLOR_CV['yellow']
+        else:  # is default CV2 contour color, green, as (B,G,R).
+            self.contour_color = arguments['color']
 
     def setup_image_windows(self) -> None:
         """
         Create and configure all Toplevel windows and their Labels
         needed to display processed images.
-        Called from ContourViewer() __init__ so that new Toplevels are
+        Called from ImageViewer() __init__ so that new Toplevels are
         not created from ProcessImage() __init__, which may be inherited
-        from multiple Classes.
+        from multiple Classes. Labels that contain the processed images
+        are gridded (made visible) in ImageViewer.grid_img_labels().
 
         Returns: None
         """
@@ -242,6 +247,8 @@ class ProcessImage(tk.Tk):
 
         # The Labels to display scaled images, which are updated using
         #  .configure() for 'image=' in their respective processing methods.
+        #  Labels are gridded in their respective img_window in
+        #  ImageViewer.grid_img_labels().
         self.img_label = {
             'input': tk.Label(self.img_window['input']),
             'gray': tk.Label(self.img_window['input']),
@@ -256,12 +263,6 @@ class ProcessImage(tk.Tk):
             'circled_can': tk.Label(self.img_window['canny sized']),
             'shaped': tk.Label(self.img_window['shaped']),
         }
-
-        # The highlight color used to draw contours and shapes.
-        if arguments['color'] == 'yellow':
-            self.contour_color = const.CBLIND_COLOR_CV['yellow']
-        else:  # is default CV2 contour color option, green, as (B,G,R).
-            self.contour_color = arguments['color']
 
     def adjust_contrast(self) -> None:
         """
@@ -289,11 +290,6 @@ class ProcessImage(tk.Tk):
         #  image is updated were a Label() to be re-made here each call.
         self.tkimg['contrast'] = manage.tkimage(contrasted)
         self.img_label['contrast'].configure(image=self.tkimg['contrast'])
-        # Place the label panel to the left of the contrast label gridded
-        #  in reduce_noise().
-        self.img_label['contrast'].grid(column=0, row=0,
-                                        padx=5, pady=5,
-                                        sticky=tk.NSEW)
 
         return contrasted
 
@@ -344,11 +340,6 @@ class ProcessImage(tk.Tk):
 
         self.tkimg['redux'] = manage.tkimage(self.reduced_noise_img)
         self.img_label['redux'].configure(image=self.tkimg['redux'])
-        # Place the label panel to the right of the contrast label gridded
-        #  in adjust_contrast().
-        self.img_label['redux'].grid(column=1, row=0,
-                                     padx=5, pady=5,
-                                     sticky=tk.NSEW)
 
         return self.reduced_noise_img
 
@@ -426,9 +417,6 @@ class ProcessImage(tk.Tk):
 
         self.tkimg['filter'] = manage.tkimage(self.filtered_img)
         self.img_label['filter'].configure(image=self.tkimg['filter'])
-        self.img_label['filter'].grid(column=1, row=0,
-                                      padx=5, pady=5,
-                                      sticky=tk.NSEW)
 
         return self.filtered_img
 
@@ -526,15 +514,9 @@ class ProcessImage(tk.Tk):
         #   prevent garbage collection.
         self.tkimg['thresh'] = manage.tkimage(thresh_img)
         self.img_label['thresh'].configure(image=self.tkimg['thresh'])
-        self.img_label['thresh'].grid(column=0, row=0,
-                                      padx=5, pady=5,
-                                      sticky=tk.NSEW)
 
         self.tkimg['drawn_thresh'] = manage.tkimage(self.contours['drawn_thresh'])
         self.img_label['th_contour'].configure(image=self.tkimg['drawn_thresh'])
-        self.img_label['th_contour'].grid(column=1, row=0,
-                                          padx=5, pady=5,
-                                          sticky=tk.NSEW)
 
         return event
 
@@ -632,15 +614,9 @@ class ProcessImage(tk.Tk):
 
         self.tkimg['canny'] = manage.tkimage(canny_img)
         self.img_label['canny'].configure(image=self.tkimg['canny'])
-        self.img_label['canny'].grid(column=0, row=0,
-                                     padx=5, pady=5,
-                                     sticky=tk.NSEW)
 
         self.tkimg['drawn_canny'] = manage.tkimage(self.contours['drawn_canny'])
         self.img_label['can_contour'].configure(image=self.tkimg['drawn_canny'])
-        self.img_label['can_contour'].grid(column=1, row=0,
-                                           padx=5, pady=5,
-                                           sticky=tk.NSEW)
 
         return event
 
@@ -705,15 +681,9 @@ class ProcessImage(tk.Tk):
         if called_by == 'thresh sized':
             self.tkimg['circled_th'] = manage.tkimage(circled_contours)
             self.img_label['circled_th'].configure(image=self.tkimg['circled_th'])
-            self.img_label['circled_th'].grid(column=0, row=0,
-                                              padx=5, pady=5,
-                                              sticky=tk.NSEW)
         else:  # called by 'canny sized'
             self.tkimg['circled_can'] = manage.tkimage(circled_contours)
             self.img_label['circled_can'].configure(image=self.tkimg['circled_can'])
-            self.img_label['circled_can'].grid(column=0, row=0,
-                                               padx=5, pady=5,
-                                               sticky=tk.NSEW)
 
     def select_shape(self, contour_pointset: list) -> None:
         """
@@ -838,9 +808,9 @@ class ProcessImage(tk.Tk):
 
         self.tkimg['shaped'] = manage.tkimage(img4shaping)
         self.img_label['shaped'].configure(image=self.tkimg['shaped'])
-        self.img_label['shaped'].grid(column=0, row=0,
-                                      padx=5, pady=5,
-                                      sticky=tk.NSEW)
+        # self.img_label['shaped'].grid(column=0, row=0,
+        #                               padx=5, pady=5,
+        #                               sticky=tk.NSEW)
 
     def find_circles(self):
         """
@@ -917,16 +887,16 @@ class ProcessImage(tk.Tk):
                 # Show found circles marked on the input image.
                 self.tkimg['shaped'] = manage.tkimage(img4shaping)
                 self.img_label['shaped'].configure(image=self.tkimg['shaped'])
-                self.img_label['shaped'].grid(column=0, row=0,
-                                              padx=5, pady=5,
-                                              sticky=tk.NSEW)
+                # self.img_label['shaped'].grid(column=0, row=0,
+                #                               padx=5, pady=5,
+                #                               sticky=tk.NSEW)
 
         else:
             self.tkimg['shaped'] = manage.tkimage(img4shaping)
             self.img_label['shaped'].configure(image=self.tkimg['shaped'])
-            self.img_label['shaped'].grid(column=0, row=0,
-                                          padx=5, pady=5,
-                                          sticky=tk.NSEW)
+            # self.img_label['shaped'].grid(column=0, row=0,
+            #                               padx=5, pady=5,
+            #                               sticky=tk.NSEW)
 
         # Note: reporting of current metrics and settings is handled by
         #  ImageViewer.process_shapes().
@@ -1078,6 +1048,7 @@ class ImageViewer(ProcessImage):
         self.config_comboboxes()
         self.config_radiobuttons()
         self.grid_contour_widgets()
+        self.grid_img_labels()
         self.set_contour_defaults()
         self.set_shape_defaults()
         self.report_contour()
@@ -1261,7 +1232,7 @@ class ImageViewer(ProcessImage):
                               pady=(0, 5),
                               sticky=tk.E)
 
-    def setup_styles(self):
+    def setup_styles(self) -> None:
         """
         Configure ttk.Style for Buttons and Comboboxes.
         Called by __init__ and ShapeViewer.shape_win_setup().
@@ -1303,7 +1274,7 @@ class ImageViewer(ProcessImage):
             bstyle = ttk.Style()
             bstyle.configure("My.TButton", font=('TkTooltipFont', 11))
 
-    def setup_buttons(self):
+    def setup_buttons(self) -> None:
         """
         Assign and grid Buttons in the main (app) and shape windows.
         Called from __init__.
@@ -1396,7 +1367,7 @@ class ImageViewer(ProcessImage):
                              pady=(0, 5),
                              sticky=tk.E)
 
-    def display_input_images(self):
+    def display_input_images(self) -> None:
         """
         Converts input image and its grayscale to tk image formate and
         displays them as panels gridded in their toplevel window.
@@ -1419,7 +1390,7 @@ class ImageViewer(ProcessImage):
         self.img_label['gray'].grid(column=1, row=0,
                                     padx=5, pady=5)
 
-    def config_sliders(self):
+    def config_sliders(self) -> None:
         """
 
         Returns: None
@@ -1563,7 +1534,7 @@ class ImageViewer(ProcessImage):
         for _s in sliders:
             self.slider[_s].bind('<ButtonRelease-1>', self.process_shapes)
 
-    def config_comboboxes(self):
+    def config_comboboxes(self) -> None:
 
         if const.MY_OS == 'win':
             width_correction = 2
@@ -1670,7 +1641,7 @@ class ImageViewer(ProcessImage):
                   ' an Otsu threshold of it, not from previously found contours.'),
             **const.LABEL_PARAMETERS)
 
-    def config_radiobuttons(self):
+    def config_radiobuttons(self) -> None:
 
         self.radio['c_mode_lbl'].config(text='cv2.findContours mode:',
                                         **const.LABEL_PARAMETERS)
@@ -1775,7 +1746,7 @@ class ImageViewer(ProcessImage):
             **const.RADIO_PARAMETERS
         )
 
-    def grid_contour_widgets(self):
+    def grid_contour_widgets(self) -> None:
         """
         Developer: Grid as a group to make clear spatial relationships.
         """
@@ -1973,7 +1944,7 @@ class ImageViewer(ProcessImage):
         self.slider['c_limit'].grid(column=1, row=15,
                                     **slider_grid_params)
 
-    def grid_shape_widgets(self):
+    def grid_shape_widgets(self) -> None:
         """
         Grid all selector widgets in the frame_shape_selectors Frame.
 
@@ -2068,6 +2039,47 @@ class ImageViewer(ProcessImage):
         self.slider['circle_maxradius'].grid(column=1, row=10,
                                              **selector_grid_params)
 
+    def grid_img_labels(self) -> None:
+        """
+        Grid all image Labels, inherited from ProcessImage(), for the
+        opening and contoured images. Labels' parent/master are defined
+        in ProcessImage.setup_image_windows() and updated with config()
+        in their respective PI methods.
+        """
+        self.img_label['contrast'].grid(column=0, row=0,
+                                        padx=5, pady=5,
+                                        sticky=tk.NSEW)
+        self.img_label['redux'].grid(column=1, row=0,
+                                     padx=5, pady=5,
+                                     sticky=tk.NSEW)
+        self.img_label['filter'].grid(column=1, row=0,
+                                      padx=5, pady=5,
+                                      sticky=tk.NSEW)
+        self.img_label['thresh'].grid(column=0, row=0,
+                                      padx=5, pady=5,
+                                      sticky=tk.NSEW)
+        self.img_label['th_contour'].grid(column=1, row=0,
+                                          padx=5, pady=5,
+                                          sticky=tk.NSEW)
+        self.img_label['canny'].grid(column=0, row=0,
+                                     padx=5, pady=5,
+                                     sticky=tk.NSEW)
+        self.img_label['can_contour'].grid(column=1, row=0,
+                                           padx=5, pady=5,
+                                           sticky=tk.NSEW)
+        self.img_label['circled_th'].grid(column=0, row=0,
+                                          padx=5, pady=5,
+                                          sticky=tk.NSEW)
+        self.img_label['circled_can'].grid(column=0, row=0,
+                                           padx=5, pady=5,
+                                           sticky=tk.NSEW)
+        self.img_label['shaped'].grid(column=0, row=0,
+                                      padx=5, pady=5,
+                                      sticky=tk.NSEW)
+        self.img_label['shaped'].grid(column=0, row=0,
+                                      padx=5, pady=5,
+                                      sticky=tk.NSEW)
+
     def set_contour_defaults(self) -> None:
         """
         Sets controller widgets at startup. Called from "Reset" button.
@@ -2110,7 +2122,7 @@ class ImageViewer(ProcessImage):
         # Apply the default settings.
         self.process_all()
 
-    def set_shape_defaults(self):
+    def set_shape_defaults(self) -> None:
         """
         Set default values for selectors. Called at startup.
         Returns: None
@@ -2138,7 +2150,7 @@ class ImageViewer(ProcessImage):
         """
         Write the current settings and cv2 metrics in a Text widget of
         the report_frame. Same text is printed in Terminal from "Save"
-        button. Called at from __init__ and process_*() methods.
+        button. Called from __init__ and process_*() methods.
         """
 
         # Note: recall that *_val dict are inherited from ProcessImage().
@@ -2215,7 +2227,13 @@ class ImageViewer(ProcessImage):
         utils.display_report(frame=self.frame_report,
                              report=self.contour_settings_txt)
 
-    def report_shape(self):
+    def report_shape(self) -> None:
+        """
+        Write the current settings and cv2 metrics in a Text widget of
+        the frame_shape_report of the shape_setting_win.
+        Same text format is printed in Terminal from "Save"
+        button. Called from __init__ and process_shaper().
+        """
 
         epsilon_coef = self.slider_val['epsilon'].get()
         epsilon_pct = round(self.slider_val['epsilon'].get() * 100, 2)
@@ -2329,7 +2347,6 @@ class ImageViewer(ProcessImage):
         Returns: *event* as a formality; is functionally None.
 
         """
-        self.update_idletasks()
 
         grayout = const.MASTER_BG
         fg_default = const.CBLIND_COLOR_TK['yellow']
@@ -2386,6 +2403,7 @@ class ImageViewer(ProcessImage):
 
         self.select_shape(contours)
         self.report_shape()
+        self.update_idletasks()
 
         return event
 
