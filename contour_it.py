@@ -808,15 +808,12 @@ class ProcessImage(tk.Tk):
 
         self.tkimg['shaped'] = manage.tkimage(img4shaping)
         self.img_label['shaped'].configure(image=self.tkimg['shaped'])
-        # self.img_label['shaped'].grid(column=0, row=0,
-        #                               padx=5, pady=5,
-        #                               sticky=tk.NSEW)
 
     def find_circles(self):
         """
         Implements the cv2.HOUGH_GRADIENT_ALT method of cv2.HoughCircles()
-        to approximate circles in a filtered/blured threshold image, then
-        displays them on the input image.
+        to approximate circles in a filtered/blured image or its threshold,
+        and shows circle objects on the input image.
         Called from select_shape(). Calls utils.text_array().
 
         Returns: An array of HoughCircles contours.
@@ -887,16 +884,9 @@ class ProcessImage(tk.Tk):
                 # Show found circles marked on the input image.
                 self.tkimg['shaped'] = manage.tkimage(img4shaping)
                 self.img_label['shaped'].configure(image=self.tkimg['shaped'])
-                # self.img_label['shaped'].grid(column=0, row=0,
-                #                               padx=5, pady=5,
-                #                               sticky=tk.NSEW)
-
         else:
             self.tkimg['shaped'] = manage.tkimage(img4shaping)
             self.img_label['shaped'].configure(image=self.tkimg['shaped'])
-            # self.img_label['shaped'].grid(column=0, row=0,
-            #                               padx=5, pady=5,
-            #                               sticky=tk.NSEW)
 
         # Note: reporting of current metrics and settings is handled by
         #  ImageViewer.process_shapes().
@@ -1037,7 +1027,9 @@ class ImageViewer(ProcessImage):
         # Attributes for shape windows.
         self.circle_msg_lbl = tk.Label(master=self.frame_shape_selectors)
         self.shapeimg_lbl = None
-        # self.saveshape_button = None  # ttk.Button(master=self.img_window['shaped'])
+        self.resetshape_button = None
+        self.circle_defaults_button = None
+        self.saveshape_button = None
 
         self.setup_image_windows()  # called from ProcessImage base Class.
         self.display_input_images()
@@ -1050,10 +1042,12 @@ class ImageViewer(ProcessImage):
         self.grid_contour_widgets()
         self.grid_img_labels()
         self.set_contour_defaults()
-        self.set_shape_defaults()
         self.report_contour()
 
+        # Shape objects are displayed at startup, but are processed and
+        #  ready for display when called from the 'show shapes' Button.
         self.shape_win_setup()
+        self.set_shape_defaults()
         self.grid_shape_widgets()
         self.report_shape()
 
@@ -1177,9 +1171,6 @@ class ImageViewer(ProcessImage):
         self.frame_shape_selectors.columnconfigure(0, weight=1)
         self.frame_shape_selectors.columnconfigure(1, weight=1)
 
-        resetshape_button = ttk.Button(master=self.shape_settings_win)
-        saveshape_button = ttk.Button(master=self.shape_settings_win)
-
         self.img_window['shaped'].geometry(f'+{self.winfo_screenwidth() - 830}+150')
         self.img_window['shaped'].title(const.WIN_NAME['shapes'])
         self.img_window['shaped'].protocol('WM_DELETE_WINDOW', no_exit_on_x)
@@ -1187,6 +1178,16 @@ class ImageViewer(ProcessImage):
         self.img_window['shaped'].columnconfigure(1, weight=1)
 
         self.shapeimg_lbl = tk.Label(master=self.img_window['shaped'])
+
+        self.frame_shape_report.grid(column=0, row=0,
+                                     columnspan=2,
+                                     padx=5, pady=5,
+                                     sticky=tk.EW)
+        self.frame_shape_selectors.grid(column=0, row=1,
+                                        columnspan=2,
+                                        padx=5, pady=(0, 5),
+                                        ipadx=4, ipady=4,
+                                        sticky=tk.EW)
 
         def save_shape_cmd():
             if self.radio_val['find_shape_in'].get() == 'threshold':
@@ -1201,36 +1202,35 @@ class ImageViewer(ProcessImage):
                     caller='canny_shape')
 
         # Note that ttk.Styles are defined in ContourViewer.setup_styles().
-        resetshape_button.configure(text='Reset shape settings',
-                                    style='My.TButton',
-                                    width=0,
-                                    command=self.set_shape_defaults)
+        self.resetshape_button.configure(text='Default settings',
+                                         style='My.TButton',
+                                         width=0,
+                                         command=self.set_shape_defaults)
 
-        saveshape_button.configure(text='Save shape settings and image',
-                                   style='My.TButton',
-                                   width=0,
-                                   command=save_shape_cmd)
+        self.circle_defaults_button.configure(text='Set Circle defaults',
+                                              style='My.TButton',
+                                              width=0,
+                                              command=self.set_shape_defaults)
 
-        self.frame_shape_report.grid(column=0, row=0,
-                                     columnspan=2,
-                                     padx=5, pady=5,
-                                     sticky=tk.EW)
-        self.frame_shape_selectors.grid(column=0, row=1,
-                                        columnspan=2,
-                                        padx=5, pady=(0, 5),
-                                        ipadx=4, ipady=4,
-                                        sticky=tk.EW)
+        self.saveshape_button.configure(text='Save shape settings and image',
+                                        style='My.TButton',
+                                        width=0,
+                                        command=save_shape_cmd)
 
         # Reset button should be centered under slider labels.
         # Save button should be on same row (bottom of frame), right side.
-        resetshape_button.grid(column=0, row=3,
-                               padx=(70, 0),
-                               pady=(0, 5),
-                               sticky=tk.W)
-        saveshape_button.grid(column=1, row=3,
-                              padx=(0, 5),
-                              pady=(0, 5),
-                              sticky=tk.E)
+        self.resetshape_button.grid(column=0, row=3,
+                                    padx=(10, 0),
+                                    pady=(0, 5),
+                                    sticky=tk.W)
+        self.circle_defaults_button.grid(column=0, row=3,
+                                         padx=(0, 80),
+                                         pady=(0, 5),
+                                         sticky=tk.E)
+        self.saveshape_button.grid(column=1, row=3,
+                                   padx=(0, 5),
+                                   pady=(0, 5),
+                                   sticky=tk.E)
 
     def setup_styles(self) -> None:
         """
@@ -1338,6 +1338,12 @@ class ImageViewer(ProcessImage):
         hide_shapes_btn = ttk.Button(text='Hide Shapes windows',
                                      command=hide_shapes_windows,
                                      **button_params)
+
+        # Buttons for Shape window; are configured and gridded in
+        #  shape_win_setup().
+        self.resetshape_button = ttk.Button(master=self.shape_settings_win)
+        self.circle_defaults_button = ttk.Button(master=self.shape_settings_win)
+        self.saveshape_button = ttk.Button(master=self.shape_settings_win)
 
         # Widget grid for the main window.
         reset_btn.grid(column=0, row=2,
@@ -2041,51 +2047,41 @@ class ImageViewer(ProcessImage):
 
     def grid_img_labels(self) -> None:
         """
-        Grid all image Labels, inherited from ProcessImage(), for the
-        opening and contoured images. Labels' parent/master are defined
-        in ProcessImage.setup_image_windows() and updated with config()
-        in their respective PI methods.
+        Grid all image Labels inherited from ProcessImage().
+        Labels' master argument for the img window is defined in
+        ProcessImage.setup_image_windows(). Label img are updated with
+        .config() in each Label's respective processing method.
         """
-        self.img_label['contrast'].grid(column=0, row=0,
-                                        padx=5, pady=5,
-                                        sticky=tk.NSEW)
-        self.img_label['redux'].grid(column=1, row=0,
-                                     padx=5, pady=5,
-                                     sticky=tk.NSEW)
-        self.img_label['filter'].grid(column=1, row=0,
-                                      padx=5, pady=5,
-                                      sticky=tk.NSEW)
-        self.img_label['thresh'].grid(column=0, row=0,
-                                      padx=5, pady=5,
-                                      sticky=tk.NSEW)
-        self.img_label['th_contour'].grid(column=1, row=0,
-                                          padx=5, pady=5,
-                                          sticky=tk.NSEW)
-        self.img_label['canny'].grid(column=0, row=0,
-                                     padx=5, pady=5,
-                                     sticky=tk.NSEW)
-        self.img_label['can_contour'].grid(column=1, row=0,
-                                           padx=5, pady=5,
-                                           sticky=tk.NSEW)
-        self.img_label['circled_th'].grid(column=0, row=0,
-                                          padx=5, pady=5,
-                                          sticky=tk.NSEW)
-        self.img_label['circled_can'].grid(column=0, row=0,
-                                           padx=5, pady=5,
-                                           sticky=tk.NSEW)
-        self.img_label['shaped'].grid(column=0, row=0,
-                                      padx=5, pady=5,
-                                      sticky=tk.NSEW)
-        self.img_label['shaped'].grid(column=0, row=0,
-                                      padx=5, pady=5,
-                                      sticky=tk.NSEW)
+        panel_left = dict(
+            column=0, row=0,
+            padx=5, pady=5,
+            sticky=tk.NSEW)
+        panel_right = dict(
+            column=1, row=0,
+            padx=5, pady=5,
+            sticky=tk.NSEW)
+
+        self.img_label['contrast'].grid(**panel_left)
+        self.img_label['redux'].grid(**panel_right)
+
+        self.img_label['filter'].grid(**panel_right)
+
+        self.img_label['thresh'].grid(**panel_left)
+        self.img_label['th_contour'].grid(**panel_right)
+
+        self.img_label['canny'].grid(**panel_left)
+        self.img_label['can_contour'].grid(**panel_right)
+
+        self.img_label['circled_th'].grid(**panel_left)
+        self.img_label['circled_can'].grid(**panel_left)
+        self.img_label['shaped'].grid(**panel_left)
 
     def set_contour_defaults(self) -> None:
         """
         Sets controller widgets at startup. Called from "Reset" button.
         """
 
-        # Set defaults for contour settings:
+        # Set defaults for contour selector settings:
         # Note: These 3 statement are duplicated in adjust_contrast().
         contrasted = (
             cv2.convertScaleAbs(
@@ -2128,8 +2124,10 @@ class ImageViewer(ProcessImage):
         Returns: None
         """
         # Combobox starting value.
-        self.cbox['choose_shape'].current(0)
-        self.cbox_val['polygon'].set('Triangle')
+        # When 'Circle' is selected shape, leave do not reset it.
+        if self.cbox_val['polygon'].get() != 'Circle':
+            self.cbox['choose_shape'].current(0)
+            self.cbox_val['polygon'].set('Triangle')
 
         # Scale starting positions.
         self.slider['epsilon'].set(0.01)
@@ -2327,7 +2325,9 @@ class ImageViewer(ProcessImage):
                                called_by='thresh sized')
         self.size_the_contours(self.contours['selected_found_canny'], 'canny sized')
         self.report_contour()
-        self.process_shapes(event)
+        # cv2.HoughCircles doesn't use contours, so skip shape processing.
+        if self.cbox_val['polygon'].get() != 'Circle':
+            self.process_shapes(event)
 
         return event
 
@@ -2351,8 +2351,8 @@ class ImageViewer(ProcessImage):
         grayout = const.MASTER_BG
         fg_default = const.CBLIND_COLOR_TK['yellow']
 
-        # To make things clear for the user, Need to disable and gray out
-        #  unrelated selectors when 'Circle' is selected or not.
+        # To make options clear for the user, disable and gray out
+        #  unrelated selectors when 'Circle' is selected or not selected.
         if self.cbox_val['polygon'].get() == 'Circle':
             self.radio['find_shape_lbl'].config(fg=grayout)
             self.radio['find_shape_in_thresh'].config(state=tk.DISABLED)
@@ -2363,6 +2363,9 @@ class ImageViewer(ProcessImage):
             self.slider['epsilon_lbl'].config(fg=grayout)
             self.slider['epsilon'].config(state=tk.DISABLED,
                                           fg=grayout)
+            self.resetshape_button.configure(state=tk.DISABLED)
+
+            self.circle_defaults_button.configure(state=tk.NORMAL)
             self.radio['find_circle_lbl'].config(fg=fg_default)
             self.radio['find_circle_in_th'].config(state=tk.NORMAL)
             self.radio['find_circle_in_filtered'].config(state=tk.NORMAL)
@@ -2370,14 +2373,6 @@ class ImageViewer(ProcessImage):
                 if 'circle' in key:
                     self.slider[key].config(state=tk.NORMAL,
                                             fg=fg_default)
-            # Need to set Scale positions (as in set_shape_defaults())
-            #   so that they are not left at minimum (disabled) slider values.
-            # self.slider['epsilon'].set(0.01)
-            self.slider['circle_mindist'].set(100)
-            self.slider['circle_param1'].set(300)
-            self.slider['circle_param2'].set(0.9)
-            self.slider['circle_minradius'].set(20)
-            self.slider['circle_maxradius'].set(500)
         else:
             self.radio['find_shape_lbl'].config(fg=fg_default)
             self.radio['find_shape_in_thresh'].config(state=tk.NORMAL)
@@ -2388,6 +2383,9 @@ class ImageViewer(ProcessImage):
             self.slider['epsilon_lbl'].config(fg=fg_default)
             self.slider['epsilon'].config(state=tk.NORMAL,
                                           fg=fg_default)
+            self.resetshape_button.configure(state=tk.NORMAL)
+
+            self.circle_defaults_button.configure(state=tk.DISABLED)
             self.radio['find_circle_lbl'].config(fg=grayout)
             self.radio['find_circle_in_th'].config(state=tk.DISABLED)
             self.radio['find_circle_in_filtered'].config(state=tk.DISABLED)
@@ -2424,7 +2422,6 @@ if __name__ == "__main__":
     try:
         app = ImageViewer(tk.Tk)
         app.title('OpenCV Contour Settings Report')
-        # Need to prevent errant window resize becoming too small to see.
         app.resizable(False, False)
         print(f'{Path(__file__).name} is now running...')
         app.mainloop()
