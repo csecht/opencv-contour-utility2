@@ -1174,6 +1174,11 @@ class ImageViewer(ProcessImage):
 
         self.shapeimg_lbl = tk.Label(master=self.img_window['shaped'])
 
+        self.circle_msg_lbl.config(
+            text=('Note: Circles are found in the filtered image or'
+                  ' an Otsu threshold of it, not from previously found contours.'),
+            **const.LABEL_PARAMETERS)
+
         self.shape_report_frame.grid(column=0, row=0,
                                      columnspan=2,
                                      padx=5, pady=5,
@@ -1183,6 +1188,12 @@ class ImageViewer(ProcessImage):
                                         padx=5, pady=(0, 5),
                                         ipadx=4, ipady=4,
                                         sticky=tk.EW)
+
+        self.circle_msg_lbl.grid(column=0, row=4,
+                                 columnspan=2,
+                                 padx=5,
+                                 pady=(7, 0),
+                                 sticky=tk.EW)
 
         def save_shape_cmd():
             if self.radio_val['find_shape_in'].get() == 'threshold':
@@ -1619,6 +1630,18 @@ class ImageViewer(ProcessImage):
             '<<ComboboxSelected>>', lambda _: self.process_contours())
 
         # Shape Comboboxes:
+        def process_shape_selection(event):
+            """
+            Use 'Circle' condition to automatically set default circle
+            slider values, thus avoiding need to use "Set Circle defaults"
+            button each time 'Circle' is selected. Without this, the
+            circle sliders are all set to minimum values following the
+            DISABLED state invoked when a different shape is selected.
+            """
+            self.process_all()
+            if self.cbox_val['polygon'].get() == 'Circle':
+                self.set_shape_defaults()
+
         self.cbox['choose_shape_lbl'].config(text='Select shape to find:',
                                              **const.LABEL_PARAMETERS)
         self.cbox['choose_shape'].config(
@@ -1634,13 +1657,8 @@ class ImageViewer(ProcessImage):
                     'Circle'),
             **const.COMBO_PARAMETERS)
         self.cbox['choose_shape'].bind('<<ComboboxSelected>>',
-                                       func=self.process_all)
+                                       func=process_shape_selection)
         self.cbox['choose_shape'].current(0)
-
-        self.circle_msg_lbl.config(
-            text=('Note: Circles are found in the filtered image or'
-                  ' an Otsu threshold of it, not from previously found contours.'),
-            **const.LABEL_PARAMETERS)
 
     def config_radiobuttons(self) -> None:
         """
@@ -2005,12 +2023,6 @@ class ImageViewer(ProcessImage):
                             padx=10,
                             pady=(8, 5),
                             sticky=tk.EW)
-
-        self.circle_msg_lbl.grid(column=0, row=4,
-                                 columnspan=2,
-                                 padx=5,
-                                 pady=(7, 0),
-                                 sticky=tk.EW)
 
         self.radio['find_circle_lbl'].grid(column=0, row=5,
                                            **label_grid_params)
