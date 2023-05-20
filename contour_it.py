@@ -2252,6 +2252,7 @@ class ImageViewer(ProcessImage):
         epsilon_coef = self.slider_val['epsilon'].get()
         epsilon_pct = round(self.slider_val['epsilon'].get() * 100, 2)
         shape_found_in = self.radio_val['find_shape_in'].get()
+        hough_img = 'n/a'
         use_image = self.radio_val['find_circle_in'].get()
         mindist = self.slider_val['circle_mindist'].get()
         param1 = self.slider_val['circle_param1'].get()
@@ -2267,9 +2268,11 @@ class ImageViewer(ProcessImage):
             # Need to specify text based on selections.
             if use_image == 'thresholded':
                 shape_found_in = ('\n     Hough transform of an Otsu threshold '
-                                  'from the filtered')
+                                  'from the Filtered')
+                hough_img = '...an Otsu threshold of the Filtered image.'
             else:  # is 'filtered'
-                shape_found_in = '\n     Hough transform of the filtered'
+                shape_found_in = '\n     Hough transform of the Filtered'
+                hough_img = '...the Filtered image.'
 
         if self.radio_val['hull_shape'].get() == 'yes':
             shape_type = 'Selected hull shape'
@@ -2284,7 +2287,7 @@ class ImageViewer(ProcessImage):
             f'{"cv2.approxPolyDP:".ljust(justify)}epsilon coefficient is {epsilon_coef}\n'
             f'{indent}({epsilon_pct}% contour length, cv2.arcLength)\n'
             f'{indent}closed=True\n'
-            f'{"cv2.HoughCircles:".ljust(justify)}image={use_image}\n'
+            f'{"cv2.HoughCircles:".ljust(justify)}image={hough_img}\n'
             f'{indent}method=cv2.HOUGH_GRADIENT_ALT\n'
             f'{indent}dp=1.5\n'
             f'{indent}minDist={mindist}\n'
@@ -2347,6 +2350,54 @@ class ImageViewer(ProcessImage):
 
         return event
 
+    def toggle_circle_vs_shapes(self) -> None:
+        """
+        Make selector options clear for the user; toggle disabled and
+         gray out unrelated selectors for when 'Circle' is selected,
+        or not selected.
+
+        Returns: None
+        """
+        grayout = const.MASTER_BG
+        fg_default = const.CBLIND_COLOR_TK['yellow']
+
+        if self.cbox_val['polygon'].get() == 'Circle':
+            self.radio['find_shape_lbl'].config(fg=grayout)
+            self.radio['find_shape_in_thresh'].config(state=tk.DISABLED)
+            self.radio['find_shape_in_canny'].config(state=tk.DISABLED)
+            self.radio['shape_hull_lbl'].config(fg=grayout)
+            self.radio['shape_hull_yes'].config(state=tk.DISABLED)
+            self.radio['shape_hull_no'].config(state=tk.DISABLED)
+            self.slider['epsilon_lbl'].config(fg=grayout)
+            self.slider['epsilon'].config(state=tk.DISABLED, fg=grayout)
+            self.resetshape_button.configure(state=tk.DISABLED)
+
+            self.circle_defaults_button.configure(state=tk.NORMAL)
+            self.radio['find_circle_lbl'].config(fg=fg_default)
+            self.radio['find_circle_in_th'].config(state=tk.NORMAL)
+            self.radio['find_circle_in_filtered'].config(state=tk.NORMAL)
+            for _ in self.slider:
+                if 'circle' in _:
+                    self.slider[_].config(state=tk.NORMAL, fg=fg_default)
+        else:
+            self.radio['find_shape_lbl'].config(fg=fg_default)
+            self.radio['find_shape_in_thresh'].config(state=tk.NORMAL)
+            self.radio['find_shape_in_canny'].config(state=tk.NORMAL)
+            self.radio['shape_hull_lbl'].config(fg=fg_default)
+            self.radio['shape_hull_yes'].config(state=tk.NORMAL)
+            self.radio['shape_hull_no'].config(state=tk.NORMAL)
+            self.slider['epsilon_lbl'].config(fg=fg_default)
+            self.slider['epsilon'].config(state=tk.NORMAL, fg=fg_default)
+            self.resetshape_button.configure(state=tk.NORMAL)
+
+            self.circle_defaults_button.configure(state=tk.DISABLED)
+            self.radio['find_circle_lbl'].config(fg=grayout)
+            self.radio['find_circle_in_th'].config(state=tk.DISABLED)
+            self.radio['find_circle_in_filtered'].config(state=tk.DISABLED)
+            for _ in self.slider:
+                if 'circle' in _:
+                    self.slider[_].config(state=tk.DISABLED, fg=grayout)
+
     def process_shapes(self, event=None) -> None:
         """
         A handler for the command kw and button binding for the settings
@@ -2364,51 +2415,7 @@ class ImageViewer(ProcessImage):
 
         """
 
-        grayout = const.MASTER_BG
-        fg_default = const.CBLIND_COLOR_TK['yellow']
-
-        # To make options clear for the user, disable and gray out
-        #  unrelated selectors when 'Circle' is selected, or not.
-        if self.cbox_val['polygon'].get() == 'Circle':
-            self.radio['find_shape_lbl'].config(fg=grayout)
-            self.radio['find_shape_in_thresh'].config(state=tk.DISABLED)
-            self.radio['find_shape_in_canny'].config(state=tk.DISABLED)
-            self.radio['shape_hull_lbl'].config(fg=grayout)
-            self.radio['shape_hull_yes'].config(state=tk.DISABLED)
-            self.radio['shape_hull_no'].config(state=tk.DISABLED)
-            self.slider['epsilon_lbl'].config(fg=grayout)
-            self.slider['epsilon'].config(state=tk.DISABLED,
-                                          fg=grayout)
-            self.resetshape_button.configure(state=tk.DISABLED)
-
-            self.circle_defaults_button.configure(state=tk.NORMAL)
-            self.radio['find_circle_lbl'].config(fg=fg_default)
-            self.radio['find_circle_in_th'].config(state=tk.NORMAL)
-            self.radio['find_circle_in_filtered'].config(state=tk.NORMAL)
-            for _ in self.slider:
-                if 'circle' in _:
-                    self.slider[_].config(state=tk.NORMAL,
-                                          fg=fg_default)
-        else:
-            self.radio['find_shape_lbl'].config(fg=fg_default)
-            self.radio['find_shape_in_thresh'].config(state=tk.NORMAL)
-            self.radio['find_shape_in_canny'].config(state=tk.NORMAL)
-            self.radio['shape_hull_lbl'].config(fg=fg_default)
-            self.radio['shape_hull_yes'].config(state=tk.NORMAL)
-            self.radio['shape_hull_no'].config(state=tk.NORMAL)
-            self.slider['epsilon_lbl'].config(fg=fg_default)
-            self.slider['epsilon'].config(state=tk.NORMAL,
-                                          fg=fg_default)
-            self.resetshape_button.configure(state=tk.NORMAL)
-
-            self.circle_defaults_button.configure(state=tk.DISABLED)
-            self.radio['find_circle_lbl'].config(fg=grayout)
-            self.radio['find_circle_in_th'].config(state=tk.DISABLED)
-            self.radio['find_circle_in_filtered'].config(state=tk.DISABLED)
-            for _ in self.slider:
-                if 'circle' in _:
-                    self.slider[_].config(state=tk.DISABLED,
-                                          fg=grayout)
+        self.toggle_circle_vs_shapes()
 
         if self.radio_val['find_shape_in'].get() == 'threshold':
             contours = self.contours['selected_found_thresh']
