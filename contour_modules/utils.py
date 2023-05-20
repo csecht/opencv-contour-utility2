@@ -311,7 +311,7 @@ def quit_gui(mainloop: tk.Tk, gui=True, keybind=None) -> None:
     :type keybind: Direct call from keybindings.
     """
     if gui:
-        print('\n  *** User has quit the program. Good bye...')
+        print('\n  *** User has quit the program. ***')
 
         try:
             mainloop.update_idletasks()

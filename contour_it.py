@@ -36,7 +36,7 @@ from contour_modules import (vcheck,
                              )
 
 # Third party imports.
-# tkinter(Tk / Tcl) is included with most Python3 distributions,
+# tkinter(Tk/Tcl) is included with most Python3 distributions,
 #  but may sometimes need to be regarded as third-party.
 try:
     import cv2
@@ -67,6 +67,8 @@ except (ImportError, ModuleNotFoundError) as import_err:
         '  https://docs.opencv.org/4.6.0/d5/de5/tutorial_py_setup_in_windows.html\n\n'
         f'Error message:\n{import_err}')
 
+
+# pylint: disable=use-dict-literal
 
 class ProcessImage(tk.Tk):
     """
@@ -163,8 +165,8 @@ class ProcessImage(tk.Tk):
         self.contours = {
             'drawn_thresh': stub_array,
             'drawn_canny': stub_array,
-            'selected_found_thresh': [],
-            'selected_found_canny': [],
+            'selected_found_thresh': [stub_array],
+            'selected_found_canny': [stub_array],
         }
 
         self.num_contours = {
@@ -174,8 +176,10 @@ class ProcessImage(tk.Tk):
             'canny_select': tk.IntVar(),
         }
 
-        self.filtered_img = None
-        self.reduced_noise_img = None
+        self.img_window = {}
+        self.img_label = {}
+        self.filtered_img = stub_array
+        self.reduced_noise_img = stub_array
 
         # Image processing parameters.
         self.sigma_color = 1
@@ -185,10 +189,6 @@ class ProcessImage(tk.Tk):
         self.computed_threshold = 0
         self.contour_limit = 0
         self.num_shapes = 0
-
-        self.img_window = None
-        self.img_label = None
-        self.shape_settings_win = None
 
         # The highlight color used to draw contours and shapes.
         if arguments['color'] == 'yellow':
@@ -242,7 +242,7 @@ class ProcessImage(tk.Tk):
         # Need integers for the cv2 function parameters.
         morph_shape = const.CV_MORPH_SHAPE[self.cbox_val['morphshape_pref'].get()]
 
-        # ksize value needs to be a tuple.
+        # kernel (ksize), used in cv2.getStructuringElement, needs to be a tuple.
         kernel = (self.slider_val['noise_k'].get(),
                   self.slider_val['noise_k'].get())
 
@@ -1000,15 +1000,19 @@ class ImageViewer(ProcessImage):
                   '  window bar or Esc or Ctrl-Q keys.'
                   )
 
+        # NOTE: dict item order affects the order that windows are
+        #  drawn, so here use an inverse order of processing steps to
+        #  have windows in proper arranged in sensible order on the
+        #  screen (input on bottom, sized or shaped on top).
         self.img_window = {
-            'input': tk.Toplevel(),
-            'contrasted': tk.Toplevel(),
-            'filtered': tk.Toplevel(),
-            'thresholded': tk.Toplevel(),
-            'canny': tk.Toplevel(),
-            'thresh sized': tk.Toplevel(),
-            'canny sized': tk.Toplevel(),
             'shaped': tk.Toplevel(),
+            'canny sized': tk.Toplevel(),
+            'thresh sized': tk.Toplevel(),
+            'canny': tk.Toplevel(),
+            'thresholded': tk.Toplevel(),
+            'filtered': tk.Toplevel(),
+            'contrasted': tk.Toplevel(),
+            'input': tk.Toplevel(),
         }
 
         # Prevent user from inadvertently resizing a window too small to use.
@@ -1208,7 +1212,7 @@ class ImageViewer(ProcessImage):
                     caller='canny_shape')
 
         # Note that ttk.Styles are defined in ContourViewer.setup_styles().
-        self.resetshape_button.configure(text='Default settings',
+        self.resetshape_button.configure(text='Set contour defaults',
                                          style='My.TButton',
                                          width=0,
                                          command=self.set_shape_defaults)
@@ -1230,7 +1234,7 @@ class ImageViewer(ProcessImage):
                                     pady=(0, 5),
                                     sticky=tk.W)
         self.circle_defaults_button.grid(column=0, row=3,
-                                         padx=(0, 80),
+                                         padx=(0, 60),
                                          pady=(0, 5),
                                          sticky=tk.E)
         self.saveshape_button.grid(column=1, row=3,
@@ -2061,9 +2065,9 @@ class ImageViewer(ProcessImage):
     def grid_img_labels(self) -> None:
         """
         Grid all image Labels inherited from ProcessImage().
-        Labels' master argument for the img window is defined in
-        ProcessImage.setup_image_windows(). Label img are updated with
-        .config() in each Label's respective processing method.
+        Labels' 'master' argument for the img window is defined in
+        ProcessImage.setup_image_windows(). Label 'image' params are
+        updated with .configure() in each PI processing method.
         """
         panel_left = dict(
             column=0, row=0,
@@ -2136,13 +2140,12 @@ class ImageViewer(ProcessImage):
         Set default values for selectors. Called at startup.
         Returns: None
         """
-        # Combobox starting value.
-        # When 'Circle' is selected shape, leave do not reset it.
+        # Set/Reset Combobox widgets.
+        # When 'Circle' is selected shape, do not reset it.
         if self.cbox_val['polygon'].get() != 'Circle':
-            self.cbox['choose_shape'].current(0)
             self.cbox_val['polygon'].set('Triangle')
 
-        # Scale starting positions.
+        # Set/Reset Scale widgets.
         self.slider['epsilon'].set(0.01)
         self.slider['circle_mindist'].set(100)
         self.slider['circle_param1'].set(300)
@@ -2150,7 +2153,7 @@ class ImageViewer(ProcessImage):
         self.slider['circle_minradius'].set(20)
         self.slider['circle_maxradius'].set(500)
 
-        # Radiobutton starting values.
+        # Set/Reset Radiobutton widgets:
         self.radio['shape_hull_no'].select()
         self.radio['find_shape_in_thresh'].select()
         self.radio['find_circle_in_filtered'].select()
@@ -2365,7 +2368,7 @@ class ImageViewer(ProcessImage):
         fg_default = const.CBLIND_COLOR_TK['yellow']
 
         # To make options clear for the user, disable and gray out
-        #  unrelated selectors when 'Circle' is selected or not selected.
+        #  unrelated selectors when 'Circle' is selected, or not.
         if self.cbox_val['polygon'].get() == 'Circle':
             self.radio['find_shape_lbl'].config(fg=grayout)
             self.radio['find_shape_in_thresh'].config(state=tk.DISABLED)
@@ -2382,10 +2385,10 @@ class ImageViewer(ProcessImage):
             self.radio['find_circle_lbl'].config(fg=fg_default)
             self.radio['find_circle_in_th'].config(state=tk.NORMAL)
             self.radio['find_circle_in_filtered'].config(state=tk.NORMAL)
-            for key, _ in self.slider.items():
-                if 'circle' in key:
-                    self.slider[key].config(state=tk.NORMAL,
-                                            fg=fg_default)
+            for _ in self.slider:
+                if 'circle' in _:
+                    self.slider[_].config(state=tk.NORMAL,
+                                          fg=fg_default)
         else:
             self.radio['find_shape_lbl'].config(fg=fg_default)
             self.radio['find_shape_in_thresh'].config(state=tk.NORMAL)
@@ -2402,10 +2405,10 @@ class ImageViewer(ProcessImage):
             self.radio['find_circle_lbl'].config(fg=grayout)
             self.radio['find_circle_in_th'].config(state=tk.DISABLED)
             self.radio['find_circle_in_filtered'].config(state=tk.DISABLED)
-            for key, _ in self.slider.items():
-                if 'circle' in key:
-                    self.slider[key].config(state=tk.DISABLED,
-                                            fg=grayout)
+            for _ in self.slider:
+                if 'circle' in _:
+                    self.slider[_].config(state=tk.DISABLED,
+                                          fg=grayout)
 
         if self.radio_val['find_shape_in'].get() == 'threshold':
             contours = self.contours['selected_found_thresh']
@@ -2426,7 +2429,7 @@ if __name__ == "__main__":
     arguments = manage.arguments()
 
     # All checks are good, so grab as a 'global' the dictionary of
-    #   command line argument values, and reference often used values...
+    #   command line argument values to define often used values...
     infile_dict = manage.infile()
     INPUT_IMG = infile_dict['input_img']
     GRAY_IMG = infile_dict['gray_img']
