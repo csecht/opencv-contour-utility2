@@ -1816,10 +1816,6 @@ class ImageViewer(ProcessImage):
                 padx=(0, 15),
                 pady=(5, 0),
                 sticky=tk.E)
-            filter_cbox_param = dict(
-                padx=(0, 15),
-                pady=(5, 0),
-                sticky=tk.E)
 
         else:  # is macOS
             slider_grid_params = dict(
@@ -1841,10 +1837,6 @@ class ImageViewer(ProcessImage):
                 padx=(245, 0),
                 pady=(5, 0),
                 sticky=tk.W)
-            filter_cbox_param = dict(
-                padx=(245, 0),
-                pady=(5, 0),
-                sticky=tk.W)
 
         # Special cases where each platform is different. Messy, but, oh well.
         if const.MY_OS == 'lin':
@@ -1861,9 +1853,9 @@ class ImageViewer(ProcessImage):
                 pady=(5, 0),
                 sticky=tk.E)
             filter_cbox_param = dict(
-                padx=(245, 0),
+                padx=(0, 15),
                 pady=(5, 0),
-                sticky=tk.W)
+                sticky=tk.E)
 
         elif const.MY_OS == 'win':
             c_method_lbl_params = dict(
@@ -2302,7 +2294,7 @@ class ImageViewer(ProcessImage):
             app.update_idletasks()
             # Need to specify text based on selections.
             if use_image4circle == 'thresholded':
-                shape_found_in = 'an Otsu threshold of the Filtered image.\n'
+                shape_found_in = 'Otsu threshold of Filtered image.\n'
                 hough_img = '...an Otsu threshold of the Filtered image.'
             else:  # is 'filtered'
                 shape_found_in = 'the Filtered image.\n'
