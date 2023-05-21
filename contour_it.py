@@ -1229,12 +1229,16 @@ class ImageViewer(ProcessImage):
 
         # Reset button should be centered under slider labels.
         # Save button should be on same row (bottom of frame), right side.
+        if const.MY_OS == 'lin, dar':
+            padx = (0, 60)
+        else:  # is Windows
+            padx = (0, 40)
         self.resetshape_button.grid(column=0, row=3,
                                     padx=(10, 0),
                                     pady=(0, 5),
                                     sticky=tk.W)
         self.circle_defaults_button.grid(column=0, row=3,
-                                         padx=(0, 60),
+                                         padx=padx,
                                          pady=(0, 5),
                                          sticky=tk.E)
         self.saveshape_button.grid(column=1, row=3,
@@ -1800,16 +1804,8 @@ class ImageViewer(ProcessImage):
                 sticky=tk.W)
 
             # Parameters for specific widgets:
-            shape_lbl_param = dict(
-                padx=(0, 180),  # (0, 155) works better for Linux.
-                pady=(5, 0),
-                sticky=tk.E)
             shape_cbox_param = dict(
                 padx=(0, 15),
-                pady=(5, 0),
-                sticky=tk.E)
-            filter_lbl_param = dict(
-                padx=(0, 140),
                 pady=(5, 0),
                 sticky=tk.E)
             filter_cbox_param = dict(
@@ -1833,10 +1829,6 @@ class ImageViewer(ProcessImage):
                 sticky=tk.W)
 
             # Parameters for specific widgets:
-            shape_lbl_param = dict(
-                padx=(190, 0),
-                pady=(5, 0),
-                sticky=tk.W)
             shape_cbox_param = dict(
                 padx=(245, 0),
                 pady=(5, 0),
@@ -1850,22 +1842,48 @@ class ImageViewer(ProcessImage):
                 pady=(5, 0),
                 sticky=tk.W)
 
-        # A special case where each platform is different. Messy, but, oh well.
+        # Special cases where each platform is different. Messy, but, oh well.
         if const.MY_OS == 'lin':
             c_method_lbl_params = dict(
                 padx=(145, 0),
                 pady=(5, 0),
                 sticky=tk.W)
+            shape_lbl_param = dict(
+                padx=(0, 155),
+                pady=(5, 0),
+                sticky=tk.E)
+            filter_lbl_param = dict(
+                padx=(0, 140),
+                pady=(5, 0),
+                sticky=tk.E)
+
         elif const.MY_OS == 'win':
             c_method_lbl_params = dict(
                 padx=(0, 240),
                 pady=(5, 0),
                 sticky=tk.E)
+            shape_lbl_param = dict(
+                padx=(0, 170),
+                pady=(5, 0),
+                sticky=tk.E)
+            filter_lbl_param = dict(
+                padx=(0, 160),
+                pady=(5, 0),
+                sticky=tk.E)
+
         else:  # is macOS
             c_method_lbl_params = dict(
                 padx=(160, 0),
                 pady=(4, 0),
                 sticky=tk.W)
+            shape_lbl_param = dict(
+                padx=(0, 180),
+                pady=(5, 0),
+                sticky=tk.E)
+            filter_lbl_param = dict(
+                padx=(0, 140),
+                pady=(5, 0),
+                sticky=tk.E)
 
         # Widgets gridded in the self.contour_selectors_frame Frame.
         # Sorted by row number:
