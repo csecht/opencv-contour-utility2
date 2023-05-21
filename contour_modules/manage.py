@@ -167,7 +167,7 @@ def scale(img: np.ndarray, scalefactor: float) -> np.ndarray:
 
 
 # def tkimage(input_tkimg: tuple, gray_tkimg: tuple = None):
-def tkimage(image: np.ndarray) -> PhotoImage:
+def tk_image(image: np.ndarray) -> PhotoImage:
     """
     Scales and converts cv2 images to a compatible format for display
     in tk window. Be sure that the returned image is properly scoped in

@@ -200,7 +200,8 @@ class ProcessImage(tk.Tk):
         """
         Adjust contrast of the input GRAY_IMG image.
         Updates contrast and brightness via alpha and beta sliders.
-        Calls reduce_noise. Displays contrasted and redux noise images.
+        Displays contrasted and redux noise images.
+        Calls reduce_noise, manage.tk_image().
 
         Returns: None
         """
@@ -220,7 +221,7 @@ class ProcessImage(tk.Tk):
         self.curr_contrast_std.set(int(np.std(contrasted)))
         # Using .configure to update image avoids the white flash each time an
         #  image is updated were a Label() to be re-made here each call.
-        self.tkimg['contrast'] = manage.tkimage(contrasted)
+        self.tkimg['contrast'] = manage.tk_image(contrasted)
         self.img_label['contrast'].configure(image=self.tkimg['contrast'])
 
         return contrasted
@@ -233,7 +234,7 @@ class ProcessImage(tk.Tk):
         Uses cv2.morphologyEx params op=self.morph_op,
         kernel=<local structuring element>, iterations=self.noise_iter,
         borderType=self.border_val.
-        Called only by adjust_contrast().
+        Called only by adjust_contrast(). Calls manage.tk_image().
 
         Returns:
              The array defined in adjust_contrast() with noise reduction.
@@ -270,7 +271,7 @@ class ProcessImage(tk.Tk):
             borderType=border_type
         )
 
-        self.tkimg['redux'] = manage.tkimage(self.reduced_noise_img)
+        self.tkimg['redux'] = manage.tk_image(self.reduced_noise_img)
         self.img_label['redux'].configure(image=self.tkimg['redux'])
 
         return self.reduced_noise_img
@@ -279,7 +280,7 @@ class ProcessImage(tk.Tk):
         """
         Applies a filter selection to blur the image for Canny edge
         detection or threshold contouring.
-        Called from contour_threshold().
+        Called from contour_threshold(). Calls manage.tk_image().
 
         Returns: The filtered (blurred) image array processed by
                  reduce_noise().
@@ -347,7 +348,7 @@ class ProcessImage(tk.Tk):
                                          ksize=(filter_k, filter_k),
                                          borderType=border_type)
 
-        self.tkimg['filter'] = manage.tkimage(self.filtered_img)
+        self.tkimg['filter'] = manage.tk_image(self.filtered_img)
         self.img_label['filter'].configure(image=self.tkimg['filter'])
 
         return self.filtered_img
@@ -356,6 +357,8 @@ class ProcessImage(tk.Tk):
         """
         Identify object contours with cv2.threshold() and
         cv2.drawContours(). Threshold types limited to Otsu and Triangle.
+        Called by process_*() methods. Calls manage.tk_image().
+
         Args:
             event: An implicit mouse button event.
 
@@ -444,17 +447,19 @@ class ProcessImage(tk.Tk):
 
         # Need to use self.*_img to keep attribute reference and thus
         #   prevent garbage collection.
-        self.tkimg['thresh'] = manage.tkimage(thresh_img)
+        self.tkimg['thresh'] = manage.tk_image(thresh_img)
         self.img_label['thresh'].configure(image=self.tkimg['thresh'])
 
-        self.tkimg['drawn_thresh'] = manage.tkimage(self.contours['drawn_thresh'])
+        self.tkimg['drawn_thresh'] = manage.tk_image(self.contours['drawn_thresh'])
         self.img_label['th_contour'].configure(image=self.tkimg['drawn_thresh'])
 
         return event
 
     def contour_canny(self, event=None) -> None:
         """
-        Identify objects with cv2.Canny() edges and cv2.drawContours().
+        Identify objects using cv2.Canny() edges and cv2.drawContours().
+        Called by process_*() methods. Calls manage.tk_image().
+
         Args:
             event: An implicit mouse button event.
 
@@ -465,7 +470,7 @@ class ProcessImage(tk.Tk):
         # https://docs.opencv.org/4.x/d4/d73/tutorial_py_contours_begin.html
         # https://docs.opencv.org/3.4/dd/d49/tutorial_py_contour_features.html
 
-        # Note: Much of this method is duplicated in contour_threshold();
+        # Note to dev: Much of this method is duplicated in contour_threshold();
         #   consider consolidating the two methods.
 
         # Canny recommended an upper:lower ratio between 2:1 and 3:1.
@@ -544,10 +549,10 @@ class ProcessImage(tk.Tk):
             thickness=LINE_THICKNESS * 2,
             lineType=cv2.LINE_AA)
 
-        self.tkimg['canny'] = manage.tkimage(canny_img)
+        self.tkimg['canny'] = manage.tk_image(canny_img)
         self.img_label['canny'].configure(image=self.tkimg['canny'])
 
-        self.tkimg['drawn_canny'] = manage.tkimage(self.contours['drawn_canny'])
+        self.tkimg['drawn_canny'] = manage.tk_image(self.contours['drawn_canny'])
         self.img_label['can_contour'].configure(image=self.tkimg['drawn_canny'])
 
         return event
@@ -558,6 +563,7 @@ class ProcessImage(tk.Tk):
         """
         Draws a circles around contoured objects. Objects are expected
         to be oblong so that circle diameter can represent object length.
+        Called by process_*() methods. Calls manage.tk_image().
         Args:
             contour_pointset: List of selected contours from cv2.findContours.
             called_by: Descriptive name of calling function;
@@ -610,10 +616,10 @@ class ProcessImage(tk.Tk):
         #   the respective size Button 'command' kw call in
         #   ContourViewer.setup_buttons().  Ugh, messy hard coding.
         if called_by == 'thresh sized':
-            self.tkimg['circled_th'] = manage.tkimage(circled_contours)
+            self.tkimg['circled_th'] = manage.tk_image(circled_contours)
             self.img_label['circled_th'].configure(image=self.tkimg['circled_th'])
         else:  # called by 'canny sized'
-            self.tkimg['circled_can'] = manage.tkimage(circled_contours)
+            self.tkimg['circled_can'] = manage.tk_image(circled_contours)
             self.img_label['circled_can'].configure(image=self.tkimg['circled_can'])
 
     def select_shape(self, contour_pointset: list) -> None:
@@ -737,17 +743,17 @@ class ProcessImage(tk.Tk):
                                  lineType=cv2.LINE_AA
                                  )
 
-        self.tkimg['shaped'] = manage.tkimage(img4shaping)
+        self.tkimg['shaped'] = manage.tk_image(img4shaping)
         self.img_label['shaped'].configure(image=self.tkimg['shaped'])
 
-    def find_circles(self):
+    def find_circles(self) -> None:
         """
         Implements the cv2.HOUGH_GRADIENT_ALT method of cv2.HoughCircles()
-        to approximate circles in a filtered/blured image or its threshold,
-        and shows circle objects on the input image.
-        Called from select_shape(). Calls utils.text_array().
+        to approximate circles in the filtered/blured image or a threshold
+        thereof, and shows overlay of circles on the input image.
+        Called from select_shape(). Calls manage.tk_image().
 
-        Returns: An array of HoughCircles contours.
+        Returns: None
         """
 
         img4shaping = INPUT_IMG.copy()
@@ -814,11 +820,11 @@ class ProcessImage(tk.Tk):
                            )
 
                 # Show found circles highlighted on the input image.
-                self.tkimg['shaped'] = manage.tkimage(img4shaping)
+                self.tkimg['shaped'] = manage.tk_image(img4shaping)
                 self.img_label['shaped'].configure(image=self.tkimg['shaped'])
         else:
             # No circles found, so display the input image as-is.
-            self.tkimg['shaped'] = manage.tkimage(img4shaping)
+            self.tkimg['shaped'] = manage.tk_image(img4shaping)
             self.img_label['shaped'].configure(image=self.tkimg['shaped'])
 
         # Note: reporting of current metrics and settings is handled by
@@ -1400,12 +1406,12 @@ class ImageViewer(ProcessImage):
         #  structure of processed images that do need updating.
         # Note: Use 'self' to scope the ImageTk.PhotoImage in the Class,
         #  otherwise it will/may not show b/c of garbage collection.
-        self.tkimg['input'] = manage.tkimage(INPUT_IMG)
+        self.tkimg['input'] = manage.tk_image(INPUT_IMG)
         self.img_label['input'].configure(image=self.tkimg['input'])
         self.img_label['input'].grid(column=0, row=0,
                                      padx=5, pady=5)
 
-        self.tkimg['gray'] = manage.tkimage(GRAY_IMG)
+        self.tkimg['gray'] = manage.tk_image(GRAY_IMG)
         self.img_label['gray'].configure(image=self.tkimg['gray'])
         self.img_label['gray'].grid(column=1, row=0,
                                     padx=5, pady=5)
@@ -1766,7 +1772,7 @@ class ImageViewer(ProcessImage):
         self.radio['find_circle_lbl'].config(text='Find Hough circles in:',
                                              **const.LABEL_PARAMETERS)
         self.radio['find_circle_in_th'].configure(
-            text='Threshold img',  # Need to say 'Edged' if/when use cv2.Canny.
+            text='Threshold img',
             variable=self.radio_val['find_circle_in'],
             value='thresholded',
             command=self.process_all,
@@ -1831,10 +1837,6 @@ class ImageViewer(ProcessImage):
             # Parameters for specific widgets:
             shape_cbox_param = dict(
                 padx=(245, 0),
-                pady=(5, 0),
-                sticky=tk.W)
-            filter_lbl_param = dict(
-                padx=(190, 0),
                 pady=(5, 0),
                 sticky=tk.W)
             filter_cbox_param = dict(
@@ -2085,7 +2087,7 @@ class ImageViewer(ProcessImage):
         """
         Grid all image Labels inherited from ProcessImage().
         Labels' 'master' argument for the img window is defined in
-        ProcessImage.setup_image_windows(). Label 'image' params are
+        ProcessImage.setup_image_windows(). Label 'image' param is
         updated with .configure() in each PI processing method.
         """
         panel_left = dict(
@@ -2431,7 +2433,6 @@ class ImageViewer(ProcessImage):
             event: An implicit mouse button event.
 
         Returns: *event* as a formality; is functionally None.
-
         """
 
         self.toggle_circle_vs_shapes()
