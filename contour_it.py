@@ -68,7 +68,7 @@ except (ImportError, ModuleNotFoundError) as import_err:
         f'Error message:\n{import_err}')
 
 
-# pylint: disable=use-dict-literal
+# pylint: disable=use-dict-literal, no-member
 
 class ProcessImage(tk.Tk):
     """
@@ -778,7 +778,7 @@ class ProcessImage(tk.Tk):
         # source: https://www.geeksforgeeks.org/circle-detection-using-opencv-python/
         # https://docs.opencv.org/4.x/dd/d1a/group__imgproc__feature.html#ga47849c3be0d0406ad3ca45db65a25d2d
         # Docs general recommendations for HOUGH_GRADIENT_ALT with good image contrast:
-        #    param1=300, param2=0.9, minRadius=20, maxRadius=400
+        #   dp=1.5, param1=300, param2=0.9, minRadius=20, maxRadius=400
         found_circles = cv2.HoughCircles(image=img4houghcircles,
                                          method=cv2.HOUGH_GRADIENT_ALT,
                                          dp=1.5,
@@ -792,7 +792,6 @@ class ProcessImage(tk.Tk):
         if found_circles is not None:
             # Convert the circle parameters to integers to get the right data type.
             found_circles = np.uint16(np.round(found_circles))
-
             self.num_shapes = len(found_circles[0, :])
 
             for _circle in found_circles[0, :]:
@@ -814,10 +813,11 @@ class ProcessImage(tk.Tk):
                            lineType=cv2.LINE_AA
                            )
 
-                # Show found circles marked on the input image.
+                # Show found circles highlighted on the input image.
                 self.tkimg['shaped'] = manage.tkimage(img4shaping)
                 self.img_label['shaped'].configure(image=self.tkimg['shaped'])
         else:
+            # No circles found, so display the input image as-is.
             self.tkimg['shaped'] = manage.tkimage(img4shaping)
             self.img_label['shaped'].configure(image=self.tkimg['shaped'])
 
@@ -849,19 +849,19 @@ class ImageViewer(ProcessImage):
     process_shapes
     """
 
-    def __init__(self, tk1):
+    def __init__(self):
         super().__init__()
         # Note: the tk1 param represents the inherited tk.Tk base class.
-        # self.configure(bg='green')
         self.contour_report_frame = tk.Frame()
         self.contour_selectors_frame = tk.Frame()
+        # self.configure(bg='green')  # for dev.
 
         self.shape_settings_win = tk.Toplevel()
         self.shape_report_frame = tk.Frame(master=self.shape_settings_win)
         self.shape_selectors_frame = tk.Frame(master=self.shape_settings_win)
 
         # Note: The matching control variable attributes for the
-        #   following 15 selector widgets are in ProcessImage __init__.
+        #   following 14 selector widgets are in ProcessImage __init__.
         self.slider = {
             'alpha': tk.Scale(master=self.contour_selectors_frame),
             'alpha_lbl': tk.Label(master=self.contour_selectors_frame),
@@ -1018,9 +1018,9 @@ class ImageViewer(ProcessImage):
         # Prevent user from inadvertently resizing a window too small to use.
         # Need to disable default window Exit in display windows b/c
         #  subsequent calls to them need a valid path name.
-        for _, value in self.img_window.items():
-            value.minsize(200, 200)
-            value.protocol('WM_DELETE_WINDOW', no_exit_on_x)
+        for _, window in self.img_window.items():
+            window.minsize(200, 200)
+            window.protocol('WM_DELETE_WINDOW', no_exit_on_x)
 
         self.img_window['input'].title(const.WIN_NAME['input+gray'])
         self.img_window['contrasted'].title(const.WIN_NAME['contrast+redux'])
@@ -1540,9 +1540,11 @@ class ImageViewer(ProcessImage):
         #   overhead of that is too great, then can add conditions in the loop
         #   to bind certain groups or individual sliders to more restrictive
         #   processing functions.
-        scale_widget = [_s for _s in self.slider.keys() if '_lbl' not in _s]
-        for _s in scale_widget:
-            self.slider[_s].bind('<ButtonRelease-1>', self.process_all)
+        for name, widget in self.slider.items():
+            if '_lbl' not in name:
+                widget.bind('<ButtonRelease-1>', self.process_all)
+        # for _s in [_s for _s in self.slider if '_lbl' not in _s]:
+        #     self.slider[_s].bind('<ButtonRelease-1>', self.process_all)
 
     def config_comboboxes(self) -> None:
         """
@@ -1552,10 +1554,9 @@ class ImageViewer(ProcessImage):
         Returns: None
         """
 
-        if const.MY_OS == 'win':
-            width_correction = 2
-        else:  # is Linux or macOS
-            width_correction = 0
+        # Different Combobox widths are needed to account for font widths
+        #  and padding in different systems.
+        width_correction = 2 if const.MY_OS == 'win' else 0  # is Linux or macOS
 
         self.cbox['choose_morphop_lbl'].config(text='Reduce noise, morphology operator:',
                                                **const.LABEL_PARAMETERS)
@@ -1650,7 +1651,7 @@ class ImageViewer(ProcessImage):
                                              **const.LABEL_PARAMETERS)
         self.cbox['choose_shape'].config(
             textvariable=self.cbox_val['polygon'],
-            width=12,
+            width=12 + width_correction,
             values=('Triangle',
                     'Rectangle',
                     'Pentagon',
@@ -1800,7 +1801,7 @@ class ImageViewer(ProcessImage):
 
             # Parameters for specific widgets:
             shape_lbl_param = dict(
-                padx=(0, 180),
+                padx=(0, 180),  # (0, 155) works better for Linux.
                 pady=(5, 0),
                 sticky=tk.E)
             shape_cbox_param = dict(
@@ -2352,9 +2353,9 @@ class ImageViewer(ProcessImage):
 
     def toggle_circle_vs_shapes(self) -> None:
         """
-        Make selector options clear for the user; toggle disabled and
-         gray out unrelated selectors for when 'Circle' is selected,
-        or not selected.
+        Make selector options obvious for the user depending on whether
+        'Circle' shape is selected or not; gray out and disable those
+        that are not relevant to the selection.
 
         Returns: None
         """
@@ -2376,9 +2377,9 @@ class ImageViewer(ProcessImage):
             self.radio['find_circle_lbl'].config(fg=fg_default)
             self.radio['find_circle_in_th'].config(state=tk.NORMAL)
             self.radio['find_circle_in_filtered'].config(state=tk.NORMAL)
-            for _ in self.slider:
-                if 'circle' in _:
-                    self.slider[_].config(state=tk.NORMAL, fg=fg_default)
+            for name, widget in self.slider.items():
+                if 'circle' in name:
+                    widget.config(state=tk.NORMAL, fg=fg_default)
         else:
             self.radio['find_shape_lbl'].config(fg=fg_default)
             self.radio['find_shape_in_thresh'].config(state=tk.NORMAL)
@@ -2394,9 +2395,9 @@ class ImageViewer(ProcessImage):
             self.radio['find_circle_lbl'].config(fg=grayout)
             self.radio['find_circle_in_th'].config(state=tk.DISABLED)
             self.radio['find_circle_in_filtered'].config(state=tk.DISABLED)
-            for _ in self.slider:
-                if 'circle' in _:
-                    self.slider[_].config(state=tk.DISABLED, fg=grayout)
+            for name, widget in self.slider.items():
+                if 'circle' in name:
+                    widget.config(state=tk.DISABLED, fg=grayout)
 
     def process_shapes(self, event=None) -> None:
         """
@@ -2443,7 +2444,7 @@ if __name__ == "__main__":
     LINE_THICKNESS = infile_dict['line_thickness']
 
     try:
-        app = ImageViewer(tk.Tk)
+        app = ImageViewer()
         app.title('OpenCV Contour Settings Report')
         app.resizable(False, False)
         print(f'{Path(__file__).name} is now running...')
