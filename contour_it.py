@@ -720,7 +720,7 @@ class ProcessImage(tk.Tk):
         """
         img4shaping = INPUT_IMG.copy()
 
-        if self.radio_val['find_shape_in'].get() == 'threshold':
+        if self.radio_val['find_shape_in'].get() == 'Threshold':
             shapeimg_win_name = 'thresh'
         else:  # == 'canny'
             shapeimg_win_name = 'canny'
@@ -964,7 +964,7 @@ class ImageViewer(ProcessImage):
         # Attributes for shape windows.
         self.circle_msg_lbl = tk.Label(master=self.shape_selectors_frame)
         self.shapeimg_lbl = None
-        self.resetshape_button = None
+        self.shape_defaults_button = None
         self.circle_defaults_button = None
         self.saveshape_button = None
 
@@ -1206,7 +1206,7 @@ class ImageViewer(ProcessImage):
                                  sticky=tk.EW)
 
         def save_shape_cmd():
-            if self.radio_val['find_shape_in'].get() == 'threshold':
+            if self.radio_val['find_shape_in'].get() == 'Threshold':
                 utils.save_settings_and_img(
                     img2save=self.tkimg['shaped'],
                     txt2save=self.shape_settings_txt,
@@ -1218,10 +1218,10 @@ class ImageViewer(ProcessImage):
                     caller='canny_shape')
 
         # Note that ttk.Styles are defined in ContourViewer.setup_styles().
-        self.resetshape_button.configure(text='Set contour defaults',
-                                         style='My.TButton',
-                                         width=0,
-                                         command=self.set_shape_defaults)
+        self.shape_defaults_button.configure(text='Set contour defaults',
+                                             style='My.TButton',
+                                             width=0,
+                                             command=self.set_shape_defaults)
 
         self.circle_defaults_button.configure(text='Set Circle defaults',
                                               style='My.TButton',
@@ -1235,16 +1235,18 @@ class ImageViewer(ProcessImage):
 
         # Reset button should be centered under slider labels.
         # Save button should be on same row (bottom of frame), right side.
-        if const.MY_OS == 'lin, dar':
-            padx = (0, 60)
+        if const.MY_OS == 'lin':
+            os_padx = (0, 60)
+        elif const.MY_OS == 'dar':
+            os_padx = (0, 0)
         else:  # is Windows
-            padx = (0, 40)
-        self.resetshape_button.grid(column=0, row=3,
-                                    padx=(10, 0),
-                                    pady=(0, 5),
-                                    sticky=tk.W)
+            os_padx = (0, 40)
+        self.shape_defaults_button.grid(column=0, row=3,
+                                        padx=(10, 0),
+                                        pady=(0, 5),
+                                        sticky=tk.W)
         self.circle_defaults_button.grid(column=0, row=3,
-                                         padx=padx,
+                                         padx=os_padx,
                                          pady=(0, 5),
                                          sticky=tk.E)
         self.saveshape_button.grid(column=1, row=3,
@@ -1361,7 +1363,7 @@ class ImageViewer(ProcessImage):
 
         # Buttons for Shape window; are configured and gridded in
         #  shape_win_setup().
-        self.resetshape_button = ttk.Button(master=self.shape_settings_win)
+        self.shape_defaults_button = ttk.Button(master=self.shape_settings_win)
         self.circle_defaults_button = ttk.Button(master=self.shape_settings_win)
         self.saveshape_button = ttk.Button(master=self.shape_settings_win)
 
@@ -1757,14 +1759,14 @@ class ImageViewer(ProcessImage):
         self.radio['find_shape_in_thresh'].configure(
             text='Threshold',
             variable=self.radio_val['find_shape_in'],
-            value='threshold',
+            value='Threshold',
             command=self.process_all,
             **const.RADIO_PARAMETERS
         )
         self.radio['find_shape_in_canny'].configure(
             text='Canny',
             variable=self.radio_val['find_shape_in'],
-            value='canny',
+            value='Canny',
             command=self.process_all,
             **const.RADIO_PARAMETERS
         )
@@ -1858,6 +1860,10 @@ class ImageViewer(ProcessImage):
                 padx=(0, 140),
                 pady=(5, 0),
                 sticky=tk.E)
+            filter_cbox_param = dict(
+                padx=(245, 0),
+                pady=(5, 0),
+                sticky=tk.W)
 
         elif const.MY_OS == 'win':
             c_method_lbl_params = dict(
@@ -1872,6 +1878,10 @@ class ImageViewer(ProcessImage):
                 padx=(0, 160),
                 pady=(5, 0),
                 sticky=tk.E)
+            filter_cbox_param = dict(
+                padx=(245, 0),
+                pady=(5, 0),
+                sticky=tk.W)
 
         else:  # is macOS
             c_method_lbl_params = dict(
@@ -1884,6 +1894,10 @@ class ImageViewer(ProcessImage):
                 sticky=tk.E)
             filter_lbl_param = dict(
                 padx=(0, 140),
+                pady=(5, 0),
+                sticky=tk.E)
+            filter_cbox_param = dict(
+                padx=(0, 15),
                 pady=(5, 0),
                 sticky=tk.E)
 
@@ -2272,9 +2286,9 @@ class ImageViewer(ProcessImage):
 
         epsilon_coef = self.slider_val['epsilon'].get()
         epsilon_pct = round(self.slider_val['epsilon'].get() * 100, 2)
-        shape_found_in = self.radio_val['find_shape_in'].get()
+        shape_found_in =f"the {self.radio_val['find_shape_in'].get()} image.\n"
         hough_img = 'n/a'
-        use_image = self.radio_val['find_circle_in'].get()
+        use_image4circle = self.radio_val['find_circle_in'].get()
         mindist = self.slider_val['circle_mindist'].get()
         param1 = self.slider_val['circle_param1'].get()
         param2 = self.slider_val['circle_param2'].get()
@@ -2287,12 +2301,11 @@ class ImageViewer(ProcessImage):
             self.radio_val['hull_shape'].set('no')
             app.update_idletasks()
             # Need to specify text based on selections.
-            if use_image == 'thresholded':
-                shape_found_in = ('\n     Hough transform of an Otsu threshold '
-                                  'from the Filtered')
+            if use_image4circle == 'thresholded':
+                shape_found_in = 'an Otsu threshold of the Filtered image.\n'
                 hough_img = '...an Otsu threshold of the Filtered image.'
             else:  # is 'filtered'
-                shape_found_in = '\n     Hough transform of the Filtered'
+                shape_found_in = 'the Filtered image.\n'
                 hough_img = '...the Filtered image.'
 
         if self.radio_val['hull_shape'].get() == 'yes':
@@ -2316,8 +2329,8 @@ class ImageViewer(ProcessImage):
             f'{indent}param2={param2}\n'
             f'{indent}minRadius={min_radius}\n'
             f'{indent}maxRadius={max_radius}\n\n'
-            f'{shape_type}: {poly_choice}, found: {self.num_shapes} in the '
-            f'{shape_found_in} image.\n'
+            f'{shape_type}: {poly_choice}, found: {self.num_shapes} in '
+            f'{shape_found_in}\n'
         )
 
         utils.display_report(frame=self.shape_report_frame,
@@ -2391,7 +2404,7 @@ class ImageViewer(ProcessImage):
             self.radio['shape_hull_no'].config(state=tk.DISABLED)
             self.slider['epsilon_lbl'].config(fg=grayout)
             self.slider['epsilon'].config(state=tk.DISABLED, fg=grayout)
-            self.resetshape_button.configure(state=tk.DISABLED)
+            self.shape_defaults_button.configure(state=tk.DISABLED)
 
             self.circle_defaults_button.configure(state=tk.NORMAL)
             self.radio['find_circle_lbl'].config(fg=fg_default)
@@ -2409,7 +2422,7 @@ class ImageViewer(ProcessImage):
             self.radio['shape_hull_no'].config(state=tk.NORMAL)
             self.slider['epsilon_lbl'].config(fg=fg_default)
             self.slider['epsilon'].config(state=tk.NORMAL, fg=fg_default)
-            self.resetshape_button.configure(state=tk.NORMAL)
+            self.shape_defaults_button.configure(state=tk.NORMAL)
 
             self.circle_defaults_button.configure(state=tk.DISABLED)
             self.radio['find_circle_lbl'].config(fg=grayout)
@@ -2437,9 +2450,9 @@ class ImageViewer(ProcessImage):
 
         self.toggle_circle_vs_shapes()
 
-        if self.radio_val['find_shape_in'].get() == 'threshold':
+        if self.radio_val['find_shape_in'].get() == 'Threshold':
             contours = self.contours['selected_found_thresh']
-        else:  # is 'canny'
+        else:  # is 'Canny'
             contours = self.contours['selected_found_canny']
 
         self.select_shape(contours)
