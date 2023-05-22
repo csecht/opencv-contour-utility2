@@ -836,6 +836,7 @@ class ImageViewer(ProcessImage):
     A suite of methods to display cv2 contours based on chosen settings
     and parameters as applied in ProcessImage().
     Methods:
+    setup_image_windows
     master_setup
     shape_win_setup
     setup_styles
@@ -846,12 +847,14 @@ class ImageViewer(ProcessImage):
     config_radiobuttons
     grid_contour_widgets
     grid_shape_widgets
+    grid_img_labels
     set_contour_defaults
     set_shape_defaults
     report_contour
     report_shape
     process_all
     process_contours
+    toggle_circle_vs_shapes
     process_shapes
     """
 
@@ -958,8 +961,7 @@ class ImageViewer(ProcessImage):
         self.shape_settings_txt = ''
 
         # Separator used in shape report window.
-        self.separator = ttk.Separator(master=self.shape_selectors_frame,
-                                       orient='horizontal')
+        self.separator = None #ttk.Separator()
 
         # Attributes for shape windows.
         self.circle_msg_lbl = tk.Label(master=self.shape_selectors_frame)
@@ -1024,9 +1026,9 @@ class ImageViewer(ProcessImage):
         # Prevent user from inadvertently resizing a window too small to use.
         # Need to disable default window Exit in display windows b/c
         #  subsequent calls to them need a valid path name.
-        for _, window in self.img_window.items():
-            window.minsize(200, 200)
-            window.protocol('WM_DELETE_WINDOW', no_exit_on_x)
+        for _, toplevel in self.img_window.items():
+            toplevel.minsize(200, 200)
+            toplevel.protocol('WM_DELETE_WINDOW', no_exit_on_x)
 
         self.img_window['input'].title(const.WIN_NAME['input+gray'])
         self.img_window['contrasted'].title(const.WIN_NAME['contrast+redux'])
@@ -1066,20 +1068,20 @@ class ImageViewer(ProcessImage):
         #  is 729. Need to set this window near the top right corner
         #  of the screen so that it doesn't cover up the img windows; also
         #  so that the bottom of it is, hopefully, not below the bottom
-        #  of the screen.:
-        if const.MY_OS in 'lin, dar':
+        #  of the screen. Note: macOS default width is fine.
+        # Need to set main window (self) mininum width so that entire
+        #   image contrast reporting line fits its maximum length.,
+        #    as, for example,  beta == -120 and SD == 39.0.
+        if const.MY_OS == 'lin':
             adjust_width = 740
+            self.minsize(690, 400)
+        elif const.MY_OS == 'dar':
+            adjust_width = 650
         else:  # is Windows
             adjust_width = 760
+            self.minsize(750, 400)
 
         self.geometry(f'+{self.winfo_screenwidth() - adjust_width}+0')
-
-        # Need to set min width so that entire contrast reporting line
-        #  fits its maximum length., e.g, beta == -120 and SD == 39.0.
-        if const.MY_OS == 'win':
-            self.minsize(750, 400)
-        elif const.MY_OS == 'lin':
-            self.minsize(690, 400)
 
         # Need to color in all the master Frame and use yellow border;
         #   border highlightcolor changes to dark grey when click-dragged
@@ -1368,21 +1370,30 @@ class ImageViewer(ProcessImage):
         self.saveshape_button = ttk.Button(master=self.shape_settings_win)
 
         # Widget grid for the main window.
+        if const.MY_OS == 'lin':
+            save_th_padx = (0, 90)
+            save_canny_padx = (0, 35)
+        elif const.MY_OS  == 'win':
+            save_th_padx = (0, 75)
+            save_canny_padx = (0, 15)
+        else:  # is macOS
+            save_th_padx = (0, 60)
+            save_canny_padx = (0, 5)
+
         reset_btn.grid(column=0, row=2,
                        padx=(70, 0),
                        pady=(0, 5),
                        sticky=tk.W)
-
         save_btn_label.grid(column=0, row=3,
                             padx=(10, 0),
                             pady=(0, 5),
                             sticky=tk.W)
         save_th_btn.grid(column=0, row=3,
-                         padx=(0, 75),
+                         padx=save_th_padx,
                          pady=(0, 5),
                          sticky=tk.E)
         save_canny_btn.grid(column=0, row=3,
-                            padx=(0, 15),
+                            padx=save_canny_padx,
                             pady=(0, 5),
                             sticky=tk.E)
 
@@ -1647,17 +1658,20 @@ class ImageViewer(ProcessImage):
             '<<ComboboxSelected>>', lambda _: self.process_contours())
 
         # Shape Comboboxes:
-        def process_shape_selection(event):
+        def process_shape_selection(event) -> None:
             """
             Use 'Circle' condition to automatically set default circle
             slider values, thus avoiding need to use "Set Circle defaults"
             button each time 'Circle' is selected. Without this, the
             circle sliders are all set to minimum values following the
             DISABLED state invoked when a different shape is selected.
+            Args:
+                event: The implicit Combobox selection action.
             """
             self.process_all()
             if self.cbox_val['polygon'].get() == 'Circle':
                 self.set_shape_defaults()
+            return event
 
         self.cbox['choose_shape_lbl'].config(text='Select shape to find:',
                                              **const.LABEL_PARAMETERS)
@@ -1877,11 +1891,11 @@ class ImageViewer(ProcessImage):
 
         else:  # is macOS
             c_method_lbl_params = dict(
-                padx=(160, 0),
+                padx=(140, 0),
                 pady=(4, 0),
                 sticky=tk.W)
             shape_lbl_param = dict(
-                padx=(0, 180),
+                padx=(0, 160),
                 pady=(5, 0),
                 sticky=tk.E)
             filter_lbl_param = dict(

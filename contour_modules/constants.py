@@ -206,7 +206,7 @@ if MY_OS == 'lin':
     scale_len = 410
     shape_scale_len = 400
 elif MY_OS == 'dar':
-    scale_len = 400
+    scale_len = 380
     shape_scale_len = 320
 else:  # is Windows
     scale_len = 450
