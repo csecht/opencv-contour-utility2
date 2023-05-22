@@ -1827,7 +1827,7 @@ class ImageViewer(ProcessImage):
 
             # Parameters for specific widgets:
             shape_cbox_param = dict(
-                padx=(0, 15),
+                padx=(0, 20),
                 pady=(5, 0),
                 sticky=tk.E)
 
@@ -1881,13 +1881,13 @@ class ImageViewer(ProcessImage):
                 pady=(5, 0),
                 sticky=tk.E)
             filter_lbl_param = dict(
-                padx=(0, 160),
+                padx=(0, 175),
                 pady=(5, 0),
                 sticky=tk.E)
             filter_cbox_param = dict(
-                padx=(245, 0),
+                padx=(0, 20),
                 pady=(5, 0),
-                sticky=tk.W)
+                sticky=tk.E)
 
         else:  # is macOS
             c_method_lbl_params = dict(
