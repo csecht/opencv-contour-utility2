@@ -1344,11 +1344,6 @@ class ImageViewer(ProcessImage):
             self.shape_settings_win.withdraw()
             self.img_window['shaped'].withdraw()
 
-        if const.MY_OS in 'lin, win':
-            label_font = const.WIDGET_FONT
-        else:  # is macOS
-            label_font = 'TkTooltipFont', 11
-
         button_params = dict(
             style='My.TButton',
             width=0,
@@ -1359,7 +1354,7 @@ class ImageViewer(ProcessImage):
                                **button_params)
 
         save_btn_label = tk.Label(text='Save settings & contoured image for:',
-                                  font=label_font,
+                                  font=const.WIDGET_FONT,
                                   bg=const.MASTER_BG)
         save_th_btn = ttk.Button(text='Threshold',
                                  command=save_th_settings,
