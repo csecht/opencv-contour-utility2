@@ -1,6 +1,10 @@
 """
 General housekeeping utilities.
 Functions:
+arguments: handles command line arguments
+infile: reads specified input image and derives associated metrics.
+scale: manages the specified scale factor for display of images.
+tk_image: converts scaled cv2 image to a compatible tk.TK image format.
 """
 # Copyright (C) 2022 C.S. Echt, under GNU General Public License'
 
@@ -15,7 +19,6 @@ from pathlib import Path
 # Third party imports.
 import cv2
 import math
-import tkinter as tk
 
 import numpy as np
 from PIL import Image, ImageTk
@@ -80,15 +83,6 @@ def arguments() -> dict:
         args.scale = 1
         print('--scale X: X must be greater than zero. Resetting to 1.')
 
-    input_arg = 0
-    for i in ('--input', '--i', '-i'):
-        if i in sys.argv[:]:
-            input_arg += 1
-    # NOTE: multiple calls from display_this() cause annoying repeat messages.
-    # if input_arg == 0:
-    #     print('Without the --input argument, the default input image file is: '
-    #           f'{valid_path_to("images/sample1.jpg")}')
-
     if args.color == 'green':
         args.color = (0, 255, 0)
     elif args.color == 'yellow':
@@ -100,6 +94,7 @@ def arguments() -> dict:
         'scale': args.scale,
         'color': args.color,
     }
+
     return arg_dict
 
 

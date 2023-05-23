@@ -24,11 +24,11 @@ Developed in Python 3.8-3.9.
 
 # Copyright (C) 2022-2023 C.S. Echt, under GNU General Public License
 
-# Standard library imports
+# Standard library imports.
 import sys
 from pathlib import Path
 
-# Local application imports
+# Local application imports.
 from contour_modules import (vcheck,
                              utils,
                              manage,
@@ -142,9 +142,10 @@ class ProcessImage(tk.Tk):
         self.curr_contrast_std = tk.DoubleVar()
 
         # Arrays of images to be processed. When used within a method,
-        #  the purpose of self.tkimg* is to prevent losing the image var
-        #  through garbage collection. Dict values are for panels of PIL
-        #  ImageTk.PhotoImage used for Label image display in img windows.
+        #  the purpose of self.tkimg[*] is to prevent losing the image
+        #  through garbage collection. Dict values will be defined for
+        #  panels of PIL ImageTk.PhotoImage with a Label images displayed
+        #  in their respective img_window Toplevel.
         self.tkimg = {
             'input': None,
             'gray': None,
@@ -368,7 +369,7 @@ class ProcessImage(tk.Tk):
         # https://towardsdatascience.com/clahe-and-thresholding-in-python-3bf690303e40
 
         # Thresholding with OTSU works best with a blurring filter applied to
-        #   image, like Gaussian or Bilateral
+        #   image, like Gaussian or Bilateral.
         # see: https://docs.opencv.org/3.4/d7/d4d/tutorial_py_thresholding.html
         # https://theailearner.com/tag/cv2-thresh_otsu/
         th_type = const.TH_TYPE[self.cbox_val['th_type_pref'].get()]
@@ -469,9 +470,6 @@ class ProcessImage(tk.Tk):
         # Source of coding ideas:
         # https://docs.opencv.org/4.x/d4/d73/tutorial_py_contours_begin.html
         # https://docs.opencv.org/3.4/dd/d49/tutorial_py_contour_features.html
-
-        # Note to dev: Much of this method is duplicated in contour_threshold();
-        #   consider consolidating the two methods.
 
         # Canny recommended an upper:lower ratio between 2:1 and 3:1.
         canny_th_ratio = self.slider_val['canny_th_ratio'].get()
@@ -837,7 +835,7 @@ class ImageViewer(ProcessImage):
     and parameters as applied in ProcessImage().
     Methods:
     setup_image_windows
-    master_setup
+    contour_win_setup
     shape_win_setup
     setup_styles
     setup_buttons
@@ -860,7 +858,6 @@ class ImageViewer(ProcessImage):
 
     def __init__(self):
         super().__init__()
-        # Note: the tk1 param represents the inherited tk.Tk base class.
         self.contour_report_frame = tk.Frame()
         self.contour_selectors_frame = tk.Frame()
         # self.configure(bg='green')  # for dev.
@@ -874,31 +871,44 @@ class ImageViewer(ProcessImage):
         self.slider = {
             'alpha': tk.Scale(master=self.contour_selectors_frame),
             'alpha_lbl': tk.Label(master=self.contour_selectors_frame),
+
             'beta': tk.Scale(master=self.contour_selectors_frame),
             'beta_lbl': tk.Label(master=self.contour_selectors_frame),
+
             'noise_k': tk.Scale(master=self.contour_selectors_frame),
             'noise_k_lbl': tk.Label(master=self.contour_selectors_frame),
+
             'noise_iter': tk.Scale(master=self.contour_selectors_frame),
             'noise_iter_lbl': tk.Label(master=self.contour_selectors_frame),
+
             'filter_k': tk.Scale(master=self.contour_selectors_frame),
             'filter_k_lbl': tk.Label(master=self.contour_selectors_frame),
+
             'canny_th_ratio': tk.Scale(master=self.contour_selectors_frame),
             'canny_th_ratio_lbl': tk.Label(master=self.contour_selectors_frame),
+
             'canny_th_min': tk.Scale(master=self.contour_selectors_frame),
             'canny_min_lbl': tk.Label(master=self.contour_selectors_frame),
+
             'c_limit': tk.Scale(master=self.contour_selectors_frame),
             'c_limit_lbl': tk.Label(master=self.contour_selectors_frame),
+
             # for shapes
             'epsilon': tk.Scale(master=self.shape_selectors_frame),
             'epsilon_lbl': tk.Label(master=self.shape_selectors_frame),
+
             'circle_mindist': tk.Scale(master=self.shape_selectors_frame),
             'circle_mindist_lbl': tk.Label(master=self.shape_selectors_frame),
+
             'circle_param1': tk.Scale(master=self.shape_selectors_frame),
             'circle_param1_lbl': tk.Label(master=self.shape_selectors_frame),
+
             'circle_param2': tk.Scale(master=self.shape_selectors_frame),
             'circle_param2_lbl': tk.Label(master=self.shape_selectors_frame),
+
             'circle_minradius': tk.Scale(master=self.shape_selectors_frame),
             'circle_minradius_lbl': tk.Label(master=self.shape_selectors_frame),
+
             'circle_maxradius': tk.Scale(master=self.shape_selectors_frame),
             'circle_maxradius_lbl': tk.Label(master=self.shape_selectors_frame),
         }
@@ -972,7 +982,7 @@ class ImageViewer(ProcessImage):
 
         self.setup_image_windows()
         self.display_input_images()
-        self.master_setup()
+        self.contour_win_setup()
         self.setup_styles()
         self.setup_buttons()
         self.config_sliders()
@@ -1058,20 +1068,22 @@ class ImageViewer(ProcessImage):
             'shaped': tk.Label(self.img_window['shaped']),
         }
 
-    def master_setup(self) -> None:
+    def contour_win_setup(self) -> None:
         """
         Master (main tk window) keybindings, configurations, and grids
-        for settings and reporting frames, and utility buttons.
+        for contour settings and reporting frames, and utility buttons.
         """
 
         # The expected width of the settings report_contour window (app Toplevel)
-        #  is 729. Need to set this window near the top right corner
-        #  of the screen so that it doesn't cover up the img windows; also
-        #  so that the bottom of it is, hopefully, not below the bottom
-        #  of the screen. Note: macOS default width is fine.
-        # Need to set main window (self) mininum width so that entire
-        #   image contrast reporting line fits its maximum length.,
-        #    as, for example,  beta == -120 and SD == 39.0.
+        #  is 729 for Linux, less or more for Win and Mac.
+        #  Need to set this window near the top right corner of the screen
+        #  so that it doesn't cover up the img windows; also so that
+        #  the bottom of the window is, hopefully, not below the bottom
+        #  of the screen.
+        # Need to set main window (self) to a minimum width so that entire
+        #   image contrast reporting line fits its maximum length,
+        #   as, for example,  beta == -120 and SD == 39.0.
+        #   (but is not an issue with smaller macOS font spacing)
         if const.MY_OS == 'lin':
             adjust_width = 740
             self.minsize(690, 400)
@@ -1083,9 +1095,9 @@ class ImageViewer(ProcessImage):
 
         self.geometry(f'+{self.winfo_screenwidth() - adjust_width}+0')
 
-        # Need to color in all the master Frame and use yellow border;
+        # Color in all the master Frame and use a yellow border;
         #   border highlightcolor changes to dark grey when click-dragged
-        #   and loss of focus.
+        #   or loss of focus.
         self.config(
             bg=const.MASTER_BG,  # gray80 matches report_contour() txt fg.
             # bg=const.CBLIND_COLOR_TK['sky blue'],  # for dev.
@@ -1125,8 +1137,8 @@ class ImageViewer(ProcessImage):
                                           ipadx=4, ipady=4,
                                           sticky=tk.EW)
 
-        # At startup, try to reduce screen clutter, so
-        #  do not show the Shape settings or image windows.
+        # At startup, trying to reduce screen clutter, so
+        #  the Shape settings or image windows are not shown.
         #  Subsequent show and hide are controlled with Buttons in setup_buttons().
         self.shape_settings_win.withdraw()
         self.img_window['shaped'].withdraw()

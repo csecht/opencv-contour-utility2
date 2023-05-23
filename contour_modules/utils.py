@@ -77,7 +77,7 @@ def save_settings_and_img(img2save,
     Print to terminal/console and to file current settings and
     calculated image processing values.
     Save current result image.
-    Called from ContourViewer.master_setup().
+    Called from ContourViewer.contour_win_setup().
 
     Args:
         img2save: The current resulting image array; can be a np.ndarray
