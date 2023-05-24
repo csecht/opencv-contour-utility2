@@ -49,6 +49,7 @@ def check_platform() -> None:
 
     print('Quit program with Esc or Ctrl-Q. From the Terminal, use Ctrl-C.')
 
+
 def valid_path_to(relative_path: str) -> Path:
     """
     Get correct path to program's directory/file structure
@@ -69,6 +70,7 @@ def valid_path_to(relative_path: str) -> Path:
     else:
         valid_path = Path(Path(__file__).parent, f'../{relative_path}').resolve()
     return valid_path
+
 
 def save_settings_and_img(img2save,
                           txt2save: str,
@@ -180,15 +182,21 @@ def scale_img(img: np.ndarray, scale: float) -> np.ndarray:
                               interpolation=interpolate)
     return scaled_image
 
+
 def display_report(frame: tk.Frame, report: str) -> None:
+    """
+    Places a formatted text string into the specified Frame; allows for
+    real-time updates of text and proper alignment of text in the Frame.
+
+    Args:
+        frame: The tk.Frame() in which to place the *report* text.
+        report: Text string of values, data, etc. to report.
+
+    Returns: None
+    """
 
     max_line = len(max(report.splitlines(), key=len))
 
-    # Note: TkFixedFont only works when not in a tuple, so no font size.
-    #  The goal is to get a suitable platform-independent mono font.
-    #  font=('Courier', 10) should also work, if you need font size.
-    #  A smaller font is needed to shorten the window as lines & rows are added.
-    #  With smaller font, need better fg font contrast, e.g. yellow, not MASTER_BG.
     if const.MY_OS == 'lin':
         txt_font = ('Courier', 10)
     elif const.MY_OS == 'win':
@@ -196,16 +204,21 @@ def display_report(frame: tk.Frame, report: str) -> None:
     else:  # is macOS
         txt_font = ('Courier', 10)
 
+    # Note: 'TkFixedFont' only works when not in a tuple, so no font size.
+    #  The goal is to get a suitable platform-independent mono font.
+    #  font=('Courier', 10) should also work, if need to set font size.
+    #  Smaller fonts are needed to shorten the window as lines & rows are added.
+    #  With smaller font, need better fg font contrast, e.g. yellow, not MASTER_BG.
     reporttxt = tk.Text(frame,
                         # font='TkFixedFont',
                         font=txt_font,
                         bg=const.DARK_BG,
-                        fg=const.MASTER_BG,  # gray80 matches master self bg.
-                        # fg=const.CBLIND_COLOR_TK['yellow'],  # Matches slider labels.
+                        # fg=const.MASTER_BG,  # gray80 matches master self bg.
+                        fg=const.CBLIND_COLOR_TK['yellow'],  # Matches slider labels.
                         width=max_line,
                         height=report.count('\n'),
                         relief='flat',
-                        padx=8, pady=8
+                        padx=8, pady=8,
                         )
     # Replace prior Text with current text;
     #   hide cursor in Text; (re-)grid in-place.
@@ -321,7 +334,7 @@ def quit_gui(mainloop: tk.Tk, gui=True, keybind=None) -> None:
         except Exception as unk:
             print('An unknown error occurred:', unk)
             sys.exit(0)
-    else: # Expected when call --about cmdline argument.
+    else:  # Expected when call --about cmdline argument.
         sys.exit(0)
 
     return keybind

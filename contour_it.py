@@ -1020,8 +1020,8 @@ class ImageViewer(ProcessImage):
 
         # NOTE: dict item order affects the order that windows are
         #  drawn, so here use an inverse order of processing steps to
-        #  have windows in proper arranged in sensible order on the
-        #  screen (input on bottom, sized or shaped on top).
+        #  arrange windows overlaid from first to last, e.g.,
+        #  input on bottom, sized or shaped layered on top.
         self.img_window = {
             'shaped': tk.Toplevel(),
             'canny sized': tk.Toplevel(),
@@ -2391,7 +2391,6 @@ class ImageViewer(ProcessImage):
                                called_by='thresh sized')
         self.size_the_contours(self.contours['selected_found_canny'], 'canny sized')
         self.report_contour()
-        # cv2.HoughCircles doesn't use contours, so can skip shape processing.
         if self.cbox_val['polygon'].get() != 'Circle':
             self.process_shapes(event)
 
@@ -2465,7 +2464,7 @@ class ImageViewer(ProcessImage):
 
         if self.radio_val['find_shape_in'].get() == 'Threshold':
             contours = self.contours['selected_found_thresh']
-        else:  # is 'Canny'
+        else:  # == 'Canny'
             contours = self.contours['selected_found_canny']
 
         self.select_shape(contours)
@@ -2482,7 +2481,7 @@ if __name__ == "__main__":
     arguments = manage.arguments()
 
     # All checks are good, so grab as a 'global' the dictionary of
-    #   command line argument values to define often used values...
+    #   command line argument values and define often used values...
     infile_dict = manage.infile()
     INPUT_IMG = infile_dict['input_img']
     GRAY_IMG = infile_dict['gray_img']
