@@ -170,6 +170,9 @@ class ProcessImage(tk.Tk):
             'selected_found_canny': [stub_array],
         }
 
+        self.filtered_img = stub_array
+        self.reduced_noise_img = stub_array
+
         self.num_contours = {
             'th_all': tk.IntVar(),
             'th_select': tk.IntVar(),
@@ -177,10 +180,9 @@ class ProcessImage(tk.Tk):
             'canny_select': tk.IntVar(),
         }
 
+        # Dict values are defined in ImageViewer.setup_image_windows().
         self.img_window = {}
         self.img_label = {}
-        self.filtered_img = stub_array
-        self.reduced_noise_img = stub_array
 
         # Image processing parameters.
         self.sigma_color = 1
@@ -188,7 +190,6 @@ class ProcessImage(tk.Tk):
         self.sigma_x = 1
         self.sigma_y = 1
         self.computed_threshold = 0
-        self.contour_limit = 0
         self.num_shapes = 0
 
         # The highlight color used to draw contours and shapes.
@@ -297,8 +298,8 @@ class ProcessImage(tk.Tk):
         # cv2.GaussianBlur and cv2.medianBlur need to have odd kernels,
         #   but cv2.blur and cv2.bilateralFilter will shift image between
         #   even and odd kernels so just make everything odd.
-        got_k = self.slider_val['filter_k'].get()
-        filter_k = got_k + 1 if got_k % 2 == 0 else got_k
+        slider_k = self.slider_val['filter_k'].get()
+        filter_k = slider_k + 1 if slider_k % 2 == 0 else slider_k
 
         # Bilateral parameters:
         # https://docs.opencv.org/3.4/d4/d86/group__imgproc__filter.html
@@ -512,7 +513,7 @@ class ProcessImage(tk.Tk):
         else:  # type is cv2.arcLength; aka "perimeter"
             self.contours['selected_found_canny'] = [
                 _c for _c in found_contours
-                if max_length > cv2.arcLength(_c, closed=False) >= self.contour_limit]
+                if max_length > cv2.arcLength(_c, closed=False) >= c_limit]
 
         # Used only for reporting.
         self.num_contours['canny_all'].set(len(found_contours))
@@ -604,13 +605,13 @@ class ProcessImage(tk.Tk):
                         thickness=LINE_THICKNESS,
                         lineType=cv2.LINE_AA)  # LINE_AA is anti-aliased
 
-        # cv2.mEC returns circled radius of contour as last element.
+        # cv2.minEnclosingCircle returns circled radius of contour as last element.
         # dia_list = [cv2.minEnclosingCircle(_c)[-1] * 2 for _c in selected_contour_list]
         # mean_size = round(mean(dia_list), 1) if dia_list else 0
         # print('mean threshold dia', mean_size)
 
         # Note: this string needs to match that used as the key in
-        #   const.WIN_NAME dictionary, in the img_window dict, and in
+        #   const.WIN_NAME dictionary, the img_window dict, and
         #   the respective size Button 'command' kw call in
         #   ContourViewer.setup_buttons().  Ugh, messy hard coding.
         if called_by == 'thresh sized':
