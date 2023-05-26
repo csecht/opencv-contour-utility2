@@ -972,7 +972,7 @@ class ImageViewer(ProcessImage):
         self.shape_settings_txt = ''
 
         # Separator used in shape report window.
-        self.separator = None #ttk.Separator()
+        self.separator = None  # ttk.Separator()
 
         # Attributes for shape windows.
         self.circle_msg_lbl = tk.Label(master=self.shape_selectors_frame)
@@ -981,6 +981,7 @@ class ImageViewer(ProcessImage):
         self.circle_defaults_button = None
         self.saveshape_button = None
 
+        # Put everything in place, establish initial settings and displays.
         self.setup_image_windows()
         self.display_input_images()
         self.contour_win_setup()
@@ -994,8 +995,9 @@ class ImageViewer(ProcessImage):
         self.set_contour_defaults()
         self.report_contour()
 
-        # Shape objects are not displayed at startup, but are processed and
-        #  ready for display when called from the 'show shapes' Button.
+        # Shape windows are withdrawn at startup in contour_win_setup(),
+        #   but are pre-processed and ready for display with deiconify()
+        #   from the 'Show Shapes' Button.
         self.shape_win_setup()
         self.set_shape_defaults()
         self.grid_shape_widgets()
@@ -1096,15 +1098,15 @@ class ImageViewer(ProcessImage):
 
         self.geometry(f'+{self.winfo_screenwidth() - adjust_width}+0')
 
-        # Color in all the master Frame and use a yellow border;
-        #   border highlightcolor changes to dark grey when click-dragged
-        #   or loss of focus.
+        # Color in all the master (app) Frame and use a yellow border;
+        #   border highlightcolor changes to grey with click-drag or
+        #   loss of focus.
         self.config(
-            bg=const.MASTER_BG,  # gray80 matches report_contour() txt fg.
+            bg=const.MASTER_BG,
             # bg=const.CBLIND_COLOR_TK['sky blue'],  # for dev.
             highlightthickness=5,
             highlightcolor=const.CBLIND_COLOR_TK['yellow'],
-            highlightbackground='grey65'
+            highlightbackground=const.DRAG_GRAY,
         )
         # Need to provide exit info msg to Terminal.
         self.protocol('WM_DELETE_WINDOW', lambda: utils.quit_gui(app))
@@ -1117,7 +1119,7 @@ class ImageViewer(ProcessImage):
         self.columnconfigure(1, weight=1)
 
         self.contour_report_frame.configure(relief='flat',
-                                            bg=const.CBLIND_COLOR_TK['sky blue']
+                                            bg=const.CBLIND_COLOR_TK['sky blue'],
                                             )  # bg doesn't show with grid sticky EW.
         self.contour_report_frame.columnconfigure(0, weight=1)
         self.contour_report_frame.columnconfigure(1, weight=1)
@@ -1176,7 +1178,7 @@ class ImageViewer(ProcessImage):
             # bg=const.CBLIND_COLOR_TK['sky blue'],  # for dev.
             highlightthickness=5,
             highlightcolor=const.CBLIND_COLOR_TK['yellow'],
-            highlightbackground='grey65'
+            highlightbackground=const.DRAG_GRAY
         )
 
         self.shape_report_frame.configure(relief='flat',
@@ -1347,8 +1349,7 @@ class ImageViewer(ProcessImage):
 
         button_params = dict(
             style='My.TButton',
-            width=0,
-        )
+            width=0)
 
         reset_btn = ttk.Button(text='Reset settings',
                                command=self.set_contour_defaults,
@@ -1381,7 +1382,7 @@ class ImageViewer(ProcessImage):
         if const.MY_OS == 'lin':
             save_th_padx = (0, 90)
             save_canny_padx = (0, 35)
-        elif const.MY_OS  == 'win':
+        elif const.MY_OS == 'win':
             save_th_padx = (0, 75)
             save_canny_padx = (0, 15)
         else:  # is macOS
@@ -1451,24 +1452,21 @@ class ImageViewer(ProcessImage):
                                        resolution=0.1,
                                        tickinterval=0.5,
                                        variable=self.slider_val['alpha'],
-                                       **const.SCALE_PARAMETERS,
-                                       )
+                                       **const.SCALE_PARAMETERS)
 
         self.slider['beta_lbl'].configure(text='Brightness/bias/beta:',
                                           **const.LABEL_PARAMETERS)
         self.slider['beta'].configure(from_=-127, to=127,
                                       tickinterval=25,
                                       variable=self.slider_val['beta'],
-                                      **const.SCALE_PARAMETERS,
-                                      )
+                                      **const.SCALE_PARAMETERS)
 
         self.slider['noise_k_lbl'].configure(text='Reduce noise\nkernel size:',
                                              **const.LABEL_PARAMETERS)
         self.slider['noise_k'].configure(from_=1, to=20,
                                          tickinterval=3,
                                          variable=self.slider_val['noise_k'],
-                                         **const.SCALE_PARAMETERS,
-                                         )
+                                         **const.SCALE_PARAMETERS)
 
         self.slider['noise_iter_lbl'].configure(text='Reduce noise\niterations:',
                                                 **const.LABEL_PARAMETERS)
@@ -1476,8 +1474,7 @@ class ImageViewer(ProcessImage):
                                             tickinterval=1,
                                             variable=self.slider_val['noise_iter'],
                                             command=self.process_all,
-                                            **const.SCALE_PARAMETERS,
-                                            )
+                                            **const.SCALE_PARAMETERS)
 
         self.slider['filter_k_lbl'].configure(text='Filter kernel size\n'
                                                    '(only odd integers used):',
@@ -1485,23 +1482,22 @@ class ImageViewer(ProcessImage):
         self.slider['filter_k'].configure(from_=3, to=50,
                                           tickinterval=5,
                                           variable=self.slider_val['filter_k'],
-                                          **const.SCALE_PARAMETERS,
-                                          )
+                                          **const.SCALE_PARAMETERS)
+
         self.slider['canny_th_ratio_lbl'].configure(text='Canny threshold ratio:',
                                                     **const.LABEL_PARAMETERS)
         self.slider['canny_th_ratio'].configure(from_=1, to=5,
                                                 resolution=0.1,
                                                 tickinterval=0.5,
                                                 variable=self.slider_val['canny_th_ratio'],
-                                                **const.SCALE_PARAMETERS,
-                                                )
+                                                **const.SCALE_PARAMETERS)
+
         self.slider['canny_min_lbl'].configure(text='Canny threshold minimum:',
                                                **const.LABEL_PARAMETERS)
         self.slider['canny_th_min'].configure(from_=1, to=256,
                                               tickinterval=20,
                                               variable=self.slider_val['canny_th_min'],
-                                              **const.SCALE_PARAMETERS,
-                                              )
+                                              **const.SCALE_PARAMETERS)
 
         self.slider['c_limit_lbl'].configure(text='Contour chain size\nminimum (px):',
                                              **const.LABEL_PARAMETERS)
@@ -1511,8 +1507,7 @@ class ImageViewer(ProcessImage):
         self.slider['c_limit'].configure(from_=1, to=slide_max,
                                          tickinterval=slide_max / 10,
                                          variable=self.slider_val['c_limit'],
-                                         **const.SCALE_PARAMETERS,
-                                         )
+                                         **const.SCALE_PARAMETERS)
 
         # Sliders for shape settings ##########################################
         self.slider['epsilon_lbl'].configure(text='% polygon contour length\n'
@@ -1571,11 +1566,11 @@ class ImageViewer(ProcessImage):
         #   overhead of that is too great, then can add conditions in the loop
         #   to bind certain groups or individual sliders to more restrictive
         #   processing functions.
+        # Note that the if '_lbl' condition doesn't seem to be needed to
+        #   improve performance; it's just there for clarity's sake.
         for name, widget in self.slider.items():
             if '_lbl' not in name:
                 widget.bind('<ButtonRelease-1>', self.process_all)
-        # for _s in [_s for _s in self.slider if '_lbl' not in _s]:
-        #     self.slider[_s].bind('<ButtonRelease-1>', self.process_all)
 
     def config_comboboxes(self) -> None:
         """
@@ -1585,87 +1580,6 @@ class ImageViewer(ProcessImage):
         Returns: None
         """
 
-        # Different Combobox widths are needed to account for font widths
-        #  and padding in different systems.
-        width_correction = 2 if const.MY_OS == 'win' else 0  # is Linux or macOS
-
-        self.cbox['choose_morphop_lbl'].config(text='Reduce noise, morphology operator:',
-                                               **const.LABEL_PARAMETERS)
-        self.cbox['choose_morphop'].config(textvariable=self.cbox_val['morphop_pref'],
-                                           width=18 + width_correction,
-                                           values=('cv2.MORPH_OPEN',  # cv2 returns 2
-                                                   'cv2.MORPH_CLOSE',  # cv2 returns 3
-                                                   'cv2.MORPH_GRADIENT',  # cv2 returns 4
-                                                   'cv2.MORPH_BLACKHAT',  # cv2 returns 6
-                                                   'cv2.MORPH_HITMISS'),  # cv2 returns 7
-                                           **const.COMBO_PARAMETERS)
-        self.cbox['choose_morphop'].bind('<<ComboboxSelected>>',
-                                         func=self.process_all)
-
-        self.cbox['choose_morphshape_lbl'].config(text='... shape:',
-                                                  **const.LABEL_PARAMETERS)
-        self.cbox['choose_morphshape'].config(textvariable=self.cbox_val['morphshape_pref'],
-                                              width=16 + width_correction,
-                                              values=('cv2.MORPH_RECT',  # cv2 returns 0
-                                                      'cv2.MORPH_CROSS',  # cv2 returns 1
-                                                      'cv2.MORPH_ELLIPSE'),  # cv2 returns 2
-                                              **const.COMBO_PARAMETERS)
-        self.cbox['choose_morphshape'].bind('<<ComboboxSelected>>',
-                                            func=self.process_all)
-
-        self.cbox['choose_border_lbl'].config(text='Border type:',
-                                              **const.LABEL_PARAMETERS)
-        self.cbox['choose_border'].config(textvariable=self.cbox_val['border_pref'],
-                                          width=22 + width_correction,
-                                          values=(
-                                              'cv2.BORDER_REFLECT_101',  # cv2 returns 4, default
-                                              'cv2.BORDER_REFLECT',  # cv2 returns 2
-                                              'cv2.BORDER_REPLICATE',  # cv2 returns 1
-                                              'cv2.BORDER_ISOLATED'),  # cv2 returns 16
-                                          **const.COMBO_PARAMETERS)
-        self.cbox['choose_border'].bind(
-            '<<ComboboxSelected>>', lambda _: self.process_all())
-
-        self.cbox['choose_filter_lbl'].config(text='Filter type:',
-                                              **const.LABEL_PARAMETERS)
-        self.cbox['choose_filter'].config(textvariable=self.cbox_val['filter_pref'],
-                                          width=14 + width_correction,
-                                          values=(
-                                              'cv2.blur',  # is default, 0, a box filter.
-                                              'cv2.bilateralFilter',  # cv2 returns 1
-                                              'cv2.GaussianBlur',  # cv2 returns 2
-                                              'cv2.medianBlur'),  # cv2 returns 3
-                                          **const.COMBO_PARAMETERS)
-        self.cbox['choose_filter'].bind(
-            '<<ComboboxSelected>>', lambda _: self.process_all())
-
-        self.cbox['choose_th_type_lbl'].config(text='Threshold type:',
-                                               **const.LABEL_PARAMETERS)
-        self.cbox['choose_th_type'].config(textvariable=self.cbox_val['th_type_pref'],
-                                           width=26 + width_correction,
-                                           values=('cv2.THRESH_BINARY',  # cv2 returns 0
-                                                   'cv2.THRESH_BINARY_INVERSE',  # cv2 returns 1
-                                                   'cv2.THRESH_OTSU',  # cv2 returns 8
-                                                   'cv2.THRESH_OTSU_INVERSE',  # cv2 returns 9
-                                                   'cv2.THRESH_TRIANGLE',  # cv2 returns 16
-                                                   'cv2.THRESH_TRIANGLE_INVERSE'),  # returns 17
-                                           **const.COMBO_PARAMETERS)
-        self.cbox['choose_th_type'].bind(
-            '<<ComboboxSelected>>', lambda _: self.process_contours())
-
-        self.cbox['choose_c_method_lbl'].config(text='... method:',
-                                                **const.LABEL_PARAMETERS)
-        self.cbox['choose_c_method'].config(textvariable=self.cbox_val['c_method_pref'],
-                                            width=26 + width_correction,
-                                            values=('cv2.CHAIN_APPROX_NONE',  # cv2 returns 1
-                                                    'cv2.CHAIN_APPROX_SIMPLE',  # cv2 returns 2
-                                                    'cv2.CHAIN_APPROX_TC89_L1',  # cv2 returns 3
-                                                    'cv2.CHAIN_APPROX_TC89_KCOS'),  # cv2 returns 4
-                                            **const.COMBO_PARAMETERS)
-        self.cbox['choose_c_method'].bind(
-            '<<ComboboxSelected>>', lambda _: self.process_contours())
-
-        # Shape Comboboxes:
         def process_shape_selection(event) -> None:
             """
             Use 'Circle' condition to automatically set default circle
@@ -1681,6 +1595,76 @@ class ImageViewer(ProcessImage):
                 self.set_shape_defaults()
             return event
 
+        # Different Combobox widths are needed to account for font widths
+        #  and padding in different systems.
+        width_correction = 2 if const.MY_OS == 'win' else 0  # is Linux or macOS
+
+        # Note: functions are bound to Combobox actions at the end of this method.
+        self.cbox['choose_morphop_lbl'].config(text='Reduce noise, morphology operator:',
+                                               **const.LABEL_PARAMETERS)
+        self.cbox['choose_morphop'].config(textvariable=self.cbox_val['morphop_pref'],
+                                           width=18 + width_correction,
+                                           values=('cv2.MORPH_OPEN',  # cv2 returns 2
+                                                   'cv2.MORPH_CLOSE',  # cv2 returns 3
+                                                   'cv2.MORPH_GRADIENT',  # cv2 returns 4
+                                                   'cv2.MORPH_BLACKHAT',  # cv2 returns 6
+                                                   'cv2.MORPH_HITMISS'),  # cv2 returns 7
+                                           **const.COMBO_PARAMETERS)
+
+        self.cbox['choose_morphshape_lbl'].config(text='... shape:',
+                                                  **const.LABEL_PARAMETERS)
+        self.cbox['choose_morphshape'].config(textvariable=self.cbox_val['morphshape_pref'],
+                                              width=16 + width_correction,
+                                              values=('cv2.MORPH_RECT',  # cv2 returns 0
+                                                      'cv2.MORPH_CROSS',  # cv2 returns 1
+                                                      'cv2.MORPH_ELLIPSE'),  # cv2 returns 2
+                                              **const.COMBO_PARAMETERS)
+
+        self.cbox['choose_border_lbl'].config(text='Border type:',
+                                              **const.LABEL_PARAMETERS)
+        self.cbox['choose_border'].config(textvariable=self.cbox_val['border_pref'],
+                                          width=22 + width_correction,
+                                          values=(
+                                              'cv2.BORDER_REFLECT_101',  # cv2 returns 4, default
+                                              'cv2.BORDER_REFLECT',  # cv2 returns 2
+                                              'cv2.BORDER_REPLICATE',  # cv2 returns 1
+                                              'cv2.BORDER_ISOLATED'),  # cv2 returns 16
+                                          **const.COMBO_PARAMETERS)
+
+        self.cbox['choose_filter_lbl'].config(text='Filter type:',
+                                              **const.LABEL_PARAMETERS)
+        self.cbox['choose_filter'].config(textvariable=self.cbox_val['filter_pref'],
+                                          width=14 + width_correction,
+                                          values=(
+                                              'cv2.blur',  # is default, 0, a box filter.
+                                              'cv2.bilateralFilter',  # cv2 returns 1
+                                              'cv2.GaussianBlur',  # cv2 returns 2
+                                              'cv2.medianBlur'),  # cv2 returns 3
+                                          **const.COMBO_PARAMETERS)
+
+        self.cbox['choose_th_type_lbl'].config(text='Threshold type:',
+                                               **const.LABEL_PARAMETERS)
+        self.cbox['choose_th_type'].config(textvariable=self.cbox_val['th_type_pref'],
+                                           width=26 + width_correction,
+                                           values=('cv2.THRESH_BINARY',  # cv2 returns 0
+                                                   'cv2.THRESH_BINARY_INVERSE',  # cv2 returns 1
+                                                   'cv2.THRESH_OTSU',  # cv2 returns 8
+                                                   'cv2.THRESH_OTSU_INVERSE',  # cv2 returns 9
+                                                   'cv2.THRESH_TRIANGLE',  # cv2 returns 16
+                                                   'cv2.THRESH_TRIANGLE_INVERSE'),  # returns 17
+                                           **const.COMBO_PARAMETERS)
+
+        self.cbox['choose_c_method_lbl'].config(text='... method:',
+                                                **const.LABEL_PARAMETERS)
+        self.cbox['choose_c_method'].config(textvariable=self.cbox_val['c_method_pref'],
+                                            width=26 + width_correction,
+                                            values=('cv2.CHAIN_APPROX_NONE',  # cv2 returns 1
+                                                    'cv2.CHAIN_APPROX_SIMPLE',  # cv2 returns 2
+                                                    'cv2.CHAIN_APPROX_TC89_L1',  # cv2 returns 3
+                                                    'cv2.CHAIN_APPROX_TC89_KCOS'),  # cv2 returns 4
+                                            **const.COMBO_PARAMETERS)
+
+        # Shape Comboboxes:
         self.cbox['choose_shape_lbl'].config(text='Select shape to find:',
                                              **const.LABEL_PARAMETERS)
         self.cbox['choose_shape'].config(
@@ -1695,9 +1679,18 @@ class ImageViewer(ProcessImage):
                     '5-pointed Star',
                     'Circle'),
             **const.COMBO_PARAMETERS)
+        self.cbox['choose_shape'].current(0)
+
+        # Now bind functions to all Comboboxes.
+        # Note that the if condition doesn't seem to be needed to
+        #   improve performance or affect bindings;
+        #   it just clarifies the intention.
+        for name, widget in self.cbox.items():
+            if '_lbl' not in name or 'shape' not in name:
+                widget.bind('<<ComboboxSelected>>', func=self.process_all)
+
         self.cbox['choose_shape'].bind('<<ComboboxSelected>>',
                                        func=process_shape_selection)
-        self.cbox['choose_shape'].current(0)
 
     def config_radiobuttons(self) -> None:
         """
@@ -1709,106 +1702,82 @@ class ImageViewer(ProcessImage):
 
         self.radio['c_mode_lbl'].config(text='cv2.findContours mode:',
                                         **const.LABEL_PARAMETERS)
-        self.radio['c_mode_external'].config(
-            text='External',
-            variable=self.radio_val['c_mode_pref'],
-            value='cv2.RETR_EXTERNAL',
-            command=self.process_contours,
-            **const.RADIO_PARAMETERS,
-        )
-        self.radio['c_mode_list'].config(
-            text='List',
-            variable=self.radio_val['c_mode_pref'],
-            value='cv2.RETR_LIST',
-            command=self.process_contours,
-            **const.RADIO_PARAMETERS,
-        )
+        self.radio['c_mode_external'].config(text='External',
+                                             variable=self.radio_val['c_mode_pref'],
+                                             value='cv2.RETR_EXTERNAL',
+                                             command=self.process_contours,
+                                             **const.RADIO_PARAMETERS)
+        self.radio['c_mode_list'].config(text='List',
+                                         variable=self.radio_val['c_mode_pref'],
+                                         value='cv2.RETR_LIST',
+                                         command=self.process_contours,
+                                         **const.RADIO_PARAMETERS)
 
         self.radio['c_type_lbl'].config(text='Contour chain size, type:',
                                         **const.LABEL_PARAMETERS)
-        self.radio['c_type_area'].config(
-            text='cv2.contourArea',
-            variable=self.radio_val['c_type_pref'],
-            value='cv2.contourArea',
-            command=self.process_contours,
-            **const.RADIO_PARAMETERS,
-        )
-        self.radio['c_type_length'].config(
-            text='cv2.arcLength',
-            variable=self.radio_val['c_type_pref'],
-            value='cv2.arcLength',
-            command=self.process_contours,
-            **const.RADIO_PARAMETERS,
-        )
+        self.radio['c_type_area'].config(text='cv2.contourArea',
+                                         variable=self.radio_val['c_type_pref'],
+                                         value='cv2.contourArea',
+                                         command=self.process_contours,
+                                         **const.RADIO_PARAMETERS)
+        self.radio['c_type_length'].config(text='cv2.arcLength',
+                                           variable=self.radio_val['c_type_pref'],
+                                           value='cv2.arcLength',
+                                           command=self.process_contours,
+                                           **const.RADIO_PARAMETERS)
 
         self.radio['hull_lbl'].config(text='Show hulls (in blue)?',
                                       **const.LABEL_PARAMETERS)
-        self.radio['hull_yes'].config(
-            text='Yes',
-            variable=self.radio_val['hull_pref'],
-            value=True,
-            command=self.process_contours,
-            **const.RADIO_PARAMETERS,
-        )
-        self.radio['hull_no'].config(
-            text='No',
-            variable=self.radio_val['hull_pref'],
-            value=False,
-            command=self.process_contours,
-            **const.RADIO_PARAMETERS,
-        )
+        self.radio['hull_yes'].config(text='Yes',
+                                      variable=self.radio_val['hull_pref'],
+                                      value=True,
+                                      command=self.process_contours,
+                                      **const.RADIO_PARAMETERS)
+        self.radio['hull_no'].config(text='No',
+                                     variable=self.radio_val['hull_pref'],
+                                     value=False,
+                                     command=self.process_contours,
+                                     **const.RADIO_PARAMETERS)
 
         # Shape window Radiobuttons
         self.radio['shape_hull_lbl'].config(text='Find shapes as hull?',
                                             **const.LABEL_PARAMETERS)
-        self.radio['shape_hull_yes'].configure(
-            text='Yes',
-            variable=self.radio_val['hull_shape'],
-            value='yes',
-            command=self.process_all,
-            **const.RADIO_PARAMETERS
-        )
-        self.radio['shape_hull_no'].configure(
-            text='No',
-            variable=self.radio_val['hull_shape'],
-            value='no',
-            command=self.process_all,
-            **const.RADIO_PARAMETERS,
-        )
+        self.radio['shape_hull_yes'].configure(text='Yes',
+                                               variable=self.radio_val['hull_shape'],
+                                               value='yes',
+                                               command=self.process_all,
+                                               **const.RADIO_PARAMETERS)
+        self.radio['shape_hull_no'].configure(text='No',
+                                              variable=self.radio_val['hull_shape'],
+                                              value='no',
+                                              command=self.process_all,
+                                              **const.RADIO_PARAMETERS)
 
         self.radio['find_shape_lbl'].config(text='Find shapes in contours from:',
                                             **const.LABEL_PARAMETERS)
-        self.radio['find_shape_in_thresh'].configure(
-            text='Threshold',
-            variable=self.radio_val['find_shape_in'],
-            value='Threshold',
-            command=self.process_all,
-            **const.RADIO_PARAMETERS
-        )
-        self.radio['find_shape_in_canny'].configure(
-            text='Canny',
-            variable=self.radio_val['find_shape_in'],
-            value='Canny',
-            command=self.process_all,
-            **const.RADIO_PARAMETERS
-        )
+        self.radio['find_shape_in_thresh'].configure(text='Threshold',
+                                                     variable=self.radio_val['find_shape_in'],
+                                                     value='Threshold',
+                                                     command=self.process_all,
+                                                     **const.RADIO_PARAMETERS)
+        self.radio['find_shape_in_canny'].configure(text='Canny',
+                                                    variable=self.radio_val['find_shape_in'],
+                                                    value='Canny',
+                                                    command=self.process_all,
+                                                    **const.RADIO_PARAMETERS)
 
         self.radio['find_circle_lbl'].config(text='Find Hough circles in:',
                                              **const.LABEL_PARAMETERS)
-        self.radio['find_circle_in_th'].configure(
-            text='Threshold img',
-            variable=self.radio_val['find_circle_in'],
-            value='thresholded',
-            command=self.process_all,
-            **const.RADIO_PARAMETERS
-        )
-        self.radio['find_circle_in_filtered'].configure(
-            text='Filtered img',
-            variable=self.radio_val['find_circle_in'],
-            value='filtered',
-            command=self.process_all,
-            **const.RADIO_PARAMETERS
-        )
+        self.radio['find_circle_in_th'].configure(text='Threshold img',
+                                                  variable=self.radio_val['find_circle_in'],
+                                                  value='thresholded',
+                                                  command=self.process_all,
+                                                  **const.RADIO_PARAMETERS)
+        self.radio['find_circle_in_filtered'].configure(text='Filtered img',
+                                                        variable=self.radio_val['find_circle_in'],
+                                                        value='filtered',
+                                                        command=self.process_all,
+                                                        **const.RADIO_PARAMETERS)
 
     def grid_contour_widgets(self) -> None:
         """
@@ -2300,7 +2269,7 @@ class ImageViewer(ProcessImage):
 
         epsilon_coef = self.slider_val['epsilon'].get()
         epsilon_pct = round(self.slider_val['epsilon'].get() * 100, 2)
-        shape_found_in =f"the {self.radio_val['find_shape_in'].get()} image.\n"
+        shape_found_in = f"the {self.radio_val['find_shape_in'].get()} image.\n"
         hough_img = 'n/a'
         use_image4circle = self.radio_val['find_circle_in'].get()
         mindist = self.slider_val['circle_mindist'].get()

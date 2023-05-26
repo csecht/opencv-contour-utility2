@@ -229,6 +229,7 @@ else:  # is macOS
 
 MASTER_BG = 'gray80'
 DARK_BG = 'gray20'
+DRAG_GRAY = 'gray65'
 WIDGET_FG = CBLIND_COLOR_TK['yellow']
 
 # Need to customize tk.Scale lengths for each platform's specific
@@ -282,7 +283,6 @@ RADIO_PARAMETERS = dict(
     bd=2,
     indicatoron=False,
     **radio_params  # are OS-specific.
-
 )
 
 # Here 'font' sets the shown value; font in the pull-down values
