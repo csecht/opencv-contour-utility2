@@ -1099,8 +1099,7 @@ class ImageViewer(ProcessImage):
         self.geometry(f'+{self.winfo_screenwidth() - adjust_width}+0')
 
         # Color in all the master (app) Frame and use a yellow border;
-        #   border highlightcolor changes to grey with click-drag or
-        #   loss of focus.
+        #   border highlightcolor changes to grey with loss of focus.
         self.config(
             bg=const.MASTER_BG,
             # bg=const.CBLIND_COLOR_TK['sky blue'],  # for dev.
@@ -1308,6 +1307,14 @@ class ImageViewer(ProcessImage):
                             )
         elif const.MY_OS == 'win':
             self.option_add("*TCombobox*Font", ('TkTooltipFont', 7))
+            bstyle = ttk.Style()
+            bstyle.configure("My.TButton", font=('TkTooltipFont', 7))
+            bstyle.map("My.TButton",
+                       foreground=[('active', const.CBLIND_COLOR_TK['yellow'])],
+                       background=[('pressed', 'gray30'),
+                                   ('active', const.CBLIND_COLOR_TK['vermilion'])],
+                       )
+
         else:  # is macOS
             self.option_add("*TCombobox*Font", ('TkTooltipFont', 10))
             bstyle = ttk.Style()
@@ -1383,8 +1390,8 @@ class ImageViewer(ProcessImage):
             save_th_padx = (0, 90)
             save_canny_padx = (0, 35)
         elif const.MY_OS == 'win':
-            save_th_padx = (0, 75)
-            save_canny_padx = (0, 15)
+            save_th_padx = (0, 105)
+            save_canny_padx = (0, 45)
         else:  # is macOS
             save_th_padx = (0, 60)
             save_canny_padx = (0, 5)
