@@ -1,30 +1,28 @@
 """
 General housekeeping utilities.
 Functions:
-check_platform - Exits if not Linux, Windows, or MacOS.
-args_handler - Handles command line arguments; returns dict of args.
-scale_img - Resize displayed images.
-save_settings_and_img - Saves files of result image and its settings.
-text_array - Generates an image array of text.
+check_platform - Exit if not Linux, Windows, or macOS.
 valid_path_to - Get correct path to program's files.
+save_settings_and_img- Save files of result image and its settings.
+scale_img - Resize displayed images.
+display_report - Place a formatted text string into a specified Frame.
+text_array - Generate an image array of text.
 quit_keys -  Error-free and informative exit from the program.
 """
-# Copyright (C) 2022 C.S. Echt, under GNU General Public License'
+# Copyright (C) 2022-2023 C.S. Echt, under GNU General Public License'
 
 # Standard library imports.
 import platform
 import signal
 import sys
-
+import tkinter as tk
 from datetime import datetime
-
 # noinspection PyCompatibility
 from pathlib import Path
 
 # Third party imports.
 import cv2
 import numpy as np
-import tkinter as tk
 from PIL import ImageTk
 
 # Local application imports.
@@ -148,8 +146,8 @@ def save_settings_and_img(img2save,
     # Path(f'{img_stem}_clahe_settings{curr_time}.txt').write_text(settings2save)
 
     # Use this for appending multiple settings to single file:
-    with Path(f'{img_stem}_{caller}_settings.txt').open('a') as fp:
-        fp.write(settings2save)
+    with Path(f'{img_stem}_{caller}_settings.txt').open('a', encoding='utf-8') as _fp:
+        _fp.write(settings2save)
 
     print(f'Result image and its settings were saved to files.'
           f'{settings2save}')
@@ -267,9 +265,9 @@ def text_array(text_shape: iter, do_text: str) -> np.ndarray:
                                    const.TEXT_THICKNESS)
     line_height = text_size[1] + 9
 
-    _x, y0 = (5, 50)
+    _x, _y = (5, 50)
     for i, line in enumerate(do_text.split("\n")):
-        _y = y0 + i * line_height
+        _y = _y + i * line_height
         cv2.putText(img=text_img,
                     text=line,
                     org=(_x, _y),

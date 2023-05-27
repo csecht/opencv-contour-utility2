@@ -29,24 +29,15 @@ SCALE_PARAMETERS
 SHAPE_SCALE_PARAMETERS
 RADIO_PARAMETERS
 """
-# Copyright (C) 2022 C.S. Echt, under GNU General Public License'
+# Copyright (C) 2023 C.S. Echt, under GNU General Public License'
 
-import cv2
+# Standard library import
 import sys
 
-MY_OS = sys.platform[:3]
+# Third party import
+import cv2
 
-SHAPE_NAME = {
-    3: 'triangle',
-    4: 'rectangle',
-    5: 'pentagon',
-    6: 'hexagon',
-    7: 'heptagon',
-    8: 'octagon',
-    9: 'nonagon',
-    10: 'star',
-    11: 'circle',
-}
+MY_OS = sys.platform[:3]
 
 WIN_NAME = {
     'input+gray': 'Input <- | -> Grayscale for processing',

@@ -144,7 +144,7 @@ class ProcessImage(tk.Tk):
         # Arrays of images to be processed. When used within a method,
         #  the purpose of self.tkimg[*] is to prevent losing the image
         #  through garbage collection. Dict values will be defined for
-        #  panels of PIL ImageTk.PhotoImage with a Label images displayed
+        #  panels of PIL ImageTk.PhotoImage with Label images displayed
         #  in their respective img_window Toplevel.
         self.tkimg = {
             'input': None,
@@ -784,6 +784,9 @@ class ProcessImage(tk.Tk):
         # https://docs.opencv.org/4.x/dd/d1a/group__imgproc__feature.html#ga47849c3be0d0406ad3ca45db65a25d2d
         # Docs general recommendations for HOUGH_GRADIENT_ALT with good image contrast:
         #   dp=1.5, param1=300, param2=0.9, minRadius=20, maxRadius=400
+        # From https://docs.opencv.org/3.4/d4/d70/tutorial_hough_circle.html
+        # found_circles: A numpy.ndarray vector that stores sets of 3 values:
+        #   xc,yc,r for each detected circle.
         found_circles = cv2.HoughCircles(image=img4houghcircles,
                                          method=cv2.HOUGH_GRADIENT_ALT,
                                          dp=1.5,
@@ -793,10 +796,11 @@ class ProcessImage(tk.Tk):
                                          minRadius=min_radius,
                                          maxRadius=max_radius
                                          )
-
+        print(type(found_circles))
         if found_circles is not None:
             # Convert the circle parameters to integers to get the right data type.
-            found_circles = np.uint16(np.round(found_circles))
+            # source: https://docs.opencv.org/4.x/da/d53/tutorial_py_houghcircles.html
+            found_circles = np.uint16(np.around(found_circles))
             self.num_shapes = len(found_circles[0, :])
 
             for _circle in found_circles[0, :]:

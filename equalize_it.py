@@ -26,8 +26,6 @@ from pathlib import Path
 # Third party imports.
 try:
     import cv2
-    import numpy as np
-    import matplotlib
     import matplotlib.backends.backend_tkagg as backend
     import tkinter as tk
     from matplotlib import pyplot as plt
@@ -157,8 +155,8 @@ class ProcessImage:
         #   how-to-remove-toolbar-button-from-navigationtoolbar2tk-figurecanvastkagg
         # Remove all tools from toolbar because the Histograms window is
         #   non-responsive while in event_loop.
-        for child in toolbar.children:
-            toolbar.children[child].pack_forget()
+        for child, widget in toolbar.children.items():
+            widget.pack_forget()
 
         # Now display remaining widgets in histogram_window.
         # NOTE: toolbar must be gridded BEFORE canvas to prevent
@@ -244,6 +242,7 @@ class ProcessImage:
         Returns: *event* as a formality.
 
         """
+        implicit_list_of_6_elements = args
         if utils.MY_OS in 'lin, win':
             mouse_event = cv2.EVENT_LBUTTONDBLCLK
         else:

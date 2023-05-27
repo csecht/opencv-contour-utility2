@@ -10,16 +10,15 @@ tk_image: converts scaled cv2 image to a compatible tk.TK image format.
 
 # Standard library imports.
 import argparse
+import math
 import sys
+from pathlib import Path
 
 # noinspection PyCompatibility
 from __main__ import __doc__
-from pathlib import Path
 
 # Third party imports.
 import cv2
-import math
-
 import numpy as np
 from PIL import Image, ImageTk
 from PIL.ImageTk import PhotoImage
