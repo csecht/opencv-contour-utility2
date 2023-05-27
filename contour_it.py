@@ -796,7 +796,6 @@ class ProcessImage(tk.Tk):
                                          minRadius=min_radius,
                                          maxRadius=max_radius
                                          )
-        print(type(found_circles))
         if found_circles is not None:
             # Convert the circle parameters to integers to get the right data type.
             # source: https://docs.opencv.org/4.x/da/d53/tutorial_py_houghcircles.html
