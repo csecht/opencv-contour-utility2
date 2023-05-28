@@ -304,12 +304,7 @@ class ProcessImage(tk.Tk):
         #  will not have much effect, whereas if they are large (> 150),
         #  they will have a very strong effect, making the image look "cartoonish".
         # NOTE: The larger the sigma the greater the effect of kernel size d.
-        # if self.reduced_noise_img is not None:
-        #     self.sigma_color = int(np.std(self.reduced_noise_img))
-        # else:
-        #     self.sigma_color = 3
         sigma_color = self.slider_val['sigma'].get()
-
         sigma_space = sigma_color
 
         # Gaussian parameters:
@@ -1474,8 +1469,8 @@ class ImageViewer(ProcessImage):
 
         self.slider['noise_k_lbl'].configure(text='Reduce noise\nkernel size:',
                                              **const.LABEL_PARAMETERS)
-        self.slider['noise_k'].configure(from_=1, to=20,
-                                         tickinterval=3,
+        self.slider['noise_k'].configure(from_=1, to=51,
+                                         tickinterval=5,
                                          variable=self.slider_val['noise_k'],
                                          **const.SCALE_PARAMETERS)
 
@@ -1490,8 +1485,8 @@ class ImageViewer(ProcessImage):
         self.slider['filter_k_lbl'].configure(text='Filter kernel size\n'
                                                    '(only odd integers used):',
                                               **const.LABEL_PARAMETERS)
-        self.slider['filter_k'].configure(from_=3, to=50,
-                                          tickinterval=5,
+        self.slider['filter_k'].configure(from_=3, to=111,
+                                          tickinterval=9,
                                           variable=self.slider_val['filter_k'],
                                           **const.SCALE_PARAMETERS)
 
@@ -1514,15 +1509,15 @@ class ImageViewer(ProcessImage):
                                              **const.LABEL_PARAMETERS)
 
         # Need to allow a higher limit for large images; 2000 is arbitrary.
-        slide_max = 2000 if manage.infile()['size2scale'] > 2000 else 1000
-        self.slider['c_limit'].configure(from_=1, to=slide_max,
-                                         tickinterval=slide_max / 10,
+        c_max = 2000 if manage.infile()['size2scale'] > 2000 else 1000
+        self.slider['c_limit'].configure(from_=1, to=c_max,
+                                         tickinterval=c_max / 10,
                                          variable=self.slider_val['c_limit'],
                                          **const.SCALE_PARAMETERS)
 
         self.slider['sigma_lbl'].configure(text='bilateral sigmaColor / Gauss sigmaX:',
                                            **const.LABEL_PARAMETERS)
-        self.slider['sigma'].configure(from_=0, to=200,
+        self.slider['sigma'].configure(from_=0, to=240,
                                        tickinterval=20,
                                        variable=self.slider_val['sigma'],
                                        **const.SCALE_PARAMETERS)

@@ -48,7 +48,7 @@ def check_platform() -> None:
     print('Quit program with Esc or Ctrl-Q. From the Terminal, use Ctrl-C.')
 
 
-def valid_path_to(relative_path: str) -> Path:
+def valid_path_to(input_path: str) -> Path:
     """
     Get correct path to program's directory/file structure
     depending on whether program invocation is a standalone app or
@@ -57,16 +57,22 @@ def valid_path_to(relative_path: str) -> Path:
     _MEIPASS var is used by distribution programs from
     PyInstaller --onefile; e.g. for images dir.
 
-    :param relative_path: Program's local dir/file name, as string.
+    :param input_path: Program's local dir/file name, as string.
     :return: Absolute path as pathlib Path object.
     """
     # Modified from: https://stackoverflow.com/questions/7674790/
     #    bundling-data-files-with-pyinstaller-onefile and PyInstaller manual.
     if getattr(sys, 'frozen', False):  # hasattr(sys, '_MEIPASS'):
         base_path = getattr(sys, '_MEIPASS', Path(Path(__file__).resolve()).parent)
-        valid_path = Path(base_path) / relative_path
+        valid_path = Path(base_path) / input_path
     else:
-        valid_path = Path(Path(__file__).parent, f'../{relative_path}').resolve()
+        # NOTE: this math only works for images in the program folder.
+        #  To work with absolute paths, remove the ../.
+        if 'images/' in input_path:
+            valid_path = Path(Path(__file__).parent, f'../{input_path}').resolve()
+        else:  # A path outside the Project was used.
+            valid_path = Path(Path(__file__).parent, f'{input_path}').resolve()
+
     return valid_path
 
 
