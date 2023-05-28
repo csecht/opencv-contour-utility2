@@ -98,7 +98,7 @@ All screenshots are from an Ubuntu Linux platform. For Windows and macOS platfor
 
 ![contour_settings_window](images/contour_report_window.png)
 
-The startup window for contour parameter settings and reporting. Command line: `python3 -m contour_it`.
+Default startup window for contour parameter settings and reporting. Command line: `python3 -m contour_it`.
 
 ![ID_image_windows](images/all_image_windows.png)
 
