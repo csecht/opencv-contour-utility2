@@ -52,26 +52,28 @@ def valid_path_to(input_path: str) -> Path:
     """
     Get correct path to program's directory/file structure
     depending on whether program invocation is a standalone app or
-    the command line. Works with symlinks. Allows command line
-    using any path; does not need to be from parent directory.
+    the command line. Works with symlinks. Works with absolute paths
+    outside of program's folder.
+    Allows command line invocation using any path; does not need to be
+    from parent directory.
     _MEIPASS var is used by distribution programs from
     PyInstaller --onefile; e.g. for images dir.
 
     :param input_path: Program's local dir/file name, as string.
     :return: Absolute path as pathlib Path object.
     """
+    # Note that Path(Path(__file__).parent is the contours_modules folder.
     # Modified from: https://stackoverflow.com/questions/7674790/
     #    bundling-data-files-with-pyinstaller-onefile and PyInstaller manual.
     if getattr(sys, 'frozen', False):  # hasattr(sys, '_MEIPASS'):
         base_path = getattr(sys, '_MEIPASS', Path(Path(__file__).resolve()).parent)
         valid_path = Path(base_path) / input_path
     else:
-        # NOTE: this math only works for images in the program folder.
-        #  To work with absolute paths, remove the ../.
+        # NOTE: this path only works for images in the program images folder.
         if 'images/' in input_path:
             valid_path = Path(Path(__file__).parent, f'../{input_path}').resolve()
-        else:  # A path outside the Project was used.
-            valid_path = Path(Path(__file__).parent, f'{input_path}').resolve()
+        else:  # A path outside the Project was used for the input file.
+            valid_path = Path(Path(f'{input_path}')).resolve()
 
     return valid_path
 

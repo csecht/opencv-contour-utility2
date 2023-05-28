@@ -12,7 +12,6 @@ tk_image: converts scaled cv2 image to a compatible tk.TK image format.
 import argparse
 import math
 import sys
-from pathlib import Path
 
 # noinspection PyCompatibility
 from __main__ import __doc__
@@ -25,7 +24,7 @@ from PIL.ImageTk import PhotoImage
 
 # Local application imports.
 import contour_modules
-from contour_modules import utils, constants as const
+from contour_modules import constants as const
 
 
 def arguments() -> dict:
@@ -73,10 +72,6 @@ def arguments() -> dict:
         print('====================== ABOUT END ====================')
 
         sys.exit(0)
-
-    if not Path.exists(utils.valid_path_to(args.input)):
-        print('Could not open the image (check spelling and path):', args.input)
-        sys.exit()
 
     if args.scale <= 0:
         args.scale = 1
