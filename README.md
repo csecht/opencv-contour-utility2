@@ -9,8 +9,6 @@ The intention of this utility is to help OpenCV users understand the relevant pa
 
 The current tkinter implementation of `contour_it.py` can be run on Linux, Windows and macOS platforms. It is an upgrade of the original modules found in the opencv-contour-utils repository that use the native OpenCV GUI, but are suitable only for Linux systems.
 
-A utility, `equalize_it.py`, is also provided to explore parameters used in OpenCV's automatic histogram equalization function.
-
 All processing steps are conducted on grayscale conversions of the specified input file. A text file of chosen settings and the resulting image file of drawn contours, overlaid on the original image, can be saved. Image file samples are provided in the `images` folder: `sample1.jpg` (pills), `sample2.jpg` (shells), `sample3.jpg` (rummikub), `sample4.jgp` (shapes).
 
 The default contour and shape outline color is green, but can be changed to yellow with the `--color yellow` command line argument. This may be useful for certain images or users with a color vision impairment.
@@ -24,23 +22,15 @@ Development environment was Linux Ubuntu 20.04, macOS 13.2, and Windows11.
 ## contour_it.py
 The module `contour_it.py` uses cv2.threshold and cv2.Canny for contour detection.
 It uses cv2.approxPolyDP and cv2.HoughCircles for shape identification. See the startup window screenshot, below, for all cv2 functions and parameters used.
-## equalize_it.py
-The module `equalize_it.py` does not involve contours, but explores parameters for automatic histogram equalization. It can be used as an optional pre-processing step for contour detection. Unlike `contour_it.py`, it uses the native OpenCV GUI, not tkinter.
-
-Equalization is achieved with cv2.createCLAHE. CLAHE is a contrast-limited adaptive histogram equalization method. Live updates of the CLAHE histogram are controlled by slider bars for the clipLimit and tileGridSize parameter values. All processing is carried out on a grayscale version of the input file. The grayscale equalized image can be saved to use as input for `contour_it.py`. For most contour operations, however, the contrast and brightness controls provided in `contour_it.py` should be sufficient.
-
-As a side note, CLAHE works best on images that have a full range of pixel values across the image, as in sample2.jpg (shells). In other words, it does not work well with images that have large areas of similar colors, as in sample1.jpg (pills), sample3.jpg (rummikub), or sample4.jpg (shapes). Nonetheless, this module can be fun to play with. Live histogram updating may be less responsive with larger image files.
-
-A known issue is that, while `equalize_it.py` should work on all systems, some Linux installations may not show histograms. If that's the case, then try `equalize_tk.py` or `equalize_qt.py` found in https://github.com/csecht/opencv-contour-utility. The problem may be with the specific version of the required python packages.
 
 ### Usage examples:
 From within the program's folder, example command line invocations:
 
-       python3 -m contour_it
+       python3 -m contour_it  (uses a default input image)
 
        python3 -m contour_it --input images/sample2.jpg
 
-       python3 -m equalize_it -i images/sample2.jpg
+       python3 -m contour_it -i /home/me/Desktop/myphoto.jpg --scale 0.2
 
 Note that with no input argument, as in the first example, the default sample1.jpg from the `images` folder is used for input. Three additional sample input files are provided in the `images` folder.
  On Windows systems, you may need to replace 'python3' with 'python' or 'py'.
@@ -61,7 +51,7 @@ To list command line options: `python3 -m contour_it --help`
 
 To view basic information, author, version, license, etc.: `python3 -m contour_it --about`
  
-The Esc or Q key will quit any running module. For `equalize_it.py`, it the "Histograms" window in is currently selected, then just select one of the other windows to use a Quit key. From the command line, the Ctrl-C will also exit a program.
+The Esc or Q key will quit any running module.
 
 Images that are too large to fit on the screen can have their display size adjusted with the `--scale` command line argument. All image processing is performed at the original image resolution.
 
@@ -72,8 +62,7 @@ Files provided as examples in the `images` folder:
 * sample4.jpg (shapes, 1245x1532, 137 kB)
 
 ### Requirements:
-Python 3.7 or later, plus the packages OpenCV, Numpy and tkinter. Additionally, Matplotlib, and it's dependency Pillow, are needed with
-the `equalize_it.py` module.
+Python 3.7 or later, plus the packages OpenCV, Numpy and tkinter.
 
 For quick installation of the required Python PIP packages:
 from the downloaded GitHub repository folder, run this command
@@ -108,11 +97,6 @@ All image windows that open to display each image processing step. Initial windo
 ![hexagon_shape_found](images/found_hexagon_screenshot.png)
 
 The Shape windows appear when the "Show Shapes windows" is clicked. In this example, settings selected to find hexagon shapes. Command line: `python3 -m contour_it  -i images/sample4.jpg -s 0.3 --color yellow`.
-
-![clahe_histograms](images/clahe_screenshot.png)
-
-Histograms and the "CLAHE adjusted" window will live update with the CLAHE clip limit and tile size parameter sliders.
-Command line: `python3 -m equalize_it  -i images/sample2.jpg`
 
 ### Attributions
 
