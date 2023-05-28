@@ -115,6 +115,7 @@ class ProcessImage(tk.Tk):
             'circle_param2': tk.IntVar(),
             'circle_minradius': tk.IntVar(),
             'circle_maxradius': tk.IntVar(),
+            'sigma': tk.IntVar(),
         }
         self.cbox_val = {
             # Used for contours.
@@ -184,10 +185,6 @@ class ProcessImage(tk.Tk):
         }
 
         # Image processing parameters.
-        self.sigma_color = 0.0
-        self.sigma_space = 0.0
-        self.sigma_x = 0.0
-        self.sigma_y = 0.0
         self.computed_threshold = 0
         self.num_shapes = 0
 
@@ -307,35 +304,35 @@ class ProcessImage(tk.Tk):
         #  will not have much effect, whereas if they are large (> 150),
         #  they will have a very strong effect, making the image look "cartoonish".
         # NOTE: The larger the sigma the greater the effect of kernel size d.
-        if self.reduced_noise_img is not None:
-            self.sigma_color = int(np.std(self.reduced_noise_img))
-        else:
-            self.sigma_color = 3
+        # if self.reduced_noise_img is not None:
+        #     self.sigma_color = int(np.std(self.reduced_noise_img))
+        # else:
+        #     self.sigma_color = 3
+        sigma_color = self.slider_val['sigma'].get()
 
-        self.sigma_space = self.sigma_color
+        sigma_space = sigma_color
 
         # Gaussian parameters:
         # see: https://theailearner.com/tag/cv2-gaussianblur/
-        self.sigma_x = self.sigma_color
+        sigma_x = sigma_color
         # NOTE: The larger the sigma, the greater the effect of kernel size d.
         # sigmaY=0 also uses sigmaX. Matches Space to d if d>0.
-        self.sigma_y = self.sigma_x
-
+        sigma_y = sigma_x
         # Apply a filter to blur edges:
         if filter_selected == 'cv2.bilateralFilter':
             filtered_img = cv2.bilateralFilter(src=self.reduced_noise_img,
                                                # d=-1 or 0, is very CPU intensive.
                                                d=filter_k,
-                                               sigmaColor=self.sigma_color,
-                                               sigmaSpace=self.sigma_space,
+                                               sigmaColor=sigma_color,
+                                               sigmaSpace=sigma_space,
                                                borderType=border_type)
         elif filter_selected == 'cv2.GaussianBlur':
             # see: https://dsp.stackexchange.com/questions/32273/
             #  how-to-get-rid-of-ripples-from-a-gradient-image-of-a-smoothed-image
             filtered_img = cv2.GaussianBlur(src=self.reduced_noise_img,
                                             ksize=(filter_k, filter_k),
-                                            sigmaX=self.sigma_x,
-                                            sigmaY=self.sigma_y,
+                                            sigmaX=sigma_x,
+                                            sigmaY=sigma_y,
                                             borderType=border_type)
         elif filter_selected == 'cv2.medianBlur':
             filtered_img = cv2.medianBlur(src=self.reduced_noise_img,
@@ -897,6 +894,9 @@ class ImageViewer(ProcessImage):
 
             'c_limit': tk.Scale(master=self.contour_selectors_frame),
             'c_limit_lbl': tk.Label(master=self.contour_selectors_frame),
+
+            'sigma': tk.Scale(master=self.contour_selectors_frame),
+            'sigma_lbl': tk.Label(master=self.contour_selectors_frame),
 
             # for shapes
             'epsilon': tk.Scale(master=self.shape_selectors_frame),
@@ -1520,6 +1520,13 @@ class ImageViewer(ProcessImage):
                                          variable=self.slider_val['c_limit'],
                                          **const.SCALE_PARAMETERS)
 
+        self.slider['sigma_lbl'].configure(text='bilateral sigmaColor / Gauss sigmaX:',
+                                           **const.LABEL_PARAMETERS)
+        self.slider['sigma'].configure(from_=0, to=200,
+                                       tickinterval=20,
+                                       variable=self.slider_val['sigma'],
+                                       **const.SCALE_PARAMETERS)
+
         # Sliders for shape settings ##########################################
         self.slider['epsilon_lbl'].configure(text='% polygon contour length\n'
                                                   '(epsilon coef.):',
@@ -1939,60 +1946,65 @@ class ImageViewer(ProcessImage):
         self.cbox['choose_filter'].grid(column=1, row=6,
                                         **filter_cbox_param)
 
-        self.slider['filter_k_lbl'].grid(column=0, row=8,
+        self.slider['sigma_lbl'].grid(column=0, row=8,
+                                      **label_grid_params)
+        self.slider['sigma'].grid(column=1, row=8,
+                                  **slider_grid_params)
+
+        self.slider['filter_k_lbl'].grid(column=0, row=9,
                                          **label_grid_params)
-        self.slider['filter_k'].grid(column=1, row=8,
+        self.slider['filter_k'].grid(column=1, row=9,
                                      **slider_grid_params)
 
-        self.slider['canny_th_ratio_lbl'].grid(column=0, row=9,
+        self.slider['canny_th_ratio_lbl'].grid(column=0, row=10,
                                                **label_grid_params)
-        self.slider['canny_th_ratio'].grid(column=1, row=9,
+        self.slider['canny_th_ratio'].grid(column=1, row=10,
                                            **slider_grid_params)
 
-        self.slider['canny_min_lbl'].grid(column=0, row=10,
+        self.slider['canny_min_lbl'].grid(column=0, row=11,
                                           **label_grid_params)
-        self.slider['canny_th_min'].grid(column=1, row=10,
+        self.slider['canny_th_min'].grid(column=1, row=11,
                                          **slider_grid_params)
 
-        self.cbox['choose_th_type_lbl'].grid(column=0, row=11,
+        self.cbox['choose_th_type_lbl'].grid(column=0, row=12,
                                              **label_grid_params)
-        self.cbox['choose_th_type'].grid(column=1, row=11,
+        self.cbox['choose_th_type'].grid(column=1, row=12,
                                          **grid_params)
 
-        self.radio['hull_lbl'].grid(column=1, row=11,
+        self.radio['hull_lbl'].grid(column=1, row=12,
                                     padx=(0, 10),
                                     pady=(5, 0),
                                     sticky=tk.E)
-        self.radio['hull_no'].grid(column=1, row=12,
+        self.radio['hull_no'].grid(column=1, row=13,
                                    padx=(0, 80),
                                    pady=(0, 0),
                                    sticky=tk.E)
-        self.radio['hull_yes'].grid(column=1, row=12,
+        self.radio['hull_yes'].grid(column=1, row=13,
                                     padx=(0, 30),
                                     pady=(0, 0),
                                     sticky=tk.E)
 
-        self.radio['c_type_lbl'].grid(column=0, row=12,
+        self.radio['c_type_lbl'].grid(column=0, row=13,
                                       **label_grid_params)
-        self.radio['c_type_area'].grid(column=1, row=12,
+        self.radio['c_type_area'].grid(column=1, row=13,
                                        **grid_params)
-        self.radio['c_type_length'].grid(column=1, row=12,
+        self.radio['c_type_length'].grid(column=1, row=13,
                                          padx=(120, 0),
                                          pady=(5, 0),
                                          sticky=tk.W)
 
-        self.radio['c_mode_lbl'].grid(column=0, row=13,
+        self.radio['c_mode_lbl'].grid(column=0, row=14,
                                       **label_grid_params)
-        self.radio['c_mode_external'].grid(column=1, row=13,
+        self.radio['c_mode_external'].grid(column=1, row=14,
                                            **grid_params)
-        self.radio['c_mode_list'].grid(column=1, row=13,
+        self.radio['c_mode_list'].grid(column=1, row=14,
                                        padx=(84, 0),
                                        pady=(5, 0),
                                        sticky=tk.W)
 
-        self.cbox['choose_c_method_lbl'].grid(column=1, row=13,
+        self.cbox['choose_c_method_lbl'].grid(column=1, row=14,
                                               **c_method_lbl_params)
-        self.cbox['choose_c_method'].grid(column=1, row=13,
+        self.cbox['choose_c_method'].grid(column=1, row=14,
                                           padx=(0, 15),
                                           pady=(5, 0),
                                           sticky=tk.E)
@@ -2147,6 +2159,7 @@ class ImageViewer(ProcessImage):
         self.slider_val['canny_th_ratio'].set(2.5)
         self.slider_val['canny_th_min'].set(50)
         self.slider_val['c_limit'].set(100)
+        self.slider_val['sigma'].set(9)
 
         # Set/Reset Combobox widgets.
         self.cbox['choose_morphop'].current(0)
@@ -2211,6 +2224,7 @@ class ImageViewer(ProcessImage):
         canny_th_ratio = self.slider_val['canny_th_ratio'].get()
         canny_th_min = self.slider_val['canny_th_min'].get()
         canny_th_max = int(canny_th_min * canny_th_ratio)
+        sigma = self.slider_val['sigma'].get()
 
         # Need to use only odd kernel integers.
         _k = self.slider_val['filter_k'].get()
@@ -2232,11 +2246,11 @@ class ImageViewer(ProcessImage):
 
         if filter_selected == 'cv2.bilateralFilter':
             filter_sigmas = (f'd=({filter_k},{filter_k}),'
-                             f' sigmaColor={self.sigma_color},'
-                             f' sigmaSpace={self.sigma_space}')
+                             f' sigmaColor={sigma},'
+                             f' sigmaSpace={sigma}')
         elif filter_selected == 'cv2.GaussianBlur':
-            filter_sigmas = (f'sigmaX={self.sigma_x},'
-                             f' sigmaY={self.sigma_y}')
+            filter_sigmas = (f'sigmaX={sigma},'
+                             f' sigmaY={sigma}')
         else:
             filter_sigmas = ''
 
