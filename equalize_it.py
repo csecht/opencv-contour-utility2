@@ -52,7 +52,27 @@ from contour_modules import (vcheck, manage, utils, constants as const)
 
 
 # noinspection PyUnresolvedReferences
+
 class ProcessImage:
+    """
+    A suite methods that support image processing with cv2.createCLAHE.
+    Uses the OpenCV-Python GUI and matplotlib for histogram display.
+    Includes mouse-click action to save the equalized image,
+    basic image metrics, and selected cv2.createCLAHE parameters.
+    Class methods:
+    manage_input
+    setup_canvas_window
+    setup_trackbars
+    save_with_click
+    clip_selector
+    tile_selector
+    apply_clahe
+    show_input_histogram
+    show_clahe_histogram
+    show_settings
+    """
+    # pylint: disable=use-dict-literal, no-member
+
     __slots__ = ('clahe_img', 'clahe_mean', 'clahe_sd', 'clip_limit',
                  'gray_img', 'input_img', 'input_mean',
                  'input_sd', 'settings_txt',

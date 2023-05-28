@@ -142,10 +142,10 @@ class ProcessImage(tk.Tk):
         self.curr_contrast_std = tk.DoubleVar()
 
         # Arrays of images to be processed. When used within a method,
-        #  the purpose of self.tkimg[*] is to prevent losing the image
-        #  through garbage collection. Dict values will be defined for
-        #  panels of PIL ImageTk.PhotoImage with Label images displayed
-        #  in their respective img_window Toplevel.
+        #  the purpose of self.tkimg[*] as an instance attribute is to
+        #  retain the attribute reference and thus prevent garbage collection.
+        #  Dict values will be defined for panels of PIL ImageTk.PhotoImage
+        #  with Label images displayed in their respective img_window Toplevel.
         self.tkimg = {
             'input': None,
             'gray': None,
@@ -161,6 +161,10 @@ class ProcessImage(tk.Tk):
             'shaped': None,
         }
 
+        # Dict values that are defined in ImageViewer.setup_image_windows().
+        self.img_window = {}
+        self.img_label = {}
+
         # Contour lists populated with cv2.findContours point sets.
         stub_array = np.ones((5, 5), 'uint8')
         self.contours = {
@@ -170,7 +174,6 @@ class ProcessImage(tk.Tk):
             'selected_found_canny': [stub_array],
         }
 
-        self.filtered_img = stub_array
         self.reduced_noise_img = stub_array
 
         self.num_contours = {
@@ -180,15 +183,11 @@ class ProcessImage(tk.Tk):
             'canny_select': tk.IntVar(),
         }
 
-        # Dict values are defined in ImageViewer.setup_image_windows().
-        self.img_window = {}
-        self.img_label = {}
-
         # Image processing parameters.
-        self.sigma_color = 1
-        self.sigma_space = 1
-        self.sigma_x = 1
-        self.sigma_y = 1
+        self.sigma_color = 0.0
+        self.sigma_space = 0.0
+        self.sigma_x = 0.0
+        self.sigma_y = 0.0
         self.computed_threshold = 0
         self.num_shapes = 0
 
@@ -298,8 +297,8 @@ class ProcessImage(tk.Tk):
         # cv2.GaussianBlur and cv2.medianBlur need to have odd kernels,
         #   but cv2.blur and cv2.bilateralFilter will shift image between
         #   even and odd kernels so just make everything odd.
-        slider_k = self.slider_val['filter_k'].get()
-        filter_k = slider_k + 1 if slider_k % 2 == 0 else slider_k
+        _k = self.slider_val['filter_k'].get()
+        filter_k = _k + 1 if _k % 2 == 0 else _k
 
         # Bilateral parameters:
         # https://docs.opencv.org/3.4/d4/d86/group__imgproc__filter.html
@@ -318,42 +317,42 @@ class ProcessImage(tk.Tk):
         # Gaussian parameters:
         # see: https://theailearner.com/tag/cv2-gaussianblur/
         self.sigma_x = self.sigma_color
-        # NOTE: The larger the sigma the greater the effect of kernel size d.
+        # NOTE: The larger the sigma, the greater the effect of kernel size d.
         # sigmaY=0 also uses sigmaX. Matches Space to d if d>0.
         self.sigma_y = self.sigma_x
 
         # Apply a filter to blur edges:
         if filter_selected == 'cv2.bilateralFilter':
-            self.filtered_img = cv2.bilateralFilter(src=self.reduced_noise_img,
-                                                    # d=-1 or 0, is very CPU intensive.
-                                                    d=filter_k,
-                                                    sigmaColor=self.sigma_color,
-                                                    sigmaSpace=self.sigma_space,
-                                                    borderType=border_type)
+            filtered_img = cv2.bilateralFilter(src=self.reduced_noise_img,
+                                               # d=-1 or 0, is very CPU intensive.
+                                               d=filter_k,
+                                               sigmaColor=self.sigma_color,
+                                               sigmaSpace=self.sigma_space,
+                                               borderType=border_type)
         elif filter_selected == 'cv2.GaussianBlur':
             # see: https://dsp.stackexchange.com/questions/32273/
             #  how-to-get-rid-of-ripples-from-a-gradient-image-of-a-smoothed-image
-            self.filtered_img = cv2.GaussianBlur(src=self.reduced_noise_img,
-                                                 ksize=(filter_k, filter_k),
-                                                 sigmaX=self.sigma_x,
-                                                 sigmaY=self.sigma_y,
-                                                 borderType=border_type)
+            filtered_img = cv2.GaussianBlur(src=self.reduced_noise_img,
+                                            ksize=(filter_k, filter_k),
+                                            sigmaX=self.sigma_x,
+                                            sigmaY=self.sigma_y,
+                                            borderType=border_type)
         elif filter_selected == 'cv2.medianBlur':
-            self.filtered_img = cv2.medianBlur(src=self.reduced_noise_img,
-                                               ksize=filter_k)
+            filtered_img = cv2.medianBlur(src=self.reduced_noise_img,
+                                          ksize=filter_k)
         elif filter_selected == 'cv2.blur':
-            self.filtered_img = cv2.blur(src=redux_img,
-                                         ksize=(filter_k, filter_k),
-                                         borderType=border_type)
+            filtered_img = cv2.blur(src=redux_img,
+                                    ksize=(filter_k, filter_k),
+                                    borderType=border_type)
         else:
-            self.filtered_img = cv2.blur(src=self.reduced_noise_img,
-                                         ksize=(filter_k, filter_k),
-                                         borderType=border_type)
+            filtered_img = cv2.blur(src=self.reduced_noise_img,
+                                    ksize=(filter_k, filter_k),
+                                    borderType=border_type)
 
-        self.tkimg['filter'] = manage.tk_image(self.filtered_img)
+        self.tkimg['filter'] = manage.tk_image(filtered_img)
         self.img_label['filter'].configure(image=self.tkimg['filter'])
 
-        return self.filtered_img
+        return filtered_img
 
     def contour_threshold(self, event=None) -> int:
         """
@@ -393,9 +392,9 @@ class ProcessImage(tk.Tk):
         # Note from doc: Currently, the Otsu's and Triangle methods
         #   are implemented only for 8-bit single-channel images.
         # OTSU & TRIANGLE compute thresh value, hence thresh=0 is replaced
-        #   with the self.computed_threshold;
-        #   for other cv2.THRESH_*, thresh needs to be manually provided.
-        # Convert values above thresh to 255, white.
+        #   with the self.computed_threshold.
+        #   For other cv2.THRESH_*, thresh needs to be manually provided.
+        # Convert values above thresh to a maxval of 255, white.
         self.computed_threshold, thresh_img = cv2.threshold(
             src=self.filter_image(),
             thresh=0,
@@ -447,8 +446,8 @@ class ProcessImage(tk.Tk):
             thickness=LINE_THICKNESS * 2,
             lineType=cv2.LINE_AA)
 
-        # Need to use self.*_img to keep attribute reference and thus
-        #   prevent garbage collection.
+        # Need to use self for image objects to retain the attribute
+        #   reference and thus prevent garbage collection.
         self.tkimg['thresh'] = manage.tk_image(thresh_img)
         self.img_label['thresh'].configure(image=self.tkimg['thresh'])
 
@@ -768,8 +767,12 @@ class ProcessImage(tk.Tk):
         if self.radio_val['find_circle_in'].get() == 'thresholded':
             self.img_window['shaped'].title(const.WIN_NAME['circle in thresh'])
 
+            # OTSU & TRIANGLE compute thresh value, hence thresh=0 is replaced
+            #   with the computed threshold, which is not used here.
+            #   For other cv2.THRESH_*, thresh needs to be manually provided.
+            # Convert values above thresh to maxval of 255, white.
             _, img4houghcircles = cv2.threshold(
-                src=self.filter_image(),  # or use self.filter_image()
+                src=self.filter_image(),
                 thresh=0,
                 maxval=255,
                 type=8  # 8 == cv2.THRESH_OTSU, 16 == cv2.THRESH_TRIANGLE
@@ -799,6 +802,7 @@ class ProcessImage(tk.Tk):
         if found_circles is not None:
             # Convert the circle parameters to integers to get the right data type.
             # source: https://docs.opencv.org/4.x/da/d53/tutorial_py_houghcircles.html
+            # pylint: disable=unsubscriptable-object
             found_circles = np.uint16(np.around(found_circles))
             self.num_shapes = len(found_circles[0, :])
 
@@ -821,13 +825,10 @@ class ProcessImage(tk.Tk):
                            lineType=cv2.LINE_AA
                            )
 
-                # Show found circles highlighted on the input image.
-                self.tkimg['shaped'] = manage.tk_image(img4shaping)
-                self.img_label['shaped'].configure(image=self.tkimg['shaped'])
-        else:
-            # No circles found, so display the input image as-is.
-            self.tkimg['shaped'] = manage.tk_image(img4shaping)
-            self.img_label['shaped'].configure(image=self.tkimg['shaped'])
+        # If circles are found, they will be displayed in outline.
+        #   Otherwise, the input image will be displayed as-is.
+        self.tkimg['shaped'] = manage.tk_image(img4shaping)
+        self.img_label['shaped'].configure(image=self.tkimg['shaped'])
 
         # Note: reporting of current metrics and settings is handled by
         #  ImageViewer.process_shapes().
