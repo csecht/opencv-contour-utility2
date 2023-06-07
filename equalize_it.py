@@ -86,6 +86,16 @@ class ProcessImage(tk.Tk):
     def __init__(self):
         super().__init__()
 
+        # Note: need to halve the default font size of 10 for Macs with a retina screen.
+        #  Do not understand why; may be specific to dev PC
+        if const.MY_OS == 'dar':
+            plt.rc('font', size=5)
+            plt.rc('axes', titlesize=5)
+            plt.rc('axes', labelsize=5)
+            plt.rc('xtick', labelsize=5)
+            plt.rc('ytick', labelsize=5)
+            plt.rc('legend', fontsize=5)
+
         # Matplotlib plotting with live updates.
         plt.style.use(('bmh', 'fast'))
         self.fig, (self.ax1, self.ax2) = plt.subplots(
@@ -124,7 +134,6 @@ class ProcessImage(tk.Tk):
             'input': tk.PhotoImage(),
             'gray': tk.PhotoImage(),
             'clahe': tk.PhotoImage(),
-            # 'histo': tk.PhotoImage(),
         }
 
         # Dict values that are defined in ImageViewer.create_image_windows().
@@ -145,7 +154,10 @@ class ProcessImage(tk.Tk):
         self.bind_all('<Control-q>', utils.quit_keys)
 
         self.img_window['histogram'].title(const.WIN_NAME['histo'])
-        self.img_window['histogram'].resizable(False, False)
+
+        # Allow plot to resize with window.
+        self.img_window['histogram'].rowconfigure(0, weight=1)
+        self.img_window['histogram'].columnconfigure(0, weight=1)
 
         canvas = backend.FigureCanvasTkAgg(self.fig, self.img_window['histogram'])
 
@@ -290,7 +302,14 @@ class ImageViewer(ProcessImage):
             toplevel.minsize(200, 200)
             toplevel.protocol('WM_DELETE_WINDOW', no_exit_on_x)
 
-        # self.img_window['clahe'].geometry(f'+{self.winfo_screenwidth() - 830}+150')
+        _x = self.winfo_screenwidth()
+        _y = self.winfo_screenheight()
+        _w = int(_x * 0.5)
+        _h = int(_y * 0.6)
+        if const.MY_OS == 'dar':
+            self.img_window['histogram'].geometry(f'{_w}x{_h}+{_x + 500}+500')
+        if const.MY_OS in 'lin, win':
+            self.img_window['histogram'].geometry(f'+{_w}+{_h}')
 
         self.img_window['input'].title(const.WIN_NAME['input+gray'])
         self.img_window['clahe'].title(const.WIN_NAME['clahe'])
@@ -704,7 +723,6 @@ class ImageViewer(ProcessImage):
                      self.slider_val['tile_size'].get())
 
         # Text is formatted for clarity in window, terminal, and saved file.
-        tab = " ".ljust(21)
         self.clahe_settings_txt = (
             f'Image: {image_file}\n\n'
             f'Input grayscale pixel value: mean {self.input_mean},'
