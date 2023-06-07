@@ -23,6 +23,11 @@ Development environment was Linux Ubuntu 20.04, macOS 13.2, and Windows11.
 The module `contour_it.py` uses cv2.threshold and cv2.Canny for contour detection.
 It uses cv2.approxPolyDP and cv2.HoughCircles for shape identification. See the startup window screenshot, below, for all cv2 functions and parameters used.
 
+## equalize_it.py
+The module `equalize_it.py` does not involve contours, but explores parameters for automatic histogram equalization. It can be used as an optional pre-processing step for contour detection. Equalization is by CLAHE, a contrast-limited adaptive histogram equalization method. Live updates of the CLAHE histogram are controlled by slide bars for the clipLimit and tileGridSize parameters of cv2.createCLAHE. All processing is carried out on a grayscale of the input file. The grayscale equalized image can be saved to use as input for `equalize_it.py`. For most contour needs, however, the contrast and brightness controls in `equalize_it.py` should be sufficient.
+
+Be aware that CLAHE works best on images that have a more-or-less continuous range of pixel values across the image, as in sample2.jpg (shells). Hence, it does not work well with images that have large areas of similar colors, as in sample1.jpg (pills), sample3.jpg (rummikub), or sample4.jgp (shapes). Nonetheless, this module can be fun to play with. Live histogram updating may be less responsive with larger image files.
+
 ### Usage examples:
 From within the program's folder, example command line invocations:
 
@@ -31,6 +36,8 @@ From within the program's folder, example command line invocations:
        python3 -m contour_it --input images/sample2.jpg
 
        python3 -m contour_it -i /home/me/Desktop/myphoto.jpg --scale 0.2
+
+       python3 -m equalize_it --i images/sample2.jpg -s 0.5
 
 Note that with no input argument, as in the first example, the default sample1.jpg from the `images` folder is used for input. Three additional sample input files are provided in the `images` folder.
  On Windows systems, you may need to replace 'python3' with 'python' or 'py'.
@@ -78,9 +85,10 @@ Alternative commands (system dependent):
 As with all repository downloads, it is a good idea to install the requirements in a Python virtual environment to avoid undesired changes in your system's Python library.
 
 ### Known Issues:
-Waiting for user comments.
 
-This isn't a program issue, but a potential source of confusion when using the example image, sample4.jpg (shapes). With the default settings, the white border around the black background will display a hexagon-shaped contour, which may be difficult to see, especially when using yellow --color option. Consequently, it will be counted as a hexagon shape unless, in main settings, it is not recognized as a selected contour by clicking the cv2.arcLength button instead of cv2.contourArea.
+While `equalize_it.py` should work on all platforms, some Linux installations may not show the histograms. The problem may be with the specific version of the required Matplotlib packages.
+
+While not a program issue, there is a potential source of confusion when using the example image, sample4.jpg (shapes). With the default settings, the white border around the black background will display a hexagon-shaped contour, which may be difficult to see, especially when using yellow --color option. Consequently, it will be counted as a hexagon shape unless, in main settings, it is not recognized as a selected contour by clicking the cv2.arcLength button instead of cv2.contourArea.
 
 ### Screenshots:
 All screenshots are from an Ubuntu Linux platform. For Windows and macOS platforms, window and widget look or layout may be slightly different.
@@ -97,6 +105,10 @@ All image windows that open to display each image processing step. Initial windo
 ![hexagon_shape_found](images/found_hexagon_screenshot.png)
 
 The Shape windows appear when the "Show Shapes windows" is clicked. In this example, settings selected to find hexagon shapes. Command line: `python3 -m contour_it  -i images/sample4.jpg -s 0.3 --color yellow`.
+
+![CLAHE_windows](images/CLAHE_screenshot.png)
+
+The windows, manually rearranged, showing default settings for the two CLAHE parameters. Command line: `python3 -m equalize_it -i images/sample2.jpg -s 0.5`
 
 ### Attributions
 
