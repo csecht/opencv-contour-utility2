@@ -148,18 +148,18 @@ class ProcessImage(tk.Tk):
         #  Dict values will be defined for panels of PIL ImageTk.PhotoImage
         #  with Label images displayed in their respective img_window Toplevel.
         self.tkimg = {
-            'input': None,
-            'gray': None,
-            'contrast': None,
-            'redux': None,
-            'filter': None,
-            'thresh': None,
-            'canny': None,
-            'drawn_thresh': None,
-            'drawn_canny': None,
-            'circled_th': None,
-            'circled_can': None,
-            'shaped': None,
+            'input': tk.PhotoImage(),
+            'gray': tk.PhotoImage(),
+            'contrast': tk.PhotoImage(),
+            'redux': tk.PhotoImage(),
+            'filter': tk.PhotoImage(),
+            'thresh': tk.PhotoImage(),
+            'canny': tk.PhotoImage(),
+            'drawn_thresh': tk.PhotoImage(),
+            'drawn_canny': tk.PhotoImage(),
+            'circled_th': tk.PhotoImage(),
+            'circled_can': tk.PhotoImage(),
+            'shaped': tk.PhotoImage(),
         }
 
         # Dict values that are defined in ImageViewer.setup_image_windows().
@@ -608,7 +608,7 @@ class ProcessImage(tk.Tk):
         if called_by == 'thresh sized':
             self.tkimg['circled_th'] = manage.tk_image(circled_contours)
             self.img_label['circled_th'].configure(image=self.tkimg['circled_th'])
-        else:  # called by 'canny sized'
+        else:  # Is called by 'canny sized'.
             self.tkimg['circled_can'] = manage.tk_image(circled_contours)
             self.img_label['circled_can'].configure(image=self.tkimg['circled_can'])
 
@@ -2342,10 +2342,10 @@ class ImageViewer(ProcessImage):
     def process_all(self, event=None) -> None:
         """
         Runs all image processing methods from ProcessImage() and the
-        settings report_contour.
+        settings report_clahe.
         Calls adjust_contrast(), reduce_noise(), filter_image(), and
         contour_threshold() from ProcessImage.
-        Calls report_contour() from ContourViewer.
+        Calls report_clahe() from ContourViewer.
         Args:
             event: The implicit mouse button event.
 
@@ -2368,7 +2368,7 @@ class ImageViewer(ProcessImage):
     def process_contours(self, event=None) -> None:
         """
         Calls contour_threshold() from ProcessImage.
-        Calls report_contour() from ContourViewer.
+        Calls report_clahe() from ContourViewer.
         Args:
             event: The implicit mouse button event.
 
@@ -2398,15 +2398,12 @@ class ImageViewer(ProcessImage):
         fg_default = const.CBLIND_COLOR_TK['yellow']
 
         if self.cbox_val['polygon'].get() == 'Circle':
-            self.radio['find_shape_lbl'].config(fg=grayout)
-            self.radio['find_shape_in_thresh'].config(state=tk.DISABLED)
-            self.radio['find_shape_in_canny'].config(state=tk.DISABLED)
-            self.radio['shape_hull_lbl'].config(fg=grayout)
-            self.radio['shape_hull_yes'].config(state=tk.DISABLED)
-            self.radio['shape_hull_no'].config(state=tk.DISABLED)
             self.slider['epsilon_lbl'].config(fg=grayout)
             self.slider['epsilon'].config(state=tk.DISABLED, fg=grayout)
             self.shape_defaults_button.configure(state=tk.DISABLED)
+            for name, widget in self.radio.items():
+                if 'shape' in name:
+                    widget.config(state=tk.DISABLED, fg=grayout)
 
             self.circle_defaults_button.configure(state=tk.NORMAL)
             self.radio['find_circle_lbl'].config(fg=fg_default)
@@ -2415,16 +2412,14 @@ class ImageViewer(ProcessImage):
             for name, widget in self.slider.items():
                 if 'circle' in name:
                     widget.config(state=tk.NORMAL, fg=fg_default)
-        else:
-            self.radio['find_shape_lbl'].config(fg=fg_default)
-            self.radio['find_shape_in_thresh'].config(state=tk.NORMAL)
-            self.radio['find_shape_in_canny'].config(state=tk.NORMAL)
-            self.radio['shape_hull_lbl'].config(fg=fg_default)
-            self.radio['shape_hull_yes'].config(state=tk.NORMAL)
-            self.radio['shape_hull_no'].config(state=tk.NORMAL)
+
+        else:  # One of the other shapes is selected.
             self.slider['epsilon_lbl'].config(fg=fg_default)
             self.slider['epsilon'].config(state=tk.NORMAL, fg=fg_default)
             self.shape_defaults_button.configure(state=tk.NORMAL)
+            for name, widget in self.radio.items():
+                if 'shape' in name:
+                    widget.config(state=tk.NORMAL, fg=fg_default)
 
             self.circle_defaults_button.configure(state=tk.DISABLED)
             self.radio['find_circle_lbl'].config(fg=grayout)
