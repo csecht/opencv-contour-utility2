@@ -138,10 +138,10 @@ def save_settings_and_img(img2save,
         if imgpil.mode in ("RGBA", "P"):
             imgpil = imgpil.convert("RGB")
 
-        if first_word == 'Image:':  # First word is from main report_contour window.
+        if first_word == 'Image:':  # First word is from main report_clahe window.
             img_name = Path(f'{img_stem}_{caller}_contoured_{curr_time}{img_ext}')
             imgpil.save(img_name)
-        else:  # ...is from shaped report_contour window
+        else:  # ...is from shaped report_clahe window
             img_name = Path(f'{img_stem}_{caller}_shaped_{curr_time}{img_ext}')
             imgpil.save(img_name)
 
@@ -320,7 +320,7 @@ def quit_keys() -> None:
             sys.exit('\n*** User quit the program. ***\n')
 
 
-def quit_gui(mainloop: tk.Tk, gui=True, keybind=None) -> None:
+def quit_gui(mainloop: tk.Tk, gui=True, keybind=None, plot=None) -> None:
     """Safe and informative exit from the program.
 
     :param mainloop: The main tk.Tk() window running the mainloop.
@@ -329,6 +329,11 @@ def quit_gui(mainloop: tk.Tk, gui=True, keybind=None) -> None:
     :param keybind: Needed for keybindings.
     :type keybind: Direct call from keybindings.
     """
+
+    if plot:
+        from matplotlib import pyplot as plt
+        plt.close('all')
+
     if gui:
         print('\n  *** User has quit the program. ***')
 

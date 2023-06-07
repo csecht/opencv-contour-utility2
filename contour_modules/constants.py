@@ -54,7 +54,8 @@ WIN_NAME = {
     'canny': 'Shapes found in Canny edge contours',
     'circle in filtered': 'Circles in the filtered image',
     'circle in thresh': 'Circles in an Otsu threshold image',
-    'clahe': 'CLAHE adjusted'
+    'clahe': 'CLAHE adjusted',
+    'histo': 'Histograms',
 }
 
 # Set ranges for trackbars used to adjust contrast and brightness for
