@@ -308,7 +308,7 @@ class ImageViewer(ProcessImage):
         _h = int(_y * 0.6)
         if const.MY_OS == 'dar':
             self.img_window['histogram'].geometry(f'{_w}x{_h}+{_x + 500}+500')
-        if const.MY_OS in 'lin, win':
+        elif const.MY_OS == 'lin':
             self.img_window['histogram'].geometry(f'+{_w}+{_h}')
 
         self.img_window['input'].title(const.WIN_NAME['input+gray'])
