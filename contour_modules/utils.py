@@ -13,7 +13,6 @@ quit_keys -  Error-free and informative exit from the program.
 
 # Standard library imports.
 import platform
-import signal
 import subprocess
 import sys
 import tkinter as tk
@@ -30,15 +29,13 @@ from matplotlib import pyplot as plt
 from contour_modules import (manage,
                              constants as const)
 
-MY_OS = sys.platform[:3]
-
 
 def check_platform() -> None:
     """
     Run check for various platforms to optimize displays.
     Intended to be called at startup.
     """
-    if MY_OS == 'dar':
+    if const.MY_OS == 'dar':
         print('Developed in macOS 13; earlier versions may not work.\n')
 
         # Note: need to halve the default Matplotlib font size of 10 for
@@ -53,7 +50,7 @@ def check_platform() -> None:
             plt.rc('legend', fontsize=macsize)
 
     # Need to account for scaling in Windows10 and earlier releases.
-    elif MY_OS == 'win':
+    elif const.MY_OS == 'win':
         from ctypes import windll
 
         if platform.release() < '10':
