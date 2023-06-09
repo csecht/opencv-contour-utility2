@@ -93,6 +93,12 @@ class ProcessImage(tk.Tk):
     find_circles
     """
 
+    __slots__ = (
+        'cbox_val', 'computed_threshold', 'contour_color', 'contours', 'curr_contrast_std',
+        'img_label', 'img_window', 'input_contrast_std', 'num_contours', 'num_shapes', 'radio_val',
+        'reduced_noise_img', 'slider_val', 'tkimg', 'tk',
+    )
+
     def __init__(self):
         super().__init__()
 
@@ -852,6 +858,14 @@ class ImageViewer(ProcessImage):
     toggle_circle_vs_shapes
     process_shapes
     """
+
+    __slots__ = (
+        'cbox', 'circle_defaults_button', 'circle_msg_lbl', 'contour_report_frame',
+        'contour_selectors_frame', 'contour_settings_txt', 'img_label', 'img_window', 'radio',
+        'saveshape_button', 'separator', 'shape_defaults_button', 'shape_report_frame',
+        'shape_selectors_frame', 'shape_settings_txt', 'shape_settings_win', 'shapeimg_lbl',
+        'slider'
+    )
 
     def __init__(self):
         super().__init__()
