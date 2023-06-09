@@ -39,9 +39,7 @@ from contour_modules import (vcheck,
 #  but may sometimes need to be regarded as third-party.
 try:
     import cv2
-    import numpy as np
     import tkinter as tk
-    import matplotlib
     import matplotlib.backends.backend_tkagg as backend
     from matplotlib import pyplot as plt
     from tkinter import ttk
@@ -83,18 +81,13 @@ class ProcessImage(tk.Tk):
     apply_clahe()
     """
 
+    __slots__ = (
+        'ax1', 'ax2', 'clahe_img', 'clahe_mean', 'clahe_sd', 'curr_contrast_std', 'fig',
+        'img_label', 'img_window', 'input_contrast_std', 'input_mean', 'input_sd', 'slider_val',
+        'tkimg', 'tk', 'plt'
+    )
     def __init__(self):
         super().__init__()
-
-        # Note: need to halve the default font size of 10 for Macs with a retina screen.
-        #  Do not understand why; may be specific to dev PC
-        if const.MY_OS == 'dar':
-            plt.rc('font', size=5)
-            plt.rc('axes', titlesize=5)
-            plt.rc('axes', labelsize=5)
-            plt.rc('xtick', labelsize=5)
-            plt.rc('ytick', labelsize=5)
-            plt.rc('legend', fontsize=5)
 
         # Matplotlib plotting with live updates.
         plt.style.use(('bmh', 'fast'))
@@ -105,16 +98,9 @@ class ProcessImage(tk.Tk):
             sharey='all',
             clear=True
         )
-        # Note that plt.ion() needs to be called
-        # AFTER subplots(), otherwise
-        #   a "Segmentation fault (core dumped)" error is raised.
-        # plt.ion() is used with fig.canvas.start_event_loop(0.1);
-        #   it is not needed if fig.canvas.draw_idle() is used.
-        # matplotlib.get_backend()
-        # plt.ion()
 
         # Note: The matching selector widgets for these control variables
-        #  are in ContourViewer __init__. Don't really need a dict for
+        #  are in ImageViewer __init__. Don't really need a dict for
         #  two var, but it's there to maintain the naming convention in
         #  contour_it().
         self.slider_val = {
@@ -166,7 +152,7 @@ class ProcessImage(tk.Tk):
         #   how-to-remove-toolbar-button-from-navigationtoolbar2tk-figurecanvastkagg
         # Remove all tools from toolbar because the Histograms window is
         #   non-responsive while in event_loop.
-        for child in toolbar.children:
+        for child, _ in toolbar.children.items():
             toolbar.children[child].pack_forget()
 
         # Now display remaining widgets in histogram_window.
@@ -223,6 +209,11 @@ class ImageViewer(ProcessImage):
     report_clahe()
     process_all()
     """
+
+    __slots__ = (
+        'clahe_report_frame', 'clahe_selectors_frame', 'clahe_settings_txt', 'img_label',
+        'img_window', 'separator', 'slider'
+    )
 
     def __init__(self):
         super().__init__()

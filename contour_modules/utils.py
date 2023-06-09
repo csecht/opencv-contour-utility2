@@ -13,31 +13,44 @@ quit_keys -  Error-free and informative exit from the program.
 
 # Standard library imports.
 import platform
-import signal
+import subprocess
 import sys
 import tkinter as tk
 from datetime import datetime
-# noinspection PyCompatibility
 from pathlib import Path
 
 # Third party imports.
 import cv2
 import numpy as np
 from PIL import ImageTk
+from matplotlib import pyplot as plt
 
 # Local application imports.
 from contour_modules import (manage,
                              constants as const)
 
-MY_OS = sys.platform[:3]
-
 
 def check_platform() -> None:
-    if MY_OS == 'dar':
+    """
+    Run check for various platforms to optimize displays.
+    Intended to be called at startup.
+    """
+    if const.MY_OS == 'dar':
         print('Developed in macOS 13; earlier versions may not work.\n')
 
+        # Note: need to halve the default Matplotlib font size of 10 for
+        #  Macbooks with a retina screen.
+        if subprocess.call(("system_profiler", "SPDisplaysDataType", '|', 'grep -i', 'retina'),
+                           stdout=subprocess.PIPE) == 0:
+            macsize = 5
+            plt.rc('font', size=macsize)
+            plt.rc('axes', titlesize=macsize, labelsize=macsize)
+            plt.rc('xtick', labelsize=macsize)
+            plt.rc('ytick', labelsize=macsize)
+            plt.rc('legend', fontsize=macsize)
+
     # Need to account for scaling in Windows10 and earlier releases.
-    if MY_OS == 'win':
+    elif const.MY_OS == 'win':
         from ctypes import windll
 
         if platform.release() < '10':
@@ -83,9 +96,7 @@ def save_settings_and_img(img2save,
                           caller: str) -> None:
     """
     Print to terminal/console and to file current settings and
-    calculated image processing values.
-    Save current result image.
-    Called from ContourViewer.contour_win_setup().
+    calculated image processing values. Save current result image.
 
     Args:
         img2save: The current resulting image array; can be a np.ndarray
@@ -240,98 +251,23 @@ def display_report(frame: tk.Frame, report: str) -> None:
                    sticky=tk.EW)
 
 
-def text_array(text_shape: iter, do_text: str) -> np.ndarray:
-    """
-    Generate an array image of text to display in a cv2 window.
-    Called by equalize_it.py.
-    Usage example:
-      text_img = utils.text_array((150, 500), my_text)
-      cv2.imshow(my_text_window, text_img)
+def quit_gui(mainloop: tk.Tk,
+             gui=True,
+             keybind=None,
+             plot=None) -> None:
+    """Safe and informative exit from the program.
 
     Args:
-        text_shape: Pixel height, width for text image dimensions,
-                    as tuple or list.
-        do_text: Formatted text string to display in the image.
-
-    Returns: An image array with the formatted text.
-    """
-
-    text_img = np.ones(text_shape, dtype='uint8')
-
-    # Convert the ones array to an image with gray16 (41,41,41) bg.
-    text_img[:] = np.ones(text_shape) * 41 / 255.0
-
-    # Display currently selected settings.
-    # To display multiple lines with putText():
-    # https://stackoverflow.com/questions/27647424/
-    #   opencv-puttext-new-line-character
-    # https://stackoverflow.com/questions/28394017/
-    #   how-to-insert-multiple-lines-of-text-into-frame-image/54234703#54234703
-    text_size, _ = cv2.getTextSize(do_text,
-                                   const.FONT_TYPE,
-                                   const.TEXT_SCALER,
-                                   const.TEXT_THICKNESS)
-    line_height = text_size[1] + 9
-
-    _x, _y = (5, 50)
-    for i, line in enumerate(do_text.split("\n")):
-        _y = _y + i * line_height
-        cv2.putText(img=text_img,
-                    text=line,
-                    org=(_x, _y),
-                    fontFace=const.FONT_TYPE,
-                    fontScale=const.TEXT_SCALER,
-                    color=const.TEXT_COLOR,
-                    thickness=const.TEXT_THICKNESS,
-                    lineType=cv2.LINE_AA)  # LINE_AA is anti-aliased
-
-    return text_img
-
-
-def quit_keys() -> None:
-    """
-    Error-free and informative exit from the python-opencv program.
-    Program runs until the Q or Esc key is pressed, or until Ctrl-C from
-    the Terminal is pressed.
-    Called from if __name__ == "__main__".
+        mainloop: The main tk.Tk() window running the mainloop.
+        gui: boolean flag for whether call is from gui or commandline
+             argument.
+        keybind: Need for implicit events from keybindings.
+        plot: Use if called from a module using Matplotlib.
 
     Returns: None
     """
 
-    def sigint_handler(signum, frame):
-        cv2.destroyAllWindows()
-        sys.exit('\n*** User quit from Terminal/Console. ***\n')
-
-    # source: https://stackoverflow.com/questions/57690899/
-    #   how-cv2-waitkey1-0xff-ordq-works
-    while True:
-        # Need to allow exit from the Terminal with Ctrl-q.
-        signal.signal(signal.SIGINT, sigint_handler)
-
-        key = cv2.waitKey(1)
-
-        # Shuts down opencv and terminates the Python process when a
-        # specific key is pressed from an active window.
-        # 27 is the Esc key ASCII code in decimal.
-        # 113 is the letter 'q' ASCII code in decimal.
-        quit_codes = (27, 113)
-        if key in quit_codes:
-            cv2.destroyAllWindows()
-            sys.exit('\n*** User quit the program. ***\n')
-
-
-def quit_gui(mainloop: tk.Tk, gui=True, keybind=None, plot=None) -> None:
-    """Safe and informative exit from the program.
-
-    :param mainloop: The main tk.Tk() window running the mainloop.
-    :param gui: boolean flag for whether call is from gui or commandline
-                argument.
-    :param keybind: Needed for keybindings.
-    :type keybind: Direct call from keybindings.
-    """
-
     if plot:
-        from matplotlib import pyplot as plt
         plt.close('all')
 
     if gui:

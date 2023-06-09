@@ -93,6 +93,12 @@ class ProcessImage(tk.Tk):
     find_circles
     """
 
+    __slots__ = (
+        'cbox_val', 'computed_threshold', 'contour_color', 'contours', 'curr_contrast_std',
+        'img_label', 'img_window', 'input_contrast_std', 'num_contours', 'num_shapes', 'radio_val',
+        'reduced_noise_img', 'slider_val', 'tkimg', 'tk',
+    )
+
     def __init__(self):
         super().__init__()
 
@@ -832,7 +838,7 @@ class ImageViewer(ProcessImage):
     and parameters as applied in ProcessImage().
     Methods:
     setup_image_windows
-    contour_win_setup
+    setup_contour_window
     shape_win_setup
     setup_styles
     setup_buttons
@@ -852,6 +858,14 @@ class ImageViewer(ProcessImage):
     toggle_circle_vs_shapes
     process_shapes
     """
+
+    __slots__ = (
+        'cbox', 'circle_defaults_button', 'circle_msg_lbl', 'contour_report_frame',
+        'contour_selectors_frame', 'contour_settings_txt', 'img_label', 'img_window', 'radio',
+        'saveshape_button', 'separator', 'shape_defaults_button', 'shape_report_frame',
+        'shape_selectors_frame', 'shape_settings_txt', 'shape_settings_win', 'shapeimg_lbl',
+        'slider'
+    )
 
     def __init__(self):
         super().__init__()
@@ -983,7 +997,7 @@ class ImageViewer(ProcessImage):
         # Put everything in place, establish initial settings and displays.
         self.setup_image_windows()
         self.display_input_images()
-        self.contour_win_setup()
+        self.setup_contour_window()
         self.setup_styles()
         self.setup_buttons()
         self.config_sliders()
@@ -994,7 +1008,7 @@ class ImageViewer(ProcessImage):
         self.set_contour_defaults()
         self.report_contour()
 
-        # Shape windows are withdrawn at startup in contour_win_setup(),
+        # Shape windows are withdrawn at startup in setup_contour_window(),
         #   but are pre-processed and ready for display with deiconify()
         #   from the 'Show Shapes' Button.
         self.shape_win_setup()
@@ -1070,9 +1084,9 @@ class ImageViewer(ProcessImage):
             'shaped': tk.Label(self.img_window['shaped']),
         }
 
-    def contour_win_setup(self) -> None:
+    def setup_contour_window(self) -> None:
         """
-        Master (main tk window) keybindings, configurations, and grids
+        Master (main tk window, "app") keybindings, configurations, and grids
         for contour settings and reporting frames, and utility buttons.
         """
 

@@ -94,11 +94,11 @@ def arguments() -> dict:
 
 def infile() -> dict:
     """
-    Read the image file specified in the --input command line option and
-    assign variable values accordingly. Shows input cv2 image and the
-    grayscale.
+    Read the image file specified in the --input command line option,
+    then calculates and assign to a dictionary values that can be used
+    in the main script as constants for that input image.
 
-    Returns: None
+    Returns: Dictionary of various image metrics.
     """
 
     # manage.arguments() has verified the image path, so read from it.

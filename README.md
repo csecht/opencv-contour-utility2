@@ -84,12 +84,6 @@ Alternative commands (system dependent):
 
 As with all repository downloads, it is a good idea to install the requirements in a Python virtual environment to avoid undesired changes in your system's Python library.
 
-### Known Issues:
-
-While `equalize_it.py` should work on all platforms, some Linux installations may not show the histograms. The problem may be with the specific version of the required Matplotlib packages.
-
-While not a program issue, there is a potential source of confusion when using the example image, sample4.jpg (shapes). With the default settings, the white border around the black background will display a hexagon-shaped contour, which may be difficult to see, especially when using yellow --color option. Consequently, it will be counted as a hexagon shape unless, in main settings, it is not recognized as a selected contour by clicking the cv2.arcLength button instead of cv2.contourArea.
-
 ### Screenshots:
 All screenshots are from an Ubuntu Linux platform. For Windows and macOS platforms, window and widget look or layout may be slightly different.
 
@@ -109,6 +103,14 @@ The Shape windows appear when the "Show Shapes windows" is clicked. In this exam
 ![CLAHE_windows](images/CLAHE_screenshot.png)
 
 The windows, manually rearranged, showing default settings for the two CLAHE parameters. Command line: `python3 -m equalize_it -i images/sample2.jpg -s 0.5`
+
+### Known Issues:
+
+While `equalize_it.py` should work on all platforms, some Linux installations may not show the histograms. The problem may be with the specific version of the required Matplotlib packages.
+
+While not a program issue, there is a potential source of confusion when using the example image, sample4.jpg (shapes). With the default settings, the white border around the black background will display a hexagon-shaped contour, which may be difficult to see, especially when using yellow --color option. Consequently, it will be counted as a hexagon shape unless, in main settings, it is not recognized as a selected contour by clicking the cv2.arcLength button instead of cv2.contourArea.
+
+With `equalize_it.py` on Linux Ubuntu, moving the sliders causes the settings report text to flash with each image update. This does not happen on Windows or macOS systems. The flashing can be removed by allowing updates only on mouse button release when moving the sliders. If Linux users prefer that remedy, just let me know, otherwise, flash on.
 
 ### Attributions
 
