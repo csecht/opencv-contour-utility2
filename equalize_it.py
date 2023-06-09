@@ -105,16 +105,9 @@ class ProcessImage(tk.Tk):
             sharey='all',
             clear=True
         )
-        # Note that plt.ion() needs to be called
-        # AFTER subplots(), otherwise
-        #   a "Segmentation fault (core dumped)" error is raised.
-        # plt.ion() is used with fig.canvas.start_event_loop(0.1);
-        #   it is not needed if fig.canvas.draw_idle() is used.
-        # matplotlib.get_backend()
-        # plt.ion()
 
         # Note: The matching selector widgets for these control variables
-        #  are in ContourViewer __init__. Don't really need a dict for
+        #  are in ImageViewer __init__. Don't really need a dict for
         #  two var, but it's there to maintain the naming convention in
         #  contour_it().
         self.slider_val = {
