@@ -86,16 +86,6 @@ class ProcessImage(tk.Tk):
     def __init__(self):
         super().__init__()
 
-        # Note: need to halve the default font size of 10 for Macs with a retina screen.
-        #  Do not understand why; may be specific to dev PC
-        if const.MY_OS == 'dar':
-            plt.rc('font', size=5)
-            plt.rc('axes', titlesize=5)
-            plt.rc('axes', labelsize=5)
-            plt.rc('xtick', labelsize=5)
-            plt.rc('ytick', labelsize=5)
-            plt.rc('legend', fontsize=5)
-
         # Matplotlib plotting with live updates.
         plt.style.use(('bmh', 'fast'))
         self.fig, (self.ax1, self.ax2) = plt.subplots(

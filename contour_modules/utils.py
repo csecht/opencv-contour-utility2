@@ -14,9 +14,11 @@ quit_keys -  Error-free and informative exit from the program.
 # Standard library imports.
 import platform
 import signal
+import subprocess
 import sys
 import tkinter as tk
 from datetime import datetime
+from matplotlib import pyplot as plt
 # noinspection PyCompatibility
 from pathlib import Path
 
@@ -36,8 +38,19 @@ def check_platform() -> None:
     if MY_OS == 'dar':
         print('Developed in macOS 13; earlier versions may not work.\n')
 
+        # Note: need to halve the default Matplotlib font size of 10 for
+        #  Macbooks with a retina screen.
+        if subprocess.call(("system_profiler", "SPDisplaysDataType", '|', 'grep -i', 'retina'),
+                           stdout=subprocess.PIPE) == 0:
+            macsize = 5
+            plt.rc('font', size=macsize)
+            plt.rc('axes', titlesize=macsize, labelsize=macsize)
+            plt.rc('xtick', labelsize=macsize)
+            plt.rc('ytick', labelsize=macsize)
+            plt.rc('legend', fontsize=macsize)
+
     # Need to account for scaling in Windows10 and earlier releases.
-    if MY_OS == 'win':
+    elif MY_OS == 'win':
         from ctypes import windll
 
         if platform.release() < '10':
