@@ -77,7 +77,7 @@ class ProcessImage(tk.Tk):
     image file.
 
     Class methods and internal functions:
-    setup_histogram_window()
+    setup_histogram_canvas()
     apply_clahe()
     """
 
@@ -86,6 +86,7 @@ class ProcessImage(tk.Tk):
         'img_label', 'img_window', 'input_contrast_std', 'input_mean', 'input_sd', 'slider_val',
         'tkimg', 'tk', 'plt'
     )
+
     def __init__(self):
         super().__init__()
 
@@ -132,16 +133,10 @@ class ProcessImage(tk.Tk):
         self.clahe_mean = 0  # int(self.clahe_img.mean())
         self.clahe_img = None
 
-    def setup_histogram_window(self) -> None:
+    def setup_histogram_canvas(self) -> None:
         """
         A tkinter window for the Matplotlib plot canvas.
         """
-
-        self.img_window['histogram'].title(const.WIN_NAME['histo'])
-
-        # Allow plot to resize with window.
-        self.img_window['histogram'].rowconfigure(0, weight=1)
-        self.img_window['histogram'].columnconfigure(0, weight=1)
 
         canvas = backend.FigureCanvasTkAgg(self.fig, self.img_window['histogram'])
 
@@ -241,7 +236,7 @@ class ImageViewer(ProcessImage):
         # Put everything in place, establish initial settings and displays.
         self.setup_image_windows()
         self.setup_report_window()
-        self.setup_histogram_window()  # is called from ProcessImage
+        self.setup_histogram_canvas()  # is in ProcessImage
         self.setup_styles()
         self.setup_buttons()
         self.config_sliders()
@@ -249,7 +244,6 @@ class ImageViewer(ProcessImage):
         self.display_images()
         self.set_clahe_defaults()
         self.show_input_histogram()
-        self.report_clahe()
 
     def setup_image_windows(self) -> None:
         """
@@ -298,6 +292,15 @@ class ImageViewer(ProcessImage):
         self.img_window['input'].title(const.WIN_NAME['input+gray'])
         self.img_window['clahe'].title(const.WIN_NAME['clahe'])
         self.img_window['histogram'].title(const.WIN_NAME['histo'])
+
+        # Allow images to maintain borders and relative positions with window resize.
+        self.img_window['input'].columnconfigure(0, weight=1)
+        self.img_window['input'].columnconfigure(1, weight=1)
+        self.img_window['input'].rowconfigure(0, weight=1)
+        self.img_window['clahe'].columnconfigure(0, weight=1)
+        self.img_window['clahe'].rowconfigure(0, weight=1)
+        self.img_window['histogram'].rowconfigure(0, weight=1)
+        self.img_window['histogram'].columnconfigure(0, weight=1)
 
         # The Labels to display scaled images, which are updated using
         #  .configure() for 'image=' in their respective processing methods.
@@ -453,13 +456,33 @@ class ImageViewer(ProcessImage):
 
         Returns: None
         """
+
+        # On the development Linux Ubuntu PC, calling process_all() for
+        #  slider command arguments causes flickering of the report
+        #  Frame text. This doesn't happen on Windows or macOS. Therefore,
+        #  replace continuous slide processing on Linux with bindings
+        #  to call process_all() only on left button release (with no flicker).
+        def do_nothing() -> None:
+            """A void function"""
+
+        if const.MY_OS == 'lin':
+            slider_cmd = do_nothing()
+
+            # Note that the if '_lbl' condition isn't needed to improve
+            #   performance; it's just there for clarity's sake.
+            for name, widget in self.slider.items():
+                if '_lbl' not in name:
+                    widget.bind('<ButtonRelease-1>', self.process_all)
+        else:  # is Windows or macOS
+            slider_cmd = self.process_all
+
         self.slider['clip_limit_lbl'].configure(text='Clip limit:',
                                                 **const.LABEL_PARAMETERS)
         self.slider['clip_limit'].configure(from_=0.1, to=5,
                                             resolution=0.1,
                                             tickinterval=1,
                                             variable=self.slider_val['clip_limit'],
-                                            command=self.process_all,
+                                            command=slider_cmd,
                                             **const.SCALE_PARAMETERS)
 
         self.slider['tile_size_lbl'].configure(text='Tile size (px):',
@@ -467,21 +490,8 @@ class ImageViewer(ProcessImage):
         self.slider['tile_size'].configure(from_=1, to=200,
                                            tickinterval=20,
                                            variable=self.slider_val['tile_size'],
-                                           command=self.process_all,
+                                           command=slider_cmd,
                                            **const.SCALE_PARAMETERS)
-
-        # To avoid grabbing all the intermediate values between normal
-        #  click and release movement, bind sliders to call the main
-        #  processing and reporting function only on left button release.
-        # All sliders are here bound to process_all(), but if the processing
-        #   overhead of that is too great, then can add conditions in the loop
-        #   to bind certain groups or individual sliders to more restrictive
-        #   processing functions.
-        # Note that the if '_lbl' condition doesn't seem to be needed to
-        #   improve performance; it's just there for clarity's sake.
-        # for name, widget in self.slider.items():
-        #     if '_lbl' not in name:
-        #         widget.bind('<ButtonRelease-1>', self.report_clahe())
 
     def grid_widgets(self) -> None:
         """
@@ -524,26 +534,12 @@ class ImageViewer(ProcessImage):
 
     def display_images(self) -> None:
         """
-        Converts input image and its grayscale to tk image formate and
+        Converts input image and its grayscale to tk image format and
         displays them as panels gridded in their toplevel window.
+        Displays the CLAHE image from ProcessImage.apply_clahe().
         Calls manage.tkimage(), which applies scaling, cv2 -> tk array
         conversion, and updates the panel Label's image parameter.
         """
-
-        # Display the input image and its grayscale; both are static, so
-        #  do not need updating, but retain the image display statement
-        #  structure of processed images that do need updating.
-        # Note: Use 'self' to scope the ImageTk.PhotoImage in the Class,
-        #  otherwise it will/may not show b/c of garbage collection.
-        self.tkimg['input'] = manage.tk_image(INPUT_IMG)
-        self.img_label['input'].configure(image=self.tkimg['input'])
-        self.img_label['input'].grid(column=0, row=0,
-                                     padx=5, pady=5)
-
-        self.tkimg['gray'] = manage.tk_image(GRAY_IMG)
-        self.img_label['gray'].configure(image=self.tkimg['gray'])
-        self.img_label['gray'].grid(column=1, row=0,
-                                    padx=5, pady=5)
 
         panel_left = dict(
             column=0, row=0,
@@ -554,6 +550,20 @@ class ImageViewer(ProcessImage):
             padx=5, pady=5,
             sticky=tk.NSEW)
 
+        # Display the input image and its grayscale; both are static, so
+        #  do not need updating, but retain the image display statement
+        #  structure of processed images that do need updating.
+        # Note: Use 'self' to scope the ImageTk.PhotoImage in the Class,
+        #  otherwise it will/may not show b/c of garbage collection.
+        self.tkimg['input'] = manage.tk_image(INPUT_IMG)
+        self.img_label['input'].configure(image=self.tkimg['input'])
+        self.img_label['input'].grid(**panel_left)
+
+        self.tkimg['gray'] = manage.tk_image(GRAY_IMG)
+        self.img_label['gray'].configure(image=self.tkimg['gray'])
+        self.img_label['gray'].grid(**panel_right)
+
+        # Remember that 'clahe' image is configured in PI.apply_clahe().
         self.img_label['clahe'].grid(**panel_left)
 
     def set_clahe_defaults(self) -> None:
@@ -595,8 +605,6 @@ class ImageViewer(ProcessImage):
         self.ax1.set_ylabel("Pixel count")
         self.ax1.set_title('Input (grayscale)')
 
-        self.fig.canvas.draw_idle()
-
     def show_clahe_histogram(self) -> None:
         """
         Updates CLAHE adjusted histogram plot with Matplotlib from
@@ -613,7 +621,6 @@ class ImageViewer(ProcessImage):
                       color='orange',
                       histtype='stepfilled',
                       # histtype='step',  # 'step' draws a line.
-                      # linewidth=1.2
                       )
         self.ax2.set_title('CLAHE adjusted')
         self.ax2.set_xlabel("Pixel value")
@@ -623,6 +630,7 @@ class ImageViewer(ProcessImage):
         #  plotting-in-a-non-blocking-way-with-matplotlib
         # and, https://github.com/matplotlib/matplotlib/issues/11131
         self.fig.canvas.draw_idle()
+        # plt.draw()
 
     def report_clahe(self) -> None:
         """
@@ -632,20 +640,18 @@ class ImageViewer(ProcessImage):
         """
 
         # Note: recall that *_val dict are inherited from ProcessImage().
-        image_file = manage.arguments()['input']
         clip_limit = self.slider_val['clip_limit'].get()
         tile_size = (self.slider_val['tile_size'].get(),
                      self.slider_val['tile_size'].get())
 
         # Text is formatted for clarity in window, terminal, and saved file.
         self.clahe_settings_txt = (
-            f'Image: {image_file}\n\n'
+            f'Image: {INPUT_FILE}\n\n'
             f'Input grayscale pixel value: mean {self.input_mean},'
             f' stdev {self.input_sd}\n'
             f'cv2.createCLAHE cliplimit={clip_limit}, tileGridSize{tile_size}\n'
             f'CLAHE grayscale pixel value: mean {self.clahe_mean},'
             f' stdev {self.clahe_sd}\n'
-
         )
 
         utils.display_report(frame=self.clahe_report_frame,
@@ -661,8 +667,8 @@ class ImageViewer(ProcessImage):
         Returns: *event* as a formality; is functionally None.
         """
         self.apply_clahe()
-        self.report_clahe()
         self.show_clahe_histogram()
+        self.report_clahe()
 
         return event
 
@@ -671,15 +677,15 @@ if __name__ == "__main__":
     # Program exits here if the system platform or Python version check fails.
     utils.check_platform()
     vcheck.minversion('3.7')
-    arguments = manage.arguments()
+
+    INPUT_FILE = manage.arguments()['input']
     # Need file check here instead of in manage.arguments() to avoid
     #   numerous calls to that module.
-    if not Path.exists(utils.valid_path_to(arguments['input'])):
-        sys.exit(f'COULD NOT OPEN the image: {arguments["input"]}  <-Check spelling.\n'
+    if not Path.exists(utils.valid_path_to(INPUT_FILE)):
+        sys.exit(f'COULD NOT OPEN the image: {INPUT_FILE}  <-Check spelling.\n'
                  "  If spelled correctly, then try using the file's absolute (full) path.")
 
-    # All checks are good, so grab as a 'global' the dictionary of
-    #   command line argument values and define often used values...
+    # All checks are good, so define some run-specific constants...
     infile_dict = manage.infile()
     INPUT_IMG = infile_dict['input_img']
     GRAY_IMG = infile_dict['gray_img']
