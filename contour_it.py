@@ -840,7 +840,6 @@ class ImageViewer(ProcessImage):
     setup_image_windows
     setup_contour_window
     shape_win_setup
-    setup_styles
     config_buttons
     display_input_images
     config_sliders
@@ -996,16 +995,15 @@ class ImageViewer(ProcessImage):
 
         # Put everything in place, establish initial settings and displays.
         self.setup_image_windows()
-        self.display_input_images()
         self.setup_contour_window()
-        self.setup_styles()
         self.setup_buttons()
         self.config_sliders()
         self.config_comboboxes()
         self.config_radiobuttons()
+        self.set_contour_defaults()
         self.grid_contour_widgets()
         self.grid_img_labels()
-        self.set_contour_defaults()
+        self.display_input_images()
         self.report_contour()
 
         # Shape windows are withdrawn at startup in setup_contour_window(),
@@ -1130,6 +1128,7 @@ class ImageViewer(ProcessImage):
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
 
+
         self.contour_report_frame.configure(relief='flat',
                                             bg=const.CBLIND_COLOR_TK['sky blue'],
                                             )  # bg doesn't show with grid sticky EW.
@@ -1246,7 +1245,7 @@ class ImageViewer(ProcessImage):
                     txt2save=self.shape_settings_txt,
                     caller='canny_shape')
 
-        # Note that ttk.Styles are defined in ContourViewer.setup_styles().
+        # Note that ttk.Styles are defined in manage.ttk_styles().
         self.shape_defaults_button.configure(text='Set contour defaults',
                                              style='My.TButton',
                                              width=0,
@@ -1283,56 +1282,6 @@ class ImageViewer(ProcessImage):
                                    pady=(0, 5),
                                    sticky=tk.E)
 
-    def setup_styles(self) -> None:
-        """
-        Configure ttk.Style for Buttons and Comboboxes.
-        Called by __init__ and ShapeViewer.shape_win_setup().
-
-        Returns: None
-        """
-
-        # There are problems of tk.Button text showing up on macOS, so use ttk.
-        # Explicit styles are needed for buttons to show properly on MacOS.
-        #  ... even then, background and pressed colors won't be recognized.
-        ttk.Style().theme_use('alt')
-
-        # Use fancy buttons and comboboxes for Linux;
-        #   standard theme for Windows and macOS, but with custom font.
-        if const.MY_OS == 'lin':
-            # This font setting is for the pull-down values.
-            self.option_add("*TCombobox*Font", ('TkTooltipFont', 8))
-            bstyle = ttk.Style()
-            bstyle.configure("My.TButton", font=('TkTooltipFont', 8))
-            bstyle.map("My.TButton",
-                       foreground=[('active', const.CBLIND_COLOR_TK['yellow'])],
-                       background=[('pressed', 'gray30'),
-                                   ('active', const.CBLIND_COLOR_TK['vermilion'])],
-                       )
-
-            combo_style = ttk.Style()
-            combo_style.map('TCombobox',
-                            fieldbackground=[('readonly',
-                                              const.CBLIND_COLOR_TK['dark blue'])],
-                            selectbackground=[('readonly',
-                                               const.CBLIND_COLOR_TK['dark blue'])],
-                            selectforeround=[('readonly',
-                                              const.CBLIND_COLOR_TK['yellow'])],
-                            )
-        elif const.MY_OS == 'win':
-            self.option_add("*TCombobox*Font", ('TkTooltipFont', 7))
-            bstyle = ttk.Style()
-            bstyle.configure("My.TButton", font=('TkTooltipFont', 7))
-            bstyle.map("My.TButton",
-                       foreground=[('active', const.CBLIND_COLOR_TK['yellow'])],
-                       background=[('pressed', 'gray30'),
-                                   ('active', const.CBLIND_COLOR_TK['vermilion'])],
-                       )
-
-        else:  # is macOS
-            self.option_add("*TCombobox*Font", ('TkTooltipFont', 10))
-            bstyle = ttk.Style()
-            bstyle.configure("My.TButton", font=('TkTooltipFont', 11))
-
     def setup_buttons(self) -> None:
         """
         Assign and grid Buttons in the main (app) and shape windows.
@@ -1340,6 +1289,7 @@ class ImageViewer(ProcessImage):
 
         Returns: None
         """
+        manage.ttk_styles(self)
 
         def save_th_settings():
             """
@@ -1627,6 +1577,7 @@ class ImageViewer(ProcessImage):
         width_correction = 2 if const.MY_OS == 'win' else 0  # is Linux or macOS
 
         # Note: functions are bound to Combobox actions at the end of this method.
+        #   Combobox styles are set in manage.ttk_styles(), called in setup_buttons().
         self.cbox['choose_morphop_lbl'].config(text='Reduce noise, morphology operator:',
                                                **const.LABEL_PARAMETERS)
         self.cbox['choose_morphop'].config(textvariable=self.cbox_val['morphop_pref'],

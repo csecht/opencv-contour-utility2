@@ -238,7 +238,6 @@ class ImageViewer(ProcessImage):
         self.setup_image_windows()
         self.setup_report_window()
         self.setup_histogram_canvas()  # inherited from ProcessImage
-        self.setup_styles()
         self.config_sliders()
         self.config_buttons()
         self.grid_widgets()
@@ -454,6 +453,7 @@ class ImageViewer(ProcessImage):
 
         Returns: None
         """
+        manage.ttk_styles(self)
 
         def save_settings():
             """
