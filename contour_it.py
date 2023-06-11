@@ -854,7 +854,7 @@ class ImageViewer(ProcessImage):
     report_shape
     process_all
     process_contours
-    toggle_circle_vs_shapes
+    toggle_circle_vs_polygons
     process_shapes
     """
 
@@ -2170,7 +2170,6 @@ class ImageViewer(ProcessImage):
         """
 
         # Note: recall that *_val dict are inherited from ProcessImage().
-        image_file = manage.arguments()['input']
         start_std = self.input_contrast_std.get()
         new_std = self.curr_contrast_std.get()
         alpha = self.slider_val['alpha'].get()
@@ -2217,7 +2216,7 @@ class ImageViewer(ProcessImage):
         # Text is formatted for clarity in window, terminal, and saved file.
         tab = " ".ljust(21)
         self.contour_settings_txt = (
-            f'Image: {image_file} (alpha SD: {start_std})\n\n'
+            f'Image: {INPUT_PATH} (alpha SD: {start_std})\n\n'
             f'{"Contrast:".ljust(21)}convertScaleAbs alpha={alpha},'
             f' beta={beta} (new alpha SD {new_std})\n'
             f'{"Noise reduction:".ljust(21)}cv2.getStructuringElement ksize={noise_k},\n'
@@ -2327,6 +2326,7 @@ class ImageViewer(ProcessImage):
         self.size_the_contours(self.contours['selected_found_canny'], 'canny sized')
         self.report_contour()
         self.process_shapes(event)
+        # self.update_idletasks()
 
         return event
 
@@ -2348,51 +2348,62 @@ class ImageViewer(ProcessImage):
         self.report_contour()
         if self.cbox_val['polygon'].get() != 'Circle':
             self.process_shapes(event)
+        # self.update_idletasks()
 
         return event
 
-    def toggle_circle_vs_shapes(self) -> None:
+    def toggle_circle_vs_polygons(self) -> None:
         """
         Make selector options obvious for the user depending on whether
         'Circle' shape is selected or not; gray out and disable those
-        that are not relevant to the selection.
+        options that are not relevant to the selection.
 
         Returns: None
         """
-        grayout = const.MASTER_BG
-        fg_default = const.CBLIND_COLOR_TK['yellow']
 
+        # Toggled keyword arguments for Labels, Scales, and Radiobuttons
+        #   (Buttons don't use 'fg').
+        no_for_circle = dict(
+            state=tk.DISABLED,
+            fg=const.MASTER_BG,  # should be gray80 or close
+        )
+        yes_for_circle = dict(
+            state=tk.NORMAL,
+            fg=const.CBLIND_COLOR_TK['yellow'],  # default widget fg
+        )
+
+        # Note: can't use option 'fg' for Buttons.
         if self.cbox_val['polygon'].get() == 'Circle':
-            self.slider['epsilon_lbl'].config(fg=grayout)
-            self.slider['epsilon'].config(state=tk.DISABLED, fg=grayout)
             self.shape_defaults_button.configure(state=tk.DISABLED)
+            self.slider['epsilon_lbl'].config(**no_for_circle)
+            self.slider['epsilon'].config(**no_for_circle)
             for name, widget in self.radio.items():
                 if 'shape' in name:
-                    widget.config(state=tk.DISABLED, fg=grayout)
+                    widget.config(**no_for_circle)
 
             self.circle_defaults_button.configure(state=tk.NORMAL)
-            self.radio['find_circle_lbl'].config(fg=fg_default)
-            self.radio['find_circle_in_th'].config(state=tk.NORMAL)
-            self.radio['find_circle_in_filtered'].config(state=tk.NORMAL)
+            self.radio['find_circle_lbl'].config(**yes_for_circle)
+            self.radio['find_circle_in_th'].config(**yes_for_circle)
+            self.radio['find_circle_in_filtered'].config(**yes_for_circle)
             for name, widget in self.slider.items():
                 if 'circle' in name:
-                    widget.config(state=tk.NORMAL, fg=fg_default)
+                    widget.config(**yes_for_circle)
 
         else:  # One of the other shapes is selected.
-            self.slider['epsilon_lbl'].config(fg=fg_default)
-            self.slider['epsilon'].config(state=tk.NORMAL, fg=fg_default)
             self.shape_defaults_button.configure(state=tk.NORMAL)
+            self.slider['epsilon_lbl'].config(**yes_for_circle)
+            self.slider['epsilon'].config(**yes_for_circle)
             for name, widget in self.radio.items():
                 if 'shape' in name:
-                    widget.config(state=tk.NORMAL, fg=fg_default)
+                    widget.config(**yes_for_circle)
 
             self.circle_defaults_button.configure(state=tk.DISABLED)
-            self.radio['find_circle_lbl'].config(fg=grayout)
-            self.radio['find_circle_in_th'].config(state=tk.DISABLED)
-            self.radio['find_circle_in_filtered'].config(state=tk.DISABLED)
+            self.radio['find_circle_lbl'].config(**no_for_circle)
+            self.radio['find_circle_in_th'].config(**no_for_circle)
+            self.radio['find_circle_in_filtered'].config(**no_for_circle)
             for name, widget in self.slider.items():
                 if 'circle' in name:
-                    widget.config(state=tk.DISABLED, fg=grayout)
+                    widget.config(**no_for_circle)
 
     def process_shapes(self, event=None) -> None:
         """
@@ -2410,7 +2421,7 @@ class ImageViewer(ProcessImage):
         Returns: *event* as a formality; is functionally None.
         """
 
-        self.toggle_circle_vs_shapes()
+        self.toggle_circle_vs_polygons()
 
         if self.radio_val['find_shape_in'].get() == 'Threshold':
             contours = self.contours['selected_found_thresh']
@@ -2419,7 +2430,7 @@ class ImageViewer(ProcessImage):
 
         self.select_shape(contours)
         self.report_shape()
-        self.update_idletasks()
+        # self.update_idletasks()
 
         return event
 
@@ -2430,10 +2441,11 @@ if __name__ == "__main__":
     vcheck.minversion('3.7')
     arguments = manage.arguments()
 
+    INPUT_PATH = manage.arguments()['input']
     # Need file check here instead of in manage.arguments() to avoid
     #   numerous calls to that module.
-    if not Path.exists(utils.valid_path_to(arguments['input'])):
-        sys.exit(f'COULD NOT OPEN the image: {arguments["input"]}  <-Check spelling.\n'
+    if not Path.exists(utils.valid_path_to(INPUT_PATH)):
+        sys.exit(f'COULD NOT OPEN the image: {INPUT_PATH}  <-Check spelling.\n'
                  "  If spelled correctly, then try using the file's absolute (full) path.")
 
     # All checks are good, so grab as a 'global' the dictionary of

@@ -647,7 +647,7 @@ class ImageViewer(ProcessImage):
 
         # Text is formatted for clarity in window, terminal, and saved file.
         self.clahe_settings_txt = (
-            f'Image: {INPUT_FILE}\n\n'
+            f'Image: {INPUT_PATH}\n\n'
             f'Input grayscale pixel value: mean {self.input_mean},'
             f' stdev {self.input_sd}\n'
             f'cv2.createCLAHE cliplimit={clip_limit}, tileGridSize{tile_size}\n'
@@ -679,11 +679,11 @@ if __name__ == "__main__":
     utils.check_platform()
     vcheck.minversion('3.7')
 
-    INPUT_FILE = manage.arguments()['input']
+    INPUT_PATH = manage.arguments()['input']
     # Need file check here instead of in manage.arguments() to avoid
     #   numerous calls to that module.
-    if not Path.exists(utils.valid_path_to(INPUT_FILE)):
-        sys.exit(f'COULD NOT OPEN the image: {INPUT_FILE}  <-Check spelling.\n'
+    if not Path.exists(utils.valid_path_to(INPUT_PATH)):
+        sys.exit(f'COULD NOT OPEN the image: {INPUT_PATH}  <-Check spelling.\n'
                  "  If spelled correctly, then try using the file's absolute (full) path.")
 
     # All checks are good, so define some additional run-specific constants...
