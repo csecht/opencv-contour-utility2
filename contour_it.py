@@ -610,7 +610,7 @@ class ProcessImage(tk.Tk):
         # Note: this string needs to match that used as the key in
         #   const.WIN_NAME dictionary, the img_window dict, and
         #   the respective size Button 'command' kw call in
-        #   ContourViewer.setup_buttons().  Ugh, messy hard coding.
+        #   ContourViewer.config_buttons().  Ugh, messy hard coding.
         if called_by == 'thresh sized':
             self.tkimg['circled_th'] = manage.tk_image(circled_contours)
             self.img_label['circled_th'].configure(image=self.tkimg['circled_th'])
@@ -841,7 +841,7 @@ class ImageViewer(ProcessImage):
     setup_contour_window
     shape_win_setup
     setup_styles
-    setup_buttons
+    config_buttons
     display_input_images
     config_sliders
     config_comboboxes
@@ -1154,7 +1154,7 @@ class ImageViewer(ProcessImage):
 
         # At startup, trying to reduce screen clutter, so
         #  the Shape settings or image windows are not shown.
-        #  Subsequent show and hide are controlled with Buttons in setup_buttons().
+        #  Subsequent show and hide are controlled with Buttons in config_buttons().
         self.shape_settings_win.withdraw()
         self.img_window['shaped'].withdraw()
 

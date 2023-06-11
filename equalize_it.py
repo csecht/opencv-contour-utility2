@@ -73,10 +73,10 @@ except (ImportError, ModuleNotFoundError) as import_err:
 
 class ProcessImage(tk.Tk):
     """
-    A suite of tkinter methods for applying cv2.createCLAHE to an input
-    image file.
+    Matplotlib and tkinter methods for applying cv2.createCLAHE to an
+    image from the input file.
 
-    Class methods and internal functions:
+    Class methods:
     setup_histogram_canvas()
     apply_clahe()
     """
@@ -147,21 +147,18 @@ class ProcessImage(tk.Tk):
         #   how-to-remove-toolbar-button-from-navigationtoolbar2tk-figurecanvastkagg
         # Remove all tools from toolbar because the Histograms window is
         #   non-responsive while in event_loop.
-        for child, _ in toolbar.children.items():
-            toolbar.children[child].pack_forget()
+        for child, tool in toolbar.children.items():
+            tool.pack_forget()
 
         # Now display remaining widgets in histogram_window.
         # NOTE: toolbar must be gridded BEFORE canvas to prevent
         #   FigureCanvasTkAgg from preempting window geometry with its pack().
         toolbar.grid(row=1, column=0,
-                     padx=5, pady=(0, 5),  # Put a border around toolbar.
-                     sticky=tk.NSEW,
-                     )
+                     sticky=tk.NSEW)
         canvas.get_tk_widget().grid(row=0, column=0,
                                     ipady=10, ipadx=10,
-                                    padx=5, pady=5,  # Put a border around plot.
-                                    sticky=tk.NSEW,
-                                    )
+                                    padx=5, pady=(5, 0),  # Put a border around plot.
+                                    sticky=tk.NSEW)
 
     def apply_clahe(self) -> None:
         """
@@ -188,26 +185,27 @@ class ProcessImage(tk.Tk):
 
 class ImageViewer(ProcessImage):
     """
+    Methods to adjust CLAHE parameters, and display and update the
+    resulting images.
 
-    Methods:
-    setup_image_windows() -> no_exit_on_x()
-    show_input_histogram()
-    show_clahe_histogram()
-    config_app_win()
-    setup_report_window()
-    setup_styles()
-    setup_buttons() -> save_settings()
-    display_images()
-    config_sliders()
-    grid_widgets()
-    set_clahe_defaults()
-    report_clahe()
-    process_all()
+    Class Methods:
+    setup_image_windows -> no_exit_on_x
+    setup_report_window
+    setup_styles
+    config_buttons -> save_settings
+    config_sliders
+    grid_sliders
+    display_images
+    set_clahe_defaults
+    show_input_histogram
+    show_clahe_histogram
+    report_clahe
+    process_all
     """
 
     __slots__ = (
         'clahe_report_frame', 'clahe_selectors_frame', 'clahe_settings_txt', 'img_label',
-        'img_window', 'separator', 'slider'
+        'img_window', 'reset_btn', 'save_btn', 'separator', 'slider'
     )
 
     def __init__(self):
@@ -226,20 +224,23 @@ class ImageViewer(ProcessImage):
             'tile_size_lbl': tk.Label(master=self.clahe_selectors_frame),
         }
 
+        self.reset_btn = ttk.Button(master=self)
+        self.save_btn = ttk.Button(master=self)
+
         # Is an instance attribute here only because it is used in call
         #  to utils.save_settings_and_img() from the Save button.
         self.clahe_settings_txt = ''
 
-        # Separator used in shape report window.
-        self.separator = None  # ttk.Separator()
+        # Separator used in settings report window.
+        self.separator = ttk.Separator(master=self)
 
         # Put everything in place, establish initial settings and displays.
         self.setup_image_windows()
         self.setup_report_window()
-        self.setup_histogram_canvas()  # is in ProcessImage
+        self.setup_histogram_canvas()  # inherited from ProcessImage
         self.setup_styles()
-        self.setup_buttons()
         self.config_sliders()
+        self.config_buttons()
         self.grid_widgets()
         self.display_images()
         self.set_clahe_defaults()
@@ -313,7 +314,8 @@ class ImageViewer(ProcessImage):
     def setup_report_window(self) -> None:
         """
         Master (main tk window, "app") settings and reporting frames,
-        utility buttons, configurations, keybindings, and grids.
+        and utility buttons, configurations, keybindings, and grids in the
+        main "app" window.
         """
 
         # Need to provide exit info msg to Terminal.
@@ -326,8 +328,6 @@ class ImageViewer(ProcessImage):
                                                               plot=True))
         # ^^ Note: macOS Command-q will quit program without utils.quit_gui info msg.
 
-        self.separator = ttk.Separator(master=self.clahe_selectors_frame,
-                                       orient='horizontal')
         if const.MY_OS == 'lin':
             adjust_width = 600
             self.minsize(500, 300)
@@ -371,7 +371,8 @@ class ImageViewer(ProcessImage):
                                         ipadx=4, ipady=4,
                                         sticky=tk.EW)
 
-    def setup_styles(self) -> None:
+    @staticmethod
+    def setup_styles() -> None:
         """
         Configure ttk.Style for Buttons.
         Called by __init__.
@@ -386,10 +387,10 @@ class ImageViewer(ProcessImage):
 
         # Use fancy buttons for Linux;
         #   standard theme for Windows and macOS, but with custom font.
+        bstyle = ttk.Style()
+
         if const.MY_OS == 'lin':
             # This font setting is for the pull-down values.
-            self.option_add("*TCombobox*Font", ('TkTooltipFont', 8))
-            bstyle = ttk.Style()
             bstyle.configure("My.TButton", font=('TkTooltipFont', 8))
             bstyle.map("My.TButton",
                        foreground=[('active', const.CBLIND_COLOR_TK['yellow'])],
@@ -397,58 +398,13 @@ class ImageViewer(ProcessImage):
                                    ('active', const.CBLIND_COLOR_TK['vermilion'])],
                        )
         elif const.MY_OS == 'win':
-            self.option_add("*TCombobox*Font", ('TkTooltipFont', 7))
-            bstyle = ttk.Style()
-            bstyle.configure("My.TButton", font=('TkTooltipFont', 7))
             bstyle.map("My.TButton",
                        foreground=[('active', const.CBLIND_COLOR_TK['yellow'])],
                        background=[('pressed', 'gray30'),
                                    ('active', const.CBLIND_COLOR_TK['vermilion'])],
                        )
-
         else:  # is macOS
-            self.option_add("*TCombobox*Font", ('TkTooltipFont', 10))
-            bstyle = ttk.Style()
             bstyle.configure("My.TButton", font=('TkTooltipFont', 11))
-
-    def setup_buttons(self) -> None:
-        """
-        Assign and grid Buttons in the main (app) window.
-        Called from __init__.
-
-        Returns: None
-        """
-
-        def save_settings():
-            """
-            A Button "command" kw caller to avoid messy or lambda
-            statements.
-            """
-            utils.save_settings_and_img(img2save=self.clahe_img,
-                                        txt2save=self.clahe_settings_txt,
-                                        caller='CLAHE')
-
-        button_params = dict(
-            style='My.TButton',
-            width=0)
-
-        reset_btn = ttk.Button(text='Reset to defaults',
-                               command=self.set_clahe_defaults,
-                               **button_params)
-
-        save_btn = ttk.Button(text='Save settings & image',
-                              command=save_settings,
-                              **button_params)
-
-        # Widget grid for the main window.
-        reset_btn.grid(column=0, row=2,
-                       padx=(10, 0),
-                       pady=(0, 5),
-                       sticky=tk.W)
-        save_btn.grid(column=0, row=3,
-                      padx=(10, 0),
-                      pady=(0, 5),
-                      sticky=tk.W)
 
     def config_sliders(self) -> None:
         """
@@ -462,11 +418,9 @@ class ImageViewer(ProcessImage):
         #  Frame text. This doesn't happen on Windows or macOS. Therefore,
         #  replace continuous slide processing on Linux with bindings
         #  to call process_all() only on left button release (with no flicker).
-        def do_nothing() -> None:
-            """A void function"""
 
         if const.MY_OS == 'lin':
-            slider_cmd = do_nothing()
+            slider_cmd = ''
 
             # Note that the if '_lbl' condition isn't needed to improve
             #   performance; it's just there for clarity's sake.
@@ -493,10 +447,40 @@ class ImageViewer(ProcessImage):
                                            command=slider_cmd,
                                            **const.SCALE_PARAMETERS)
 
+    def config_buttons(self) -> None:
+        """
+        Configure utility Buttons.
+        Called from __init__.
+
+        Returns: None
+        """
+
+        def save_settings():
+            """
+            A Button "command" kw caller to avoid messy or lambda
+            statements.
+            """
+            utils.save_settings_and_img(img2save=self.clahe_img,
+                                        txt2save=self.clahe_settings_txt,
+                                        caller='CLAHE')
+
+        button_params = dict(
+            style='My.TButton',
+            width=0)
+
+        self.reset_btn.config(text='Reset to defaults',
+                              command=self.set_clahe_defaults,
+                              **button_params)
+
+        self.save_btn.config(text='Save settings & image',
+                             command=save_settings,
+                             **button_params)
+
     def grid_widgets(self) -> None:
         """
-        Developer: Grid as a group to make clear the spatial
-        relationships of all elements.
+        Widgets' grid in the main, "app", window.
+        Note: Grid all here to make clear the spatial relationships
+        of all elements.
         """
 
         # Use the dict() function with keyword arguments to mimic the
@@ -510,7 +494,10 @@ class ImageViewer(ProcessImage):
                 padx=5,
                 pady=(5, 0),
                 sticky=tk.E)
-
+            grid_params = dict(
+                padx=(10, 0),
+                pady=(0, 5),
+                sticky=tk.W)
         else:  # is macOS
             slider_grid_params = dict(
                 padx=5,
@@ -519,6 +506,10 @@ class ImageViewer(ProcessImage):
                 padx=5,
                 pady=(4, 0),
                 sticky=tk.E)
+            grid_params = dict(
+                padx=(10, 0),
+                pady=(0, 5),
+                sticky=tk.W)
 
         # Widgets gridded in the self.clahe_selectors_frame Frame.
         # Sorted by row number:
@@ -531,6 +522,16 @@ class ImageViewer(ProcessImage):
                                           **label_grid_params)
         self.slider['tile_size'].grid(column=1, row=1,
                                       **slider_grid_params)
+
+        self.separator.grid(column=0, row=2,
+                            columnspan=2,
+                            pady=6,
+                            sticky=tk.NSEW)
+
+        self.reset_btn.grid(column=0, row=3,
+                            **grid_params)
+        self.save_btn.grid(column=0, row=4,
+                           **grid_params)
 
     def display_images(self) -> None:
         """
@@ -666,7 +667,7 @@ class ImageViewer(ProcessImage):
             event: The implicit mouse button event.
         Returns: *event* as a formality; is functionally None.
         """
-        self.apply_clahe()
+        self.apply_clahe()  # inherited from ProcessImage
         self.show_clahe_histogram()
         self.report_clahe()
 
@@ -685,7 +686,7 @@ if __name__ == "__main__":
         sys.exit(f'COULD NOT OPEN the image: {INPUT_FILE}  <-Check spelling.\n'
                  "  If spelled correctly, then try using the file's absolute (full) path.")
 
-    # All checks are good, so define some run-specific constants...
+    # All checks are good, so define some additional run-specific constants...
     infile_dict = manage.infile()
     INPUT_IMG = infile_dict['input_img']
     GRAY_IMG = infile_dict['gray_img']
