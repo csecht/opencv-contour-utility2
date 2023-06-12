@@ -21,6 +21,7 @@ Developed in Python 3.8-3.9.
 """
 
 # Copyright (C) 2022-2023 C.S. Echt, under GNU General Public License
+# pylint: disable=use-dict-literal, no-member
 
 # Standard library imports.
 import sys
@@ -69,15 +70,12 @@ except (ImportError, ModuleNotFoundError) as import_err:
         f'Error message:\n{import_err}')
 
 
-# pylint: disable=use-dict-literal, no-member
-
 class ProcessImage(tk.Tk):
     """
     Matplotlib and tkinter methods for applying cv2.createCLAHE to an
     image from the input file.
 
     Class methods:
-    setup_histogram_canvas()
     apply_clahe()
     """
 
@@ -133,33 +131,6 @@ class ProcessImage(tk.Tk):
         self.clahe_mean = 0  # int(self.clahe_img.mean())
         self.clahe_img = None
 
-    def setup_histogram_canvas(self) -> None:
-        """
-        A tkinter window for the Matplotlib plot canvas.
-        """
-
-        canvas = backend.FigureCanvasTkAgg(self.fig, self.img_window['histogram'])
-
-        toolbar = backend.NavigationToolbar2Tk(canvas, self.img_window['histogram'])
-
-        # Need to remove navigation buttons.
-        # Source: https://stackoverflow.com/questions/59155873/
-        #   how-to-remove-toolbar-button-from-navigationtoolbar2tk-figurecanvastkagg
-        # Remove all tools from toolbar because the Histograms window is
-        #   non-responsive while in event_loop.
-        for child, tool in toolbar.children.items():
-            tool.pack_forget()
-
-        # Now display remaining widgets in histogram_window.
-        # NOTE: toolbar must be gridded BEFORE canvas to prevent
-        #   FigureCanvasTkAgg from preempting window geometry with its pack().
-        toolbar.grid(row=1, column=0,
-                     sticky=tk.NSEW)
-        canvas.get_tk_widget().grid(row=0, column=0,
-                                    ipady=10, ipadx=10,
-                                    padx=5, pady=(5, 0),  # Put a border around plot.
-                                    sticky=tk.NSEW)
-
     def apply_clahe(self) -> None:
         """
         Applies CLAHE adjustments to image and calculates pixel values
@@ -191,7 +162,7 @@ class ImageViewer(ProcessImage):
     Class Methods:
     setup_image_windows -> no_exit_on_x
     setup_report_window
-    setup_styles
+    setup_histogram_canvas
     config_buttons -> save_settings
     config_sliders
     grid_sliders
@@ -237,7 +208,7 @@ class ImageViewer(ProcessImage):
         # Put everything in place, establish initial settings and displays.
         self.setup_image_windows()
         self.setup_report_window()
-        self.setup_histogram_canvas()  # inherited from ProcessImage
+        self.setup_histogram_canvas()
         self.config_sliders()
         self.config_buttons()
         self.grid_widgets()
@@ -370,40 +341,32 @@ class ImageViewer(ProcessImage):
                                         ipadx=4, ipady=4,
                                         sticky=tk.EW)
 
-    @staticmethod
-    def setup_styles() -> None:
+    def setup_histogram_canvas(self) -> None:
         """
-        Configure ttk.Style for Buttons.
-        Called by __init__.
-
-        Returns: None
+        A tkinter window for the Matplotlib plot canvas.
         """
 
-        # There are problems of tk.Button text showing up on macOS, so use ttk.
-        # Explicit styles are needed for buttons to show properly on MacOS.
-        #  ... even then, background and pressed colors won't be recognized.
-        ttk.Style().theme_use('alt')
+        canvas = backend.FigureCanvasTkAgg(self.fig, self.img_window['histogram'])
 
-        # Use fancy buttons for Linux;
-        #   standard theme for Windows and macOS, but with custom font.
-        bstyle = ttk.Style()
+        toolbar = backend.NavigationToolbar2Tk(canvas, self.img_window['histogram'])
 
-        if const.MY_OS == 'lin':
-            # This font setting is for the pull-down values.
-            bstyle.configure("My.TButton", font=('TkTooltipFont', 8))
-            bstyle.map("My.TButton",
-                       foreground=[('active', const.CBLIND_COLOR_TK['yellow'])],
-                       background=[('pressed', 'gray30'),
-                                   ('active', const.CBLIND_COLOR_TK['vermilion'])],
-                       )
-        elif const.MY_OS == 'win':
-            bstyle.map("My.TButton",
-                       foreground=[('active', const.CBLIND_COLOR_TK['yellow'])],
-                       background=[('pressed', 'gray30'),
-                                   ('active', const.CBLIND_COLOR_TK['vermilion'])],
-                       )
-        else:  # is macOS
-            bstyle.configure("My.TButton", font=('TkTooltipFont', 11))
+        # Need to remove navigation buttons.
+        # Source: https://stackoverflow.com/questions/59155873/
+        #   how-to-remove-toolbar-button-from-navigationtoolbar2tk-figurecanvastkagg
+        # Remove all tools from toolbar because the Histograms window is
+        #   non-responsive while in event_loop.
+        for _, tool in toolbar.children.items():
+            tool.pack_forget()
+
+        # Now display remaining widgets in histogram_window.
+        # NOTE: toolbar must be gridded BEFORE canvas to prevent
+        #   FigureCanvasTkAgg from preempting window geometry with its pack().
+        toolbar.grid(row=1, column=0,
+                     sticky=tk.NSEW)
+        canvas.get_tk_widget().grid(row=0, column=0,
+                                    ipady=10, ipadx=10,
+                                    padx=5, pady=(5, 0),  # Put a border around plot.
+                                    sticky=tk.NSEW)
 
     def config_sliders(self) -> None:
         """
