@@ -12,6 +12,7 @@ tk_image: converts scaled cv2 image to a compatible tk.TK image format.
 import argparse
 import math
 import sys
+import tkinter
 
 # noinspection PyCompatibility
 from __main__ import __doc__
@@ -184,9 +185,14 @@ def tk_image(image: np.ndarray) -> PhotoImage:
     return tk_img
 
 
-def ttk_styles(mainwin=None) -> None:
+def ttk_styles(mainloop: tkinter.Tk) -> None:
     """
     Configure platform-specific ttk.Style for Buttons and Comboboxes.
+    Font and color values need to be edited as appropriate for the
+    application (to avoid lengthy parameter arguments).
+
+    Args:
+         mainloop: The tk.Toplevel running as the mainloop.
 
     Returns: None
     """
@@ -208,7 +214,7 @@ def ttk_styles(mainwin=None) -> None:
     else:  # is macOS
         font_size = 11
 
-    mainwin.option_add("*TCombobox*Font", ('TkTooltipFont', font_size))
+    mainloop.option_add("*TCombobox*Font", ('TkTooltipFont', font_size))
 
     if const.MY_OS == 'lin':
         # This font setting is for the pull-down values.
