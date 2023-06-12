@@ -21,6 +21,7 @@ Developed in Python 3.8-3.9.
 """
 
 # Copyright (C) 2022-2023 C.S. Echt, under GNU General Public License
+# pylint: disable=use-dict-literal, no-member
 
 # Standard library imports.
 import sys
@@ -69,15 +70,12 @@ except (ImportError, ModuleNotFoundError) as import_err:
         f'Error message:\n{import_err}')
 
 
-# pylint: disable=use-dict-literal, no-member
-
 class ProcessImage(tk.Tk):
     """
-    A suite of tkinter methods for applying cv2.createCLAHE to an input
-    image file.
+    Matplotlib and tkinter methods for applying cv2.createCLAHE to an
+    image from the input file.
 
-    Class methods and internal functions:
-    setup_histogram_window()
+    Class methods:
     apply_clahe()
     """
 
@@ -86,6 +84,7 @@ class ProcessImage(tk.Tk):
         'img_label', 'img_window', 'input_contrast_std', 'input_mean', 'input_sd', 'slider_val',
         'tkimg', 'tk', 'plt'
     )
+
     def __init__(self):
         super().__init__()
 
@@ -132,42 +131,6 @@ class ProcessImage(tk.Tk):
         self.clahe_mean = 0  # int(self.clahe_img.mean())
         self.clahe_img = None
 
-    def setup_histogram_window(self) -> None:
-        """
-        A tkinter window for the Matplotlib plot canvas.
-        """
-
-        self.img_window['histogram'].title(const.WIN_NAME['histo'])
-
-        # Allow plot to resize with window.
-        self.img_window['histogram'].rowconfigure(0, weight=1)
-        self.img_window['histogram'].columnconfigure(0, weight=1)
-
-        canvas = backend.FigureCanvasTkAgg(self.fig, self.img_window['histogram'])
-
-        toolbar = backend.NavigationToolbar2Tk(canvas, self.img_window['histogram'])
-
-        # Need to remove navigation buttons.
-        # Source: https://stackoverflow.com/questions/59155873/
-        #   how-to-remove-toolbar-button-from-navigationtoolbar2tk-figurecanvastkagg
-        # Remove all tools from toolbar because the Histograms window is
-        #   non-responsive while in event_loop.
-        for child, _ in toolbar.children.items():
-            toolbar.children[child].pack_forget()
-
-        # Now display remaining widgets in histogram_window.
-        # NOTE: toolbar must be gridded BEFORE canvas to prevent
-        #   FigureCanvasTkAgg from preempting window geometry with its pack().
-        toolbar.grid(row=1, column=0,
-                     padx=5, pady=(0, 5),  # Put a border around toolbar.
-                     sticky=tk.NSEW,
-                     )
-        canvas.get_tk_widget().grid(row=0, column=0,
-                                    ipady=10, ipadx=10,
-                                    padx=5, pady=5,  # Put a border around plot.
-                                    sticky=tk.NSEW,
-                                    )
-
     def apply_clahe(self) -> None:
         """
         Applies CLAHE adjustments to image and calculates pixel values
@@ -193,26 +156,27 @@ class ProcessImage(tk.Tk):
 
 class ImageViewer(ProcessImage):
     """
+    Methods to adjust CLAHE parameters, and display and update the
+    resulting images.
 
-    Methods:
-    setup_image_windows() -> no_exit_on_x()
-    show_input_histogram()
-    show_clahe_histogram()
-    config_app_win()
-    setup_report_window()
-    setup_styles()
-    setup_buttons() -> save_settings()
-    display_images()
-    config_sliders()
-    grid_widgets()
-    set_clahe_defaults()
-    report_clahe()
-    process_all()
+    Class Methods:
+    setup_image_windows -> no_exit_on_x
+    setup_report_window
+    setup_histogram_canvas
+    config_buttons -> save_settings
+    config_sliders
+    grid_sliders
+    display_images
+    set_clahe_defaults
+    show_input_histogram
+    show_clahe_histogram
+    report_clahe
+    process_all
     """
 
     __slots__ = (
         'clahe_report_frame', 'clahe_selectors_frame', 'clahe_settings_txt', 'img_label',
-        'img_window', 'separator', 'slider'
+        'img_window', 'reset_btn', 'save_btn', 'separator', 'slider'
     )
 
     def __init__(self):
@@ -231,25 +195,26 @@ class ImageViewer(ProcessImage):
             'tile_size_lbl': tk.Label(master=self.clahe_selectors_frame),
         }
 
+        self.reset_btn = ttk.Button(master=self)
+        self.save_btn = ttk.Button(master=self)
+
         # Is an instance attribute here only because it is used in call
         #  to utils.save_settings_and_img() from the Save button.
         self.clahe_settings_txt = ''
 
-        # Separator used in shape report window.
-        self.separator = None  # ttk.Separator()
+        # Separator used in settings report window.
+        self.separator = ttk.Separator(master=self)
 
         # Put everything in place, establish initial settings and displays.
         self.setup_image_windows()
         self.setup_report_window()
-        self.setup_histogram_window()  # is called from ProcessImage
-        self.setup_styles()
-        self.setup_buttons()
+        self.setup_histogram_canvas()
         self.config_sliders()
+        self.config_buttons()
         self.grid_widgets()
         self.display_images()
         self.set_clahe_defaults()
         self.show_input_histogram()
-        self.report_clahe()
 
     def setup_image_windows(self) -> None:
         """
@@ -299,6 +264,15 @@ class ImageViewer(ProcessImage):
         self.img_window['clahe'].title(const.WIN_NAME['clahe'])
         self.img_window['histogram'].title(const.WIN_NAME['histo'])
 
+        # Allow images to maintain borders and relative positions with window resize.
+        self.img_window['input'].columnconfigure(0, weight=1)
+        self.img_window['input'].columnconfigure(1, weight=1)
+        self.img_window['input'].rowconfigure(0, weight=1)
+        self.img_window['clahe'].columnconfigure(0, weight=1)
+        self.img_window['clahe'].rowconfigure(0, weight=1)
+        self.img_window['histogram'].rowconfigure(0, weight=1)
+        self.img_window['histogram'].columnconfigure(0, weight=1)
+
         # The Labels to display scaled images, which are updated using
         #  .configure() for 'image=' in their respective processing methods.
         self.img_label = {
@@ -310,7 +284,8 @@ class ImageViewer(ProcessImage):
     def setup_report_window(self) -> None:
         """
         Master (main tk window, "app") settings and reporting frames,
-        utility buttons, configurations, keybindings, and grids.
+        and utility buttons, configurations, keybindings, and grids in the
+        main "app" window.
         """
 
         # Need to provide exit info msg to Terminal.
@@ -323,8 +298,6 @@ class ImageViewer(ProcessImage):
                                                               plot=True))
         # ^^ Note: macOS Command-q will quit program without utils.quit_gui info msg.
 
-        self.separator = ttk.Separator(master=self.clahe_selectors_frame,
-                                       orient='horizontal')
         if const.MY_OS == 'lin':
             adjust_width = 600
             self.minsize(500, 300)
@@ -368,53 +341,82 @@ class ImageViewer(ProcessImage):
                                         ipadx=4, ipady=4,
                                         sticky=tk.EW)
 
-    def setup_styles(self) -> None:
+    def setup_histogram_canvas(self) -> None:
         """
-        Configure ttk.Style for Buttons.
-        Called by __init__.
+        A tkinter window for the Matplotlib plot canvas.
+        """
+
+        canvas = backend.FigureCanvasTkAgg(self.fig, self.img_window['histogram'])
+
+        toolbar = backend.NavigationToolbar2Tk(canvas, self.img_window['histogram'])
+
+        # Need to remove navigation buttons.
+        # Source: https://stackoverflow.com/questions/59155873/
+        #   how-to-remove-toolbar-button-from-navigationtoolbar2tk-figurecanvastkagg
+        # Remove all tools from toolbar because the Histograms window is
+        #   non-responsive while in event_loop.
+        for _, tool in toolbar.children.items():
+            tool.pack_forget()
+
+        # Now display remaining widgets in histogram_window.
+        # NOTE: toolbar must be gridded BEFORE canvas to prevent
+        #   FigureCanvasTkAgg from preempting window geometry with its pack().
+        toolbar.grid(row=1, column=0,
+                     sticky=tk.NSEW)
+        canvas.get_tk_widget().grid(row=0, column=0,
+                                    ipady=10, ipadx=10,
+                                    padx=5, pady=(5, 0),  # Put a border around plot.
+                                    sticky=tk.NSEW)
+
+    def config_sliders(self) -> None:
+        """
+        Configure arguments for Scale() sliders.
 
         Returns: None
         """
 
-        # There are problems of tk.Button text showing up on macOS, so use ttk.
-        # Explicit styles are needed for buttons to show properly on MacOS.
-        #  ... even then, background and pressed colors won't be recognized.
-        ttk.Style().theme_use('alt')
+        # On the development Linux Ubuntu PC, calling process_all() for
+        #  slider command arguments causes flickering of the report
+        #  Frame text. This doesn't happen on Windows or macOS. Therefore,
+        #  replace continuous slide processing on Linux with bindings
+        #  to call process_all() only on left button release (with no flicker).
 
-        # Use fancy buttons for Linux;
-        #   standard theme for Windows and macOS, but with custom font.
         if const.MY_OS == 'lin':
-            # This font setting is for the pull-down values.
-            self.option_add("*TCombobox*Font", ('TkTooltipFont', 8))
-            bstyle = ttk.Style()
-            bstyle.configure("My.TButton", font=('TkTooltipFont', 8))
-            bstyle.map("My.TButton",
-                       foreground=[('active', const.CBLIND_COLOR_TK['yellow'])],
-                       background=[('pressed', 'gray30'),
-                                   ('active', const.CBLIND_COLOR_TK['vermilion'])],
-                       )
-        elif const.MY_OS == 'win':
-            self.option_add("*TCombobox*Font", ('TkTooltipFont', 7))
-            bstyle = ttk.Style()
-            bstyle.configure("My.TButton", font=('TkTooltipFont', 7))
-            bstyle.map("My.TButton",
-                       foreground=[('active', const.CBLIND_COLOR_TK['yellow'])],
-                       background=[('pressed', 'gray30'),
-                                   ('active', const.CBLIND_COLOR_TK['vermilion'])],
-                       )
+            slider_cmd = ''
 
-        else:  # is macOS
-            self.option_add("*TCombobox*Font", ('TkTooltipFont', 10))
-            bstyle = ttk.Style()
-            bstyle.configure("My.TButton", font=('TkTooltipFont', 11))
+            # Note that the if '_lbl' condition isn't needed to improve
+            #   performance; it's just there for clarity's sake.
+            for name, widget in self.slider.items():
+                if '_lbl' not in name:
+                    widget.bind('<ButtonRelease-1>', self.process_all)
+        else:  # is Windows or macOS
+            slider_cmd = self.process_all
 
-    def setup_buttons(self) -> None:
+        self.slider['clip_limit_lbl'].configure(text='Clip limit:',
+                                                **const.LABEL_PARAMETERS)
+        self.slider['clip_limit'].configure(from_=0.1, to=5,
+                                            resolution=0.1,
+                                            tickinterval=1,
+                                            variable=self.slider_val['clip_limit'],
+                                            command=slider_cmd,
+                                            **const.SCALE_PARAMETERS)
+
+        self.slider['tile_size_lbl'].configure(text='Tile size (px):',
+                                               **const.LABEL_PARAMETERS)
+        self.slider['tile_size'].configure(from_=1, to=200,
+                                           tickinterval=20,
+                                           variable=self.slider_val['tile_size'],
+                                           command=slider_cmd,
+                                           **const.SCALE_PARAMETERS)
+
+    def config_buttons(self) -> None:
         """
-        Assign and grid Buttons in the main (app) window.
+        Configure utility Buttons.
         Called from __init__.
 
         Returns: None
         """
+        manage.ttk_styles(self)
 
         def save_settings():
             """
@@ -429,64 +431,19 @@ class ImageViewer(ProcessImage):
             style='My.TButton',
             width=0)
 
-        reset_btn = ttk.Button(text='Reset to defaults',
-                               command=self.set_clahe_defaults,
-                               **button_params)
-
-        save_btn = ttk.Button(text='Save settings & image',
-                              command=save_settings,
+        self.reset_btn.config(text='Reset to defaults',
+                              command=self.set_clahe_defaults,
                               **button_params)
 
-        # Widget grid for the main window.
-        reset_btn.grid(column=0, row=2,
-                       padx=(10, 0),
-                       pady=(0, 5),
-                       sticky=tk.W)
-        save_btn.grid(column=0, row=3,
-                      padx=(10, 0),
-                      pady=(0, 5),
-                      sticky=tk.W)
-
-    def config_sliders(self) -> None:
-        """
-        Configure arguments for Scale() sliders.
-
-        Returns: None
-        """
-        self.slider['clip_limit_lbl'].configure(text='Clip limit:',
-                                                **const.LABEL_PARAMETERS)
-        self.slider['clip_limit'].configure(from_=0.1, to=5,
-                                            resolution=0.1,
-                                            tickinterval=1,
-                                            variable=self.slider_val['clip_limit'],
-                                            command=self.process_all,
-                                            **const.SCALE_PARAMETERS)
-
-        self.slider['tile_size_lbl'].configure(text='Tile size (px):',
-                                               **const.LABEL_PARAMETERS)
-        self.slider['tile_size'].configure(from_=1, to=200,
-                                           tickinterval=20,
-                                           variable=self.slider_val['tile_size'],
-                                           command=self.process_all,
-                                           **const.SCALE_PARAMETERS)
-
-        # To avoid grabbing all the intermediate values between normal
-        #  click and release movement, bind sliders to call the main
-        #  processing and reporting function only on left button release.
-        # All sliders are here bound to process_all(), but if the processing
-        #   overhead of that is too great, then can add conditions in the loop
-        #   to bind certain groups or individual sliders to more restrictive
-        #   processing functions.
-        # Note that the if '_lbl' condition doesn't seem to be needed to
-        #   improve performance; it's just there for clarity's sake.
-        # for name, widget in self.slider.items():
-        #     if '_lbl' not in name:
-        #         widget.bind('<ButtonRelease-1>', self.report_clahe())
+        self.save_btn.config(text='Save settings & image',
+                             command=save_settings,
+                             **button_params)
 
     def grid_widgets(self) -> None:
         """
-        Developer: Grid as a group to make clear the spatial
-        relationships of all elements.
+        Widgets' grid in the main, "app", window.
+        Note: Grid all here to make clear the spatial relationships
+        of all elements.
         """
 
         # Use the dict() function with keyword arguments to mimic the
@@ -500,7 +457,10 @@ class ImageViewer(ProcessImage):
                 padx=5,
                 pady=(5, 0),
                 sticky=tk.E)
-
+            grid_params = dict(
+                padx=(10, 0),
+                pady=(0, 5),
+                sticky=tk.W)
         else:  # is macOS
             slider_grid_params = dict(
                 padx=5,
@@ -509,6 +469,10 @@ class ImageViewer(ProcessImage):
                 padx=5,
                 pady=(4, 0),
                 sticky=tk.E)
+            grid_params = dict(
+                padx=(10, 0),
+                pady=(0, 5),
+                sticky=tk.W)
 
         # Widgets gridded in the self.clahe_selectors_frame Frame.
         # Sorted by row number:
@@ -522,28 +486,24 @@ class ImageViewer(ProcessImage):
         self.slider['tile_size'].grid(column=1, row=1,
                                       **slider_grid_params)
 
+        self.separator.grid(column=0, row=2,
+                            columnspan=2,
+                            pady=6,
+                            sticky=tk.NSEW)
+
+        self.reset_btn.grid(column=0, row=3,
+                            **grid_params)
+        self.save_btn.grid(column=0, row=4,
+                           **grid_params)
+
     def display_images(self) -> None:
         """
-        Converts input image and its grayscale to tk image formate and
+        Converts input image and its grayscale to tk image format and
         displays them as panels gridded in their toplevel window.
+        Displays the CLAHE image from ProcessImage.apply_clahe().
         Calls manage.tkimage(), which applies scaling, cv2 -> tk array
         conversion, and updates the panel Label's image parameter.
         """
-
-        # Display the input image and its grayscale; both are static, so
-        #  do not need updating, but retain the image display statement
-        #  structure of processed images that do need updating.
-        # Note: Use 'self' to scope the ImageTk.PhotoImage in the Class,
-        #  otherwise it will/may not show b/c of garbage collection.
-        self.tkimg['input'] = manage.tk_image(INPUT_IMG)
-        self.img_label['input'].configure(image=self.tkimg['input'])
-        self.img_label['input'].grid(column=0, row=0,
-                                     padx=5, pady=5)
-
-        self.tkimg['gray'] = manage.tk_image(GRAY_IMG)
-        self.img_label['gray'].configure(image=self.tkimg['gray'])
-        self.img_label['gray'].grid(column=1, row=0,
-                                    padx=5, pady=5)
 
         panel_left = dict(
             column=0, row=0,
@@ -554,6 +514,20 @@ class ImageViewer(ProcessImage):
             padx=5, pady=5,
             sticky=tk.NSEW)
 
+        # Display the input image and its grayscale; both are static, so
+        #  do not need updating, but retain the image display statement
+        #  structure of processed images that do need updating.
+        # Note: Use 'self' to scope the ImageTk.PhotoImage in the Class,
+        #  otherwise it will/may not show b/c of garbage collection.
+        self.tkimg['input'] = manage.tk_image(INPUT_IMG)
+        self.img_label['input'].configure(image=self.tkimg['input'])
+        self.img_label['input'].grid(**panel_left)
+
+        self.tkimg['gray'] = manage.tk_image(GRAY_IMG)
+        self.img_label['gray'].configure(image=self.tkimg['gray'])
+        self.img_label['gray'].grid(**panel_right)
+
+        # Remember that 'clahe' image is configured in PI.apply_clahe().
         self.img_label['clahe'].grid(**panel_left)
 
     def set_clahe_defaults(self) -> None:
@@ -595,8 +569,6 @@ class ImageViewer(ProcessImage):
         self.ax1.set_ylabel("Pixel count")
         self.ax1.set_title('Input (grayscale)')
 
-        self.fig.canvas.draw_idle()
-
     def show_clahe_histogram(self) -> None:
         """
         Updates CLAHE adjusted histogram plot with Matplotlib from
@@ -613,7 +585,6 @@ class ImageViewer(ProcessImage):
                       color='orange',
                       histtype='stepfilled',
                       # histtype='step',  # 'step' draws a line.
-                      # linewidth=1.2
                       )
         self.ax2.set_title('CLAHE adjusted')
         self.ax2.set_xlabel("Pixel value")
@@ -623,6 +594,7 @@ class ImageViewer(ProcessImage):
         #  plotting-in-a-non-blocking-way-with-matplotlib
         # and, https://github.com/matplotlib/matplotlib/issues/11131
         self.fig.canvas.draw_idle()
+        # plt.draw()
 
     def report_clahe(self) -> None:
         """
@@ -632,20 +604,18 @@ class ImageViewer(ProcessImage):
         """
 
         # Note: recall that *_val dict are inherited from ProcessImage().
-        image_file = manage.arguments()['input']
         clip_limit = self.slider_val['clip_limit'].get()
         tile_size = (self.slider_val['tile_size'].get(),
                      self.slider_val['tile_size'].get())
 
         # Text is formatted for clarity in window, terminal, and saved file.
         self.clahe_settings_txt = (
-            f'Image: {image_file}\n\n'
+            f'Image: {INPUT_PATH}\n\n'
             f'Input grayscale pixel value: mean {self.input_mean},'
             f' stdev {self.input_sd}\n'
             f'cv2.createCLAHE cliplimit={clip_limit}, tileGridSize{tile_size}\n'
             f'CLAHE grayscale pixel value: mean {self.clahe_mean},'
             f' stdev {self.clahe_sd}\n'
-
         )
 
         utils.display_report(frame=self.clahe_report_frame,
@@ -660,9 +630,9 @@ class ImageViewer(ProcessImage):
             event: The implicit mouse button event.
         Returns: *event* as a formality; is functionally None.
         """
-        self.apply_clahe()
-        self.report_clahe()
+        self.apply_clahe()  # inherited from ProcessImage
         self.show_clahe_histogram()
+        self.report_clahe()
 
         return event
 
@@ -671,15 +641,15 @@ if __name__ == "__main__":
     # Program exits here if the system platform or Python version check fails.
     utils.check_platform()
     vcheck.minversion('3.7')
-    arguments = manage.arguments()
+
+    INPUT_PATH = manage.arguments()['input']
     # Need file check here instead of in manage.arguments() to avoid
     #   numerous calls to that module.
-    if not Path.exists(utils.valid_path_to(arguments['input'])):
-        sys.exit(f'COULD NOT OPEN the image: {arguments["input"]}  <-Check spelling.\n'
+    if not Path.exists(utils.valid_path_to(INPUT_PATH)):
+        sys.exit(f'COULD NOT OPEN the image: {INPUT_PATH}  <-Check spelling.\n'
                  "  If spelled correctly, then try using the file's absolute (full) path.")
 
-    # All checks are good, so grab as a 'global' the dictionary of
-    #   command line argument values and define often used values...
+    # All checks are good, so define some additional run-specific constants...
     infile_dict = manage.infile()
     INPUT_IMG = infile_dict['input_img']
     GRAY_IMG = infile_dict['gray_img']

@@ -12,6 +12,7 @@ tk_image: converts scaled cv2 image to a compatible tk.TK image format.
 import argparse
 import math
 import sys
+import tkinter
 
 # noinspection PyCompatibility
 from __main__ import __doc__
@@ -21,6 +22,7 @@ import cv2
 import numpy as np
 from PIL import Image, ImageTk
 from PIL.ImageTk import PhotoImage
+from tkinter import ttk
 
 # Local application imports.
 import contour_modules
@@ -181,3 +183,62 @@ def tk_image(image: np.ndarray) -> PhotoImage:
     tk_img.image = tk_img
 
     return tk_img
+
+
+def ttk_styles(mainloop: tkinter.Tk) -> None:
+    """
+    Configure platform-specific ttk.Style for Buttons and Comboboxes.
+    Font and color values need to be edited as appropriate for the
+    application (to avoid lengthy parameter arguments).
+
+    Args:
+         mainloop: The tk.Toplevel running as the mainloop.
+
+    Returns: None
+    """
+
+    # There are problems of tk.Button text showing up on macOS, so use ttk.
+    # Explicit styles are needed for buttons to show properly on MacOS.
+    #  ... even then, background and pressed colors won't be recognized.
+    ttk.Style().theme_use('alt')
+
+    # Use fancy buttons for Linux;
+    #   standard theme for Windows and macOS, but with custom font.
+    bstyle = ttk.Style()
+    combo_style = ttk.Style()
+
+    if const.MY_OS == 'lin':
+        font_size = 8
+    elif const.MY_OS == 'win':
+        font_size = 7
+    else:  # is macOS
+        font_size = 11
+
+    mainloop.option_add("*TCombobox*Font", ('TkTooltipFont', font_size))
+
+    if const.MY_OS == 'lin':
+        # This font setting is for the pull-down values.
+        bstyle.configure("My.TButton", font=('TkTooltipFont', font_size))
+        bstyle.map("My.TButton",
+                   foreground=[('active', const.CBLIND_COLOR_TK['yellow'])],
+                   background=[('pressed', 'gray30'),
+                               ('active', const.CBLIND_COLOR_TK['vermilion'])],
+                   )
+
+        combo_style.map('TCombobox',
+                        fieldbackground=[('readonly',
+                                          const.CBLIND_COLOR_TK['dark blue'])],
+                        selectbackground=[('readonly',
+                                           const.CBLIND_COLOR_TK['dark blue'])],
+                        selectforeround=[('readonly',
+                                          const.CBLIND_COLOR_TK['yellow'])],
+                        )
+
+    elif const.MY_OS == 'win':
+        bstyle.map("My.TButton",
+                   foreground=[('active', const.CBLIND_COLOR_TK['yellow'])],
+                   background=[('pressed', 'gray30'),
+                               ('active', const.CBLIND_COLOR_TK['vermilion'])],
+                   )
+    else:  # is macOS
+        bstyle.configure("My.TButton", font=('TkTooltipFont', font_size))

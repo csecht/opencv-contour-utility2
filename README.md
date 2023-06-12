@@ -110,7 +110,7 @@ While `equalize_it.py` should work on all platforms, some Linux installations ma
 
 While not a program issue, there is a potential source of confusion when using the example image, sample4.jpg (shapes). With the default settings, the white border around the black background will display a hexagon-shaped contour, which may be difficult to see, especially when using yellow --color option. Consequently, it will be counted as a hexagon shape unless, in main settings, it is not recognized as a selected contour by clicking the cv2.arcLength button instead of cv2.contourArea.
 
-With `equalize_it.py` on Linux Ubuntu, moving the sliders causes the settings report text to flash with each image update. This does not happen on Windows or macOS systems. The flashing can be removed by allowing updates only on mouse button release when moving the sliders. If Linux users prefer that remedy, just let me know, otherwise, flash on.
+With `equalize_it.py` on Linux Ubuntu, moving the slider bar triggers updates only on button release, but updates are continuous with slide on Windows and macOS. The is implemented for Linux to avoid annoying report text flickering.
 
 ### Attributions
 
