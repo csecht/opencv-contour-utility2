@@ -41,7 +41,6 @@ from contour_modules import (vcheck,
 try:
     import cv2
     import tkinter as tk
-    import matplotlib.backends.backend_tkagg as backend
     from matplotlib import pyplot as plt
     from tkinter import ttk
 
@@ -89,8 +88,8 @@ class ProcessImage(tk.Tk):
         super().__init__()
 
         # Matplotlib plotting with live updates.
-        plt.style.use(('bmh', 'fast'))
         plt.ion()
+        plt.style.use(('bmh', 'fast'))
 
         # Note: The matching selector widgets for these control variables
         #  are in ImageViewer __init__. Don't really need a dict for
@@ -123,7 +122,7 @@ class ProcessImage(tk.Tk):
         self.input_mean = 0  # int(GRAY_IMG.mean())
         self.clahe_sd = 0  # int(self.clahe_img.std())
         self.clahe_mean = 0  # int(self.clahe_img.mean())
-        self.clahe_img = None
+        self.clahe_img = None  # a np.ndarray
 
     def apply_clahe(self) -> None:
         """
@@ -239,12 +238,16 @@ class ImageViewer(ProcessImage):
             'input': tk.Toplevel(),
         }
 
-        # Move input img window to right side and stacked below the
-        #  report (app, self) window.
-        w_offset = int(self.winfo_screenwidth() * 0.25)
-        h_offset = int(self.winfo_screenheight() * 0.1)
+        # Move the report (app, self) to the right side,
+        #  CLAHE window toward the center; stack the input images window
+        #  below those. Histogram window by default will be on the left side.
+        input_w_offset = int(self.winfo_screenwidth() * 0.25)
+        input_h_offset = int(self.winfo_screenheight() * 0.1)
+        clahe_w_offset = int(self.winfo_screenwidth() * 0.5)
+        clahe_h_offset = int(self.winfo_screenheight() * 0.5)
         self.img_window['input'].lower(belowThis=self)
-        self.img_window['input'].geometry(f'+{w_offset}+{h_offset}')
+        self.img_window['input'].geometry(f'+{input_w_offset}+{input_h_offset}')
+        self.img_window['clahe'].geometry(f'+{clahe_w_offset}+{clahe_h_offset}')
 
         # The Labels to display scaled images, which are updated using
         #  .configure() for 'image=' in their respective processing methods.
@@ -292,6 +295,7 @@ class ImageViewer(ProcessImage):
         #  of 0.66 was empirically determined from ~width of report (self) window.
         w_offset = int(self.winfo_screenwidth() * 0.66)
         self.geometry(f'+{w_offset}+0')
+        self.tkraise(aboveThis=self.img_window['clahe'])
 
         self.config(
             bg=const.MASTER_BG,  # gray80 matches report_clahe() txt fg.
@@ -484,9 +488,12 @@ class ImageViewer(ProcessImage):
         self.img_label['gray'].configure(image=self.tkimg['gray'])
         self.img_label['gray'].grid(**panel_right)
 
-        # Remember that 'clahe' image is configured in PI.apply_clahe().
+        # Remember that the CLAHE image is converted and configured in
+        #   ProcessImage.apply_clahe().
         self.img_label['clahe'].grid(**panel_left)
 
+        # To avoid numerous calls for ravel(), pre-process the flattened
+        #  grayscale here to use for the input histogram in show_histograms().
         self.flat_gray = GRAY_IMG.ravel()
 
     def set_clahe_defaults(self) -> None:
