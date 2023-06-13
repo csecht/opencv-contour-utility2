@@ -295,7 +295,13 @@ class ImageViewer(ProcessImage):
         #  of 0.66 was empirically determined from ~width of report (self) window.
         w_offset = int(self.winfo_screenwidth() * 0.66)
         self.geometry(f'+{w_offset}+0')
+
+        # Need to have the report window on top and take focus away from the
+        #  Histogram window so that user can immediately quit with keys and not
+        #  have to first click on the report window.
+        #  Each platform's window manager may draw windows in different order.
         self.tkraise(aboveThis=self.img_window['clahe'])
+        self.after(1, lambda: self.focus_force())
 
         self.config(
             bg=const.MASTER_BG,  # gray80 matches report_clahe() txt fg.
