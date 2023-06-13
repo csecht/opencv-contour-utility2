@@ -526,7 +526,6 @@ class ImageViewer(ProcessImage):
                  bins=255,
                  range=[0, 256],
                  color='black',
-                 alpha=1,
                  histtype='step',
                  label='Input, grayscale'
                  )
@@ -534,20 +533,19 @@ class ImageViewer(ProcessImage):
                  bins=255,
                  range=[0, 256],
                  color='orange',
-                 alpha=1,
                  histtype='stepfilled',
                  label='CLAHE adjusted'
                  )
 
         # Note: default font size is fine on most displays, but needs to be
-        #   defined on high-res 4k (i.e. Macbook Retina) so that it isn't too small.
+        #   defined for high-res 4k (i.e. Macbook Retina) so that it isn't too small.
         font_size = 10
-        plt.title('Histograms', fontsize=font_size)
+        plt.title('Histograms', fontsize=font_size + 2, fontweight='bold')
         plt.xlabel('Pixel value', fontsize=font_size)
         plt.ylabel('Pixel count', fontsize=font_size)
         plt.xticks(fontsize=font_size)
         plt.yticks(fontsize=font_size)
-        plt.legend(fontsize=font_size)
+        plt.legend(fontsize=font_size - 2)
 
     def report_clahe(self) -> None:
         """
