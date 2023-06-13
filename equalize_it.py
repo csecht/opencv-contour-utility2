@@ -210,6 +210,8 @@ class ImageViewer(ProcessImage):
         self.display_images()
         self.set_clahe_defaults()
         self.show_histograms()
+        # On Linux Ubuntu, need update to activate self.force_focus().
+        self.update_idletasks()
 
     def setup_image_windows(self) -> None:
         """
@@ -299,7 +301,8 @@ class ImageViewer(ProcessImage):
         # Need to have the report window on top and take focus away from the
         #  Histogram window so that user can immediately quit with keys and not
         #  have to first click on the report window.
-        #  Each platform's window manager may draw windows in different order.
+        #  On Linux Ubuntu, need to use self.update_idletasks() at startup to
+        #    activate focus_force().
         self.tkraise(aboveThis=self.img_window['clahe'])
         self.after(1, lambda: self.focus_force())
 
@@ -554,6 +557,10 @@ class ImageViewer(ProcessImage):
         plt.xlabel('Pixel value')
         plt.ylabel('Pixel count')
         plt.legend(fontsize=8)  # Default size is 10
+
+        # Need this on macOS to bring plot window above Toplevel windows.
+        #  Is mainly an issue at startup, but generally useful otherwise.
+        plt.get_current_fig_manager().show()
 
     def report_clahe(self) -> None:
         """
