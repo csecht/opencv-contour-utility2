@@ -40,14 +40,14 @@ def check_platform() -> None:
 
         # Note: need to halve the default Matplotlib font size of 10 for
         #  Macbooks with a retina screen.
-        if subprocess.call(("system_profiler", "SPDisplaysDataType", '|', 'grep -i', 'retina'),
-                           stdout=subprocess.PIPE) == 0:
-            macsize = 5
-            plt.rc('font', size=macsize)
-            plt.rc('axes', titlesize=macsize, labelsize=macsize)
-            plt.rc('xtick', labelsize=macsize)
-            plt.rc('ytick', labelsize=macsize)
-            plt.rc('legend', fontsize=macsize)
+        # if subprocess.call(("system_profiler", "SPDisplaysDataType", '|', 'grep -i', 'retina'),
+        #                    stdout=subprocess.PIPE) == 0:
+        #     macsize = 5
+        #     plt.rc('font', size=macsize)
+        #     plt.rc('axes', titlesize=macsize, labelsize=macsize)
+        #     plt.rc('xtick', labelsize=macsize)
+        #     plt.rc('ytick', labelsize=macsize)
+        #     plt.rc('legend', fontsize=macsize)
 
     # Need to account for scaling in Windows10 and earlier releases.
     elif const.MY_OS == 'win':

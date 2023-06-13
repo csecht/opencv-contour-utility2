@@ -537,15 +537,10 @@ class ImageViewer(ProcessImage):
                  label='CLAHE adjusted'
                  )
 
-        # Note: default font size is fine on most displays, but needs to be
-        #   defined for high-res 4k (i.e. Macbook Retina) so that it isn't too small.
-        font_size = 10
-        plt.title('Histograms', fontsize=font_size + 2, fontweight='bold')
-        plt.xlabel('Pixel value', fontsize=font_size)
-        plt.ylabel('Pixel count', fontsize=font_size)
-        plt.xticks(fontsize=font_size)
-        plt.yticks(fontsize=font_size)
-        plt.legend(fontsize=font_size - 2)
+        plt.title('Histograms', fontweight='bold')
+        plt.xlabel('Pixel value')
+        plt.ylabel('Pixel count')
+        plt.legend(fontsize=8)  # Default size is 10
 
     def report_clahe(self) -> None:
         """
