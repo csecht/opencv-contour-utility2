@@ -102,7 +102,7 @@ The Shape windows appear when the "Show Shapes windows" is clicked. In this exam
 
 ![CLAHE_windows](images/CLAHE_screenshot.png)
 
-The windows, manually rearranged, showing default settings for the two CLAHE parameters. Command line: `python3 -m equalize_it -i images/sample2.jpg -s 0.5`
+The windows, manually rearranged, showing default settings for the two CLAHE parameters. Command line: `python3 -m equalize_it -i images/sample2.jpg -s 0.4`
 
 ### Known Issues:
 
