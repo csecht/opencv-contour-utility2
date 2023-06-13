@@ -6,7 +6,7 @@ Parameter values are adjusted with slide bars.
 USAGE Example command lines, from within the image-processor-main folder:
 python3 -m equalize_it --help
 python3 -m equalize_it --about
-python3 -m equalize_it --input images/sample1.jpg
+python3 -m equalize_it --input images/sample2.jpg
 python3 -m equalize_it -i images/sample2.jpg -s 0.6
 
 Windows systems may need to substitute 'python3' with 'py' or 'python'.
@@ -90,13 +90,7 @@ class ProcessImage(tk.Tk):
 
         # Matplotlib plotting with live updates.
         plt.style.use(('bmh', 'fast'))
-        self.fig, (self.ax1, self.ax2) = plt.subplots(
-            nrows=2,
-            num='Histograms',  # Provide a window title to replace 'Figure 1'.
-            sharex='all',
-            sharey='all',
-            clear=True
-        )
+        plt.ion()
 
         # Note: The matching selector widgets for these control variables
         #  are in ImageViewer __init__. Don't really need a dict for
@@ -162,25 +156,25 @@ class ImageViewer(ProcessImage):
     Class Methods:
     setup_image_windows -> no_exit_on_x
     setup_report_window
-    setup_histogram_canvas
-    config_buttons -> save_settings
     config_sliders
-    grid_sliders
+    config_buttons -> save_settings
+    grid_widgets
     display_images
     set_clahe_defaults
-    show_input_histogram
-    show_clahe_histogram
+    show_histograms
     report_clahe
     process_all
     """
 
     __slots__ = (
-        'clahe_report_frame', 'clahe_selectors_frame', 'clahe_settings_txt', 'img_label',
-        'img_window', 'reset_btn', 'save_btn', 'separator', 'slider'
+        'clahe_report_frame', 'clahe_selectors_frame', 'clahe_settings_txt',
+        'flat_gray', 'img_label', 'img_window', 'reset_btn', 'save_btn',
+        'separator', 'slider'
     )
 
     def __init__(self):
         super().__init__()
+
         self.clahe_report_frame = tk.Frame()
         self.clahe_selectors_frame = tk.Frame()
         # self.configure(bg='green')  # for dev.
@@ -198,23 +192,25 @@ class ImageViewer(ProcessImage):
         self.reset_btn = ttk.Button(master=self)
         self.save_btn = ttk.Button(master=self)
 
+        # Separator used in settings report window.
+        self.separator = ttk.Separator(master=self)
+
         # Is an instance attribute here only because it is used in call
         #  to utils.save_settings_and_img() from the Save button.
         self.clahe_settings_txt = ''
 
-        # Separator used in settings report window.
-        self.separator = ttk.Separator(master=self)
+        # A np.ndarray of the flattened input grayscale image used for histogram.
+        self.flat_gray = None
 
         # Put everything in place, establish initial settings and displays.
         self.setup_image_windows()
         self.setup_report_window()
-        self.setup_histogram_canvas()
         self.config_sliders()
         self.config_buttons()
         self.grid_widgets()
         self.display_images()
         self.set_clahe_defaults()
-        self.show_input_histogram()
+        self.show_histograms()
 
     def setup_image_windows(self) -> None:
         """
@@ -240,8 +236,22 @@ class ImageViewer(ProcessImage):
         #  input on bottom, sized or clahe layered on top.
         self.img_window = {
             'clahe': tk.Toplevel(),
-            'histogram': tk.Toplevel(),
             'input': tk.Toplevel(),
+        }
+
+        # Move input img window to right side and stacked below the
+        #  report (app, self) window.
+        w_offset = int(self.winfo_screenwidth() * 0.25)
+        h_offset = int(self.winfo_screenheight() * 0.1)
+        self.img_window['input'].lower(belowThis=self)
+        self.img_window['input'].geometry(f'+{w_offset}+{h_offset}')
+
+        # The Labels to display scaled images, which are updated using
+        #  .configure() for 'image=' in their respective processing methods.
+        self.img_label = {
+            'input': tk.Label(self.img_window['input']),
+            'gray': tk.Label(self.img_window['input']),
+            'clahe': tk.Label(self.img_window['clahe']),
         }
 
         # Prevent user from inadvertently resizing a window too small to use.
@@ -251,18 +261,8 @@ class ImageViewer(ProcessImage):
             toplevel.minsize(200, 200)
             toplevel.protocol('WM_DELETE_WINDOW', no_exit_on_x)
 
-        _x = self.winfo_screenwidth()
-        _y = self.winfo_screenheight()
-        _w = int(_x * 0.5)
-        _h = int(_y * 0.6)
-        if const.MY_OS == 'dar':
-            self.img_window['histogram'].geometry(f'{_w}x{_h}+{_x + 500}+500')
-        if const.MY_OS == 'lin':
-            self.img_window['histogram'].geometry(f'+{_w}+{_h}')
-
         self.img_window['input'].title(const.WIN_NAME['input+gray'])
         self.img_window['clahe'].title(const.WIN_NAME['clahe'])
-        self.img_window['histogram'].title(const.WIN_NAME['histo'])
 
         # Allow images to maintain borders and relative positions with window resize.
         self.img_window['input'].columnconfigure(0, weight=1)
@@ -270,16 +270,6 @@ class ImageViewer(ProcessImage):
         self.img_window['input'].rowconfigure(0, weight=1)
         self.img_window['clahe'].columnconfigure(0, weight=1)
         self.img_window['clahe'].rowconfigure(0, weight=1)
-        self.img_window['histogram'].rowconfigure(0, weight=1)
-        self.img_window['histogram'].columnconfigure(0, weight=1)
-
-        # The Labels to display scaled images, which are updated using
-        #  .configure() for 'image=' in their respective processing methods.
-        self.img_label = {
-            'input': tk.Label(self.img_window['input']),
-            'gray': tk.Label(self.img_window['input']),
-            'clahe': tk.Label(self.img_window['clahe']),
-        }
 
     def setup_report_window(self) -> None:
         """
@@ -298,16 +288,10 @@ class ImageViewer(ProcessImage):
                                                               plot=True))
         # ^^ Note: macOS Command-q will quit program without utils.quit_gui info msg.
 
-        if const.MY_OS == 'lin':
-            adjust_width = 600
-            self.minsize(500, 300)
-        elif const.MY_OS == 'dar':
-            adjust_width = 550
-        else:  # is Windows
-            adjust_width = 660
-            self.minsize(600, 300)
-
-        self.geometry(f'+{self.winfo_screenwidth() - adjust_width}+0')
+        # Place settings/report window on upper right of screen. Width factor
+        #  of 0.66 was empirically determined from ~width of report (self) window.
+        w_offset = int(self.winfo_screenwidth() * 0.66)
+        self.geometry(f'+{w_offset}+0')
 
         self.config(
             bg=const.MASTER_BG,  # gray80 matches report_clahe() txt fg.
@@ -341,33 +325,6 @@ class ImageViewer(ProcessImage):
                                         ipadx=4, ipady=4,
                                         sticky=tk.EW)
 
-    def setup_histogram_canvas(self) -> None:
-        """
-        A tkinter window for the Matplotlib plot canvas.
-        """
-
-        canvas = backend.FigureCanvasTkAgg(self.fig, self.img_window['histogram'])
-
-        toolbar = backend.NavigationToolbar2Tk(canvas, self.img_window['histogram'])
-
-        # Need to remove navigation buttons.
-        # Source: https://stackoverflow.com/questions/59155873/
-        #   how-to-remove-toolbar-button-from-navigationtoolbar2tk-figurecanvastkagg
-        # Remove all tools from toolbar because the Histograms window is
-        #   non-responsive while in event_loop.
-        for _, tool in toolbar.children.items():
-            tool.pack_forget()
-
-        # Now display remaining widgets in histogram_window.
-        # NOTE: toolbar must be gridded BEFORE canvas to prevent
-        #   FigureCanvasTkAgg from preempting window geometry with its pack().
-        toolbar.grid(row=1, column=0,
-                     sticky=tk.NSEW)
-        canvas.get_tk_widget().grid(row=0, column=0,
-                                    ipady=10, ipadx=10,
-                                    padx=5, pady=(5, 0),  # Put a border around plot.
-                                    sticky=tk.NSEW)
-
     def config_sliders(self) -> None:
         """
         Configure arguments for Scale() sliders.
@@ -379,7 +336,7 @@ class ImageViewer(ProcessImage):
         #  slider command arguments causes flickering of the report
         #  Frame text. This doesn't happen on Windows or macOS. Therefore,
         #  replace continuous slide processing on Linux with bindings
-        #  to call process_all() only on left button release (with no flicker).
+        #  to call process_all() only on left button release -> no flicker.
 
         if const.MY_OS == 'lin':
             slider_cmd = ''
@@ -530,6 +487,8 @@ class ImageViewer(ProcessImage):
         # Remember that 'clahe' image is configured in PI.apply_clahe().
         self.img_label['clahe'].grid(**panel_left)
 
+        self.flat_gray = GRAY_IMG.ravel()
+
     def set_clahe_defaults(self) -> None:
         """
         Sets slider widgets at startup. Called from "Reset" button.
@@ -542,59 +501,53 @@ class ImageViewer(ProcessImage):
         # Apply the default settings.
         self.process_all()
 
-    def show_input_histogram(self) -> None:
-        """
-        Allows a one-time rendering of the input histogram, thus
-        providing a faster response for updating the histogram Figure
-        with CLAHE Trackbar changes.
-        Called from __init__().
-
-        Returns: None
-        """
-
-        # hist() returns tuple of (counts(n), bins(edges), patches(artists)).
-        # histtype='step' draws a line, 'stepfilled' fills under the line;
-        #   both are patches.Polygon artists that provide faster rendering
-        #   than the default 'bar', which is a BarContainer object of
-        #   Rectangle artists.
-        # Need to match these parameters with those for ax2.hist().
-        self.ax1.hist(GRAY_IMG.ravel(),
-                      bins=255,
-                      range=[0, 256],
-                      color='blue',
-                      alpha=0.4,
-                      histtype='stepfilled',
-                      # histtype='step',
-                      )
-        self.ax1.set_ylabel("Pixel count")
-        self.ax1.set_title('Input (grayscale)')
-
-    def show_clahe_histogram(self) -> None:
+    def show_histograms(self) -> None:
         """
         Updates CLAHE adjusted histogram plot with Matplotlib from
         trackbar changes. Called from apply_clahe().
 
+        Args: A flattened (1-D) ndarray of the image so that its
+            histogram can be displayed.
+
         Returns: None
         """
         # Need to clear prior histograms before drawing new ones.
-        self.ax2.clear()
+        #  Redrawing both histograms is slower, but it works.
+        plt.cla()
 
-        self.ax2.hist(self.clahe_img.ravel(),
-                      bins=255,
-                      range=[0, 256],
-                      color='orange',
-                      histtype='stepfilled',
-                      # histtype='step',  # 'step' draws a line.
-                      )
-        self.ax2.set_title('CLAHE adjusted')
-        self.ax2.set_xlabel("Pixel value")
-        self.ax2.set_ylabel("Pixel count")
+        # hist() returns tuple of (counts(n), bins(edges), patches(artists)
+        # histtype='step' draws a line, 'stepfilled' fills under the line;
+        #   both are patches. Polygon artists provide faster rendering
+        #   than the default 'bar', which is a BarContainer object of
+        #   Rectangle artists.
+        # For input img, use 'step' and pre-flattened ndarray for better
+        #   performance when overlaying a static histogram.
+        plt.hist(self.flat_gray,
+                 bins=255,
+                 range=[0, 256],
+                 color='black',
+                 alpha=1,
+                 histtype='step',
+                 label='Input, grayscale'
+                 )
+        plt.hist(self.clahe_img.ravel(),
+                 bins=255,
+                 range=[0, 256],
+                 color='orange',
+                 alpha=1,
+                 histtype='stepfilled',
+                 label='CLAHE adjusted'
+                 )
 
-        # From: https://stackoverflow.com/questions/28269157/
-        #  plotting-in-a-non-blocking-way-with-matplotlib
-        # and, https://github.com/matplotlib/matplotlib/issues/11131
-        self.fig.canvas.draw_idle()
-        # plt.draw()
+        # Note: default font size is fine on most displays, but needs to be
+        #   defined on high-res 4k (i.e. Macbook Retina) so that it isn't too small.
+        font_size = 10
+        plt.title('Histograms', fontsize=font_size)
+        plt.xlabel('Pixel value', fontsize=font_size)
+        plt.ylabel('Pixel count', fontsize=font_size)
+        plt.xticks(fontsize=font_size)
+        plt.yticks(fontsize=font_size)
+        plt.legend(fontsize=font_size)
 
     def report_clahe(self) -> None:
         """
@@ -624,14 +577,14 @@ class ImageViewer(ProcessImage):
     def process_all(self, event=None) -> None:
         """
         Runs all image processing methods and the settings report.
-        Calls apply_clahe(), report_clahe(), self.show_clahe_histogram().
+        Calls apply_clahe(), report_clahe(), self_histograms().
 
         Args:
             event: The implicit mouse button event.
         Returns: *event* as a formality; is functionally None.
         """
         self.apply_clahe()  # inherited from ProcessImage
-        self.show_clahe_histogram()
+        self.show_histograms()
         self.report_clahe()
 
         return event
