@@ -111,12 +111,10 @@ def infile() -> dict:
     #   how-to-resize-text-for-cv2-puttext-according-to-the-image-size-in-opencv-python
     size2scale = min(input_img.shape[0], input_img.shape[1])
 
-    # used only in PI.circle_the_contour() putText
     font_scale = max(size2scale * const.FONT_SCALE, 0.5)
     center_xoffset = math.ceil(size2scale * const.CENTER_XSCALE * arguments()['scale'])
 
-    # used in PI.circle_the_contour() putText and PI.contour_threshold, etc
-    line_thickness = math.ceil(size2scale * const.LINE_SCALE)  # * arguments()['scale'])
+    line_thickness = math.ceil(size2scale * const.LINE_SCALE)
 
     managed_outputs = {
         'input_img': input_img,

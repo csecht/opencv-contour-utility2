@@ -2,7 +2,7 @@
 Constants used throughout main script and modules:
 
 MY_OS
-SHAPE_NAME
+STUB_ARRAY
 WIN_NAME
 ALPHA_MAX
 BETA_MAX
@@ -23,21 +23,27 @@ FONT_SCALE
 CENTER_XSCALE
 MASTER_BG
 DARK_BG
+DRAG_GRAY
 WIDGET_FG
 LABEL_PARAMETERS
 SCALE_PARAMETERS
 SHAPE_SCALE_PARAMETERS
 RADIO_PARAMETERS
+PANEL_LEFT
+PANEL_RIGHT
 """
 # Copyright (C) 2023 C.S. Echt, under GNU General Public License'
 
 # Standard library import
 import sys
+import numpy as np
 
 # Third party import
 import cv2
 
 MY_OS = sys.platform[:3]
+
+STUB_ARRAY = np.ones((5, 5), 'uint8')
 
 # NOTE: keys here must match corresponding keys in contour_it.py
 #   img_window dict.

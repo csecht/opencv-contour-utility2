@@ -114,9 +114,9 @@ class ProcessImage(tk.Tk):
             'clahe': tk.PhotoImage(),
         }
 
-        # Dict values that are defined in ImageViewer.setup_image_windows().
-        self.img_window = {}
-        self.img_label = {}
+        # Dict items are defined in ImageViewer.setup_image_windows().
+        self.img_window = None
+        self.img_label = None
 
         self.input_sd = 0  # int(GRAY_IMG.std())
         self.input_mean = 0  # int(GRAY_IMG.mean())
@@ -176,7 +176,7 @@ class ImageViewer(ProcessImage):
 
         self.clahe_report_frame = tk.Frame()
         self.clahe_selectors_frame = tk.Frame()
-        # self.configure(bg='green')  # for dev.
+        # self.configure(bg='green')  # for development.
 
         # Note: The matching control variable attributes for the
         #   slider widgets are in ProcessImage __init__.
@@ -233,8 +233,9 @@ class ImageViewer(ProcessImage):
 
         # NOTE: dict item order affects the order that windows are
         #  drawn, so here use an inverse order of processing steps to
-        #  arrange windows overlaid from first to last, e.g.,
-        #  input on bottom, sized or clahe layered on top.
+        #  arrange windows overlaid from first to last, unless .lower() or
+        #  tkraise() are used.
+        # NOTE: keys here must match corresponding keys in const.WIN_NAME
         self.img_window = {
             'clahe': tk.Toplevel(),
             'input': tk.Toplevel(),
@@ -304,11 +305,11 @@ class ImageViewer(ProcessImage):
         #    activate focus_force().
         #  source: https://stackoverflow.com/questions/22751100/tkinter-main-window-focus
         self.tkraise(aboveThis=self.img_window['clahe'])
-        self.after(1, lambda: self.focus_force())
+        self.after(1, self.focus_force)
 
         self.config(
             bg=const.MASTER_BG,  # gray80 matches report_clahe() txt fg.
-            # bg=const.CBLIND_COLOR_TK['sky blue'],  # for dev.
+            # bg=const.CBLIND_COLOR_TK['sky blue'],  # for development.
             highlightthickness=5,
             highlightcolor=const.CBLIND_COLOR_TK['yellow'],
             highlightbackground=const.DRAG_GRAY
@@ -341,7 +342,7 @@ class ImageViewer(ProcessImage):
         # Provide a descriptive title for the Histogram window. Need to
         #  place statement here for proper geometry and focus of the
         #  report window across platforms (depends on window manager).
-        plt.gcf().canvas.manager.set_window_title(f'Image pixel distributions')
+        plt.gcf().canvas.manager.set_window_title('Image pixel distributions')
 
     def config_sliders(self) -> None:
         """

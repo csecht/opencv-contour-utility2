@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """
-Use a tkinter GUI to explore OpenCV image processing parameters that
-are involved in identifying objects and drawing contours.
+A tkinter GUI to explore OpenCV image processing parameters used to
+identify objects and draw contours.
 Parameter values are adjusted with slide bars, pull-down menus, and
 button toggles.
 
 USAGE Example command lines, from within the image-processor-main folder:
 python3 -m contour_it --help
 python3 -m contour_it --about
-python3 -m contour_it --input images/sample1.jpg
-python3 -m contour_it -i images/sample2.jpg
+python3 -m contour_it   ...is the same as:
+python3 -m contour_it --input images/sample1.jpg  <-the default input file.
+python3 -m contour_it -i images/sample2.jpg --scale 0.4 --color yellow
 
 Windows systems may need to substitute 'python3' with 'py' or 'python'.
 
@@ -168,20 +169,19 @@ class ProcessImage(tk.Tk):
             'shaped': tk.PhotoImage(),
         }
 
-        # Dict values that are defined in ImageViewer.setup_image_windows().
-        self.img_window = {}
-        self.img_label = {}
+        # Dict items are defined in ImageViewer.setup_image_windows().
+        self.img_window = None
+        self.img_label = None
 
         # Contour lists populated with cv2.findContours point sets.
-        stub_array = np.ones((5, 5), 'uint8')
         self.contours = {
-            'drawn_thresh': stub_array,
-            'drawn_canny': stub_array,
-            'selected_found_thresh': [stub_array],
-            'selected_found_canny': [stub_array],
+            'drawn_thresh': const.STUB_ARRAY,
+            'drawn_canny': const.STUB_ARRAY,
+            'selected_found_thresh': [const.STUB_ARRAY],
+            'selected_found_canny': [const.STUB_ARRAY],
         }
 
-        self.reduced_noise_img = stub_array
+        self.reduced_noise_img = const.STUB_ARRAY
 
         self.num_contours = {
             'th_all': tk.IntVar(),
@@ -727,6 +727,8 @@ class ProcessImage(tk.Tk):
             cnt_color = const.CBLIND_COLOR_CV['sky blue']
         else:
             cnt_color = self.contour_color
+
+        # Need the blue hull outline to be thicker so that it show up better.
         thickness_factor = 3 if use_hull == 'yes' else 2
 
         if selected_contours:
@@ -828,8 +830,8 @@ class ProcessImage(tk.Tk):
         self.tkimg['shaped'] = manage.tk_image(img4shaping)
         self.img_label['shaped'].configure(image=self.tkimg['shaped'])
 
-        # Note: reporting of current metrics and settings is handled by
-        #  ImageViewer.process_shapes().
+        # Note: reporting of shape/circle metrics and settings is handled
+        #  by ImageViewer.process_shapes().
 
 
 class ImageViewer(ProcessImage):
@@ -859,11 +861,13 @@ class ImageViewer(ProcessImage):
     """
 
     __slots__ = (
-        'cbox', 'circle_defaults_button', 'circle_msg_lbl', 'contour_report_frame',
-        'contour_selectors_frame', 'contour_settings_txt', 'img_label', 'img_window', 'radio',
-        'saveshape_button', 'separator', 'shape_defaults_button', 'shape_report_frame',
-        'shape_selectors_frame', 'shape_settings_txt', 'shape_settings_win', 'shapeimg_lbl',
-        'slider'
+        'cbox', 'circle_defaults_button', 'circle_msg_lbl',
+        'contour_report_frame', 'contour_selectors_frame',
+        'contour_settings_txt', 'img_label', 'img_window', 'radio',
+        'saveshape_button', 'separator', 'shape_defaults_button',
+        'shape_report_frame', 'shape_selectors_frame',
+        'shape_settings_txt', 'shape_settings_win', 'shapeimg_lbl',
+        'slider',
     )
 
     def __init__(self):
@@ -1035,7 +1039,8 @@ class ImageViewer(ProcessImage):
         # NOTE: dict item order affects the order that windows are
         #  drawn, so here use an inverse order of processing steps to
         #  arrange windows overlaid from first to last, e.g.,
-        #  input on bottom, sized or shaped layered on top.
+        #  input on bottom, sized or shaped layered on top. Unless
+        #  .lower() or tkraise() are used.
         # NOTE: keys here must match corresponding keys in const.WIN_NAME
         self.img_window = {
             'shaped': tk.Toplevel(),
@@ -1112,19 +1117,18 @@ class ImageViewer(ProcessImage):
         self.bind_all('<Control-q>', lambda _: utils.quit_gui(app))
         # ^^ Note: macOS Command-q will quit program without utils.quit_gui info msg.
 
-        self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=1)
-
-
         self.contour_report_frame.configure(relief='flat',
                                             bg=const.CBLIND_COLOR_TK['sky blue'],
                                             )  # bg doesn't show with grid sticky EW.
-        self.contour_report_frame.columnconfigure(0, weight=1)
-        self.contour_report_frame.columnconfigure(1, weight=1)
 
         self.contour_selectors_frame.configure(relief='raised',
                                                bg=const.DARK_BG,
                                                borderwidth=5)
+
+        # Need col & row configures so frame fills the window with sticky.
+        #  Note that resize=False, so do not need same for main (self) window.
+        self.contour_report_frame.columnconfigure(0, weight=1)
+        self.contour_report_frame.columnconfigure(1, weight=1)
         self.contour_selectors_frame.columnconfigure(0, weight=1)
         self.contour_selectors_frame.columnconfigure(1, weight=1)
 
@@ -1213,7 +1217,6 @@ class ImageViewer(ProcessImage):
                                         padx=5, pady=(0, 5),
                                         ipadx=4, ipady=4,
                                         sticky=tk.EW)
-
         self.circle_msg_lbl.grid(column=0, row=4,
                                  columnspan=2,
                                  padx=5,
@@ -2118,7 +2121,8 @@ class ImageViewer(ProcessImage):
 
     def set_shape_defaults(self) -> None:
         """
-        Set default values for selectors. Called at startup.
+        Set default values for shape and circle selectors.
+        Called at startup and reset Buttons.
         Returns: None
         """
         # Set/Reset Combobox widgets.
@@ -2302,7 +2306,8 @@ class ImageViewer(ProcessImage):
         self.contour_canny(event)
         self.size_the_contours(contour_pointset=self.contours['selected_found_thresh'],
                                called_by='thresh sized')
-        self.size_the_contours(self.contours['selected_found_canny'], 'canny sized')
+        self.size_the_contours(contour_pointset=self.contours['selected_found_canny'],
+                               called_by='canny sized')
         self.report_contour()
         self.process_shapes(event)
 
@@ -2322,7 +2327,8 @@ class ImageViewer(ProcessImage):
         self.contour_canny(event)
         self.size_the_contours(contour_pointset=self.contours['selected_found_thresh'],
                                called_by='thresh sized')
-        self.size_the_contours(self.contours['selected_found_canny'], 'canny sized')
+        self.size_the_contours(contour_pointset=self.contours['selected_found_canny'],
+                               called_by='canny sized')
         self.report_contour()
         if self.cbox_val['polygon'].get() != 'Circle':
             self.process_shapes(event)
