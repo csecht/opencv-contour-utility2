@@ -483,15 +483,6 @@ class ImageViewer(ProcessImage):
         conversion, and updates the panel Label's image parameter.
         """
 
-        panel_left = dict(
-            column=0, row=0,
-            padx=5, pady=5,
-            sticky=tk.NSEW)
-        panel_right = dict(
-            column=1, row=0,
-            padx=5, pady=5,
-            sticky=tk.NSEW)
-
         # Display the input image and its grayscale; both are static, so
         #  do not need updating, but retain the image display statement
         #  structure of processed images that do need updating.
@@ -499,15 +490,15 @@ class ImageViewer(ProcessImage):
         #  otherwise it will/may not show b/c of garbage collection.
         self.tkimg['input'] = manage.tk_image(INPUT_IMG)
         self.img_label['input'].configure(image=self.tkimg['input'])
-        self.img_label['input'].grid(**panel_left)
+        self.img_label['input'].grid(**const.PANEL_LEFT)
 
         self.tkimg['gray'] = manage.tk_image(GRAY_IMG)
         self.img_label['gray'].configure(image=self.tkimg['gray'])
-        self.img_label['gray'].grid(**panel_right)
+        self.img_label['gray'].grid(**const.PANEL_RIGHT)
 
         # Remember that the CLAHE image is converted and configured in
         #   ProcessImage.apply_clahe().
-        self.img_label['clahe'].grid(**panel_left)
+        self.img_label['clahe'].grid(**const.PANEL_LEFT)
 
         # To avoid numerous calls for ravel(), pre-process the flattened
         #  grayscale here to use for the input histogram in show_histograms().

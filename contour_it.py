@@ -2070,29 +2070,21 @@ class ImageViewer(ProcessImage):
         ProcessImage.setup_image_windows(). Label 'image' param is
         updated with .configure() in each PI processing method.
         """
-        panel_left = dict(
-            column=0, row=0,
-            padx=5, pady=5,
-            sticky=tk.NSEW)
-        panel_right = dict(
-            column=1, row=0,
-            padx=5, pady=5,
-            sticky=tk.NSEW)
 
-        self.img_label['contrast'].grid(**panel_left)
-        self.img_label['redux'].grid(**panel_right)
+        self.img_label['contrast'].grid(**const.PANEL_LEFT)
+        self.img_label['redux'].grid(**const.PANEL_RIGHT)
 
-        self.img_label['filter'].grid(**panel_right)
+        self.img_label['filter'].grid(**const.PANEL_RIGHT)
 
-        self.img_label['thresh'].grid(**panel_left)
-        self.img_label['th_contour'].grid(**panel_right)
+        self.img_label['thresh'].grid(**const.PANEL_LEFT)
+        self.img_label['th_contour'].grid(**const.PANEL_RIGHT)
 
-        self.img_label['canny'].grid(**panel_left)
-        self.img_label['can_contour'].grid(**panel_right)
+        self.img_label['canny'].grid(**const.PANEL_LEFT)
+        self.img_label['can_contour'].grid(**const.PANEL_RIGHT)
 
-        self.img_label['circled_th'].grid(**panel_left)
-        self.img_label['circled_can'].grid(**panel_left)
-        self.img_label['shaped'].grid(**panel_left)
+        self.img_label['circled_th'].grid(**const.PANEL_LEFT)
+        self.img_label['circled_can'].grid(**const.PANEL_LEFT)
+        self.img_label['shaped'].grid(**const.PANEL_LEFT)
 
     def set_contour_defaults(self) -> None:
         """

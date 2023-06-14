@@ -295,3 +295,13 @@ else:  # is macOS
         font=('TkTooltipFont', 9),
         takefocus=False,
         state='readonly')
+
+# Grid arguments to place Label images in image windows.
+PANEL_LEFT = dict(
+            column=0, row=0,
+            padx=5, pady=5,
+            sticky='nsew')
+PANEL_RIGHT = dict(
+            column=1, row=0,
+            padx=5, pady=5,
+            sticky='nsew')
