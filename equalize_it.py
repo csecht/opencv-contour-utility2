@@ -179,7 +179,7 @@ class ImageViewer(ProcessImage):
         # self.configure(bg='green')  # for dev.
 
         # Note: The matching control variable attributes for the
-        #   following 14 selector widgets are in ProcessImage __init__.
+        #   slider widgets are in ProcessImage __init__.
         self.slider = {
             'clip_limit': tk.Scale(master=self.clahe_selectors_frame),
             'clip_limit_lbl': tk.Label(master=self.clahe_selectors_frame),
@@ -240,8 +240,7 @@ class ImageViewer(ProcessImage):
             'input': tk.Toplevel(),
         }
 
-        # Move the report (app, self) to the right side,
-        #  CLAHE window toward the center; stack the input images window
+        # Move CLAHE window toward the center; stack the input images window
         #  below those. Histogram window by default will be on the left side.
         input_w_offset = int(self.winfo_screenwidth() * 0.25)
         input_h_offset = int(self.winfo_screenheight() * 0.1)
@@ -293,9 +292,8 @@ class ImageViewer(ProcessImage):
                                                               plot=True))
         # ^^ Note: macOS Command-q will quit program without utils.quit_gui info msg.
 
-        # Place settings/report window on upper right of screen. Width factor
-        #  of 0.66 was empirically determined from ~width of report (self) window.
-        w_offset = int(self.winfo_screenwidth() * 0.66)
+        # Place settings/report window at upper right of screen.
+        w_offset = self.winfo_screenwidth() - self.winfo_width()
         self.geometry(f'+{w_offset}+0')
 
         # Need to have the report window on top and take focus away from the
@@ -303,6 +301,7 @@ class ImageViewer(ProcessImage):
         #  have to first click on the report window.
         #  On Linux Ubuntu, need to use self.update_idletasks() at startup to
         #    activate focus_force().
+        #  source: https://stackoverflow.com/questions/22751100/tkinter-main-window-focus
         self.tkraise(aboveThis=self.img_window['clahe'])
         self.after(1, lambda: self.focus_force())
 
@@ -337,6 +336,11 @@ class ImageViewer(ProcessImage):
                                         padx=5, pady=(0, 5),
                                         ipadx=4, ipady=4,
                                         sticky=tk.EW)
+
+        # Provide a descriptive title for the Histogram window. Need to
+        #  place statement here for proper geometry and focus of the
+        #  report window across platforms (depends on window manager).
+        plt.gcf().canvas.manager.set_window_title(f'Image pixel distributions')
 
     def config_sliders(self) -> None:
         """
@@ -553,7 +557,7 @@ class ImageViewer(ProcessImage):
                  label='CLAHE adjusted'
                  )
 
-        plt.title('Histograms', fontweight='bold')
+        plt.title(f'Histograms for {INPUT_PATH}', fontweight='bold')
         plt.xlabel('Pixel value')
         plt.ylabel('Pixel count')
         plt.legend(fontsize=8)  # Default size is 10
