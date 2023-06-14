@@ -293,7 +293,11 @@ class ImageViewer(ProcessImage):
         # ^^ Note: macOS Command-q will quit program without utils.quit_gui info msg.
 
         # Place settings/report window at upper right of screen.
-        w_offset = self.winfo_screenwidth() - self.winfo_width()
+        #   Note: the report window (self, app) width is ~ 600 across platforms,
+        #   but instead of hard coding that, make geometry offset a function of
+        #   screen width. This is needed b/c of differences among platforms'
+        #   window managers in how they place windows.
+        w_offset = int(self.winfo_screenwidth() * 0.66)
         self.geometry(f'+{w_offset}+0')
 
         # Need to have the report window on top and take focus away from the
