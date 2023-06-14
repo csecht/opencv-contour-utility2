@@ -717,9 +717,9 @@ class ProcessImage(tk.Tk):
         img4shaping = INPUT_IMG.copy()
 
         if self.radio_val['find_shape_in'].get() == 'Threshold':
-            shapeimg_win_name = 'thresh'
+            shapeimg_win_name = 'thresh shaped'
         else:  # == 'canny'
-            shapeimg_win_name = 'canny'
+            shapeimg_win_name = 'canny shaped'
         self.img_window['shaped'].title(const.WIN_NAME[shapeimg_win_name])
 
         use_hull = self.radio_val['hull_shape'].get()
@@ -870,7 +870,7 @@ class ImageViewer(ProcessImage):
         super().__init__()
         self.contour_report_frame = tk.Frame()
         self.contour_selectors_frame = tk.Frame()
-        # self.configure(bg='green')  # for dev.
+        # self.configure(bg='green')  # for development.
 
         self.shape_settings_win = tk.Toplevel()
         self.shape_report_frame = tk.Frame(master=self.shape_settings_win)
@@ -1016,8 +1016,8 @@ class ImageViewer(ProcessImage):
 
     def setup_image_windows(self) -> None:
         """
-        Create and configure all Toplevel windows and their Labels
-        needed to display processed images.
+        Create and configure all Toplevel windows and their Labels that
+        are used to display processed images.
 
         Returns: None
         """
@@ -1036,6 +1036,7 @@ class ImageViewer(ProcessImage):
         #  drawn, so here use an inverse order of processing steps to
         #  arrange windows overlaid from first to last, e.g.,
         #  input on bottom, sized or shaped layered on top.
+        # NOTE: keys here must match corresponding keys in const.WIN_NAME
         self.img_window = {
             'shaped': tk.Toplevel(),
             'canny sized': tk.Toplevel(),
@@ -1050,18 +1051,16 @@ class ImageViewer(ProcessImage):
         # Prevent user from inadvertently resizing a window too small to use.
         # Need to disable default window Exit in display windows b/c
         #  subsequent calls to them need a valid path name.
-        for _, toplevel in self.img_window.items():
-            toplevel.minsize(200, 200)
+        # Allow image label panels in image windows to resize with window.
+        #  Note that images don't proportionally resize, just their boundaries;
+        #    images will remain anchored at their top left corners.
+        for _name, toplevel in self.img_window.items():
+            toplevel.minsize(200, 100)
             toplevel.protocol('WM_DELETE_WINDOW', no_exit_on_x)
-
-        self.img_window['input'].title(const.WIN_NAME['input+gray'])
-        self.img_window['contrasted'].title(const.WIN_NAME['contrast+redux'])
-        self.img_window['filtered'].title(const.WIN_NAME['filtered'])
-        self.img_window['thresholded'].title(const.WIN_NAME['th+contours'])
-        self.img_window['canny'].title(const.WIN_NAME['canny+contours'])
-        self.img_window['thresh sized'].title(const.WIN_NAME['thresh sized'])
-        self.img_window['canny sized'].title(const.WIN_NAME['canny sized'])
-        self.img_window['shaped'].title(const.WIN_NAME['shapes'])
+            toplevel.columnconfigure(0, weight=1)
+            toplevel.columnconfigure(1, weight=1)
+            toplevel.rowconfigure(0, weight=1)
+            toplevel.title(const.WIN_NAME[_name])
 
         # The Labels to display scaled images, which are updated using
         #  .configure() for 'image=' in their respective processing methods.
@@ -1088,32 +1087,20 @@ class ImageViewer(ProcessImage):
         for contour settings and reporting frames, and utility buttons.
         """
 
-        # The expected width of the settings report_contour window (app Toplevel)
-        #  is 729 for Linux, less or more for Win and Mac.
         #  Need to set this window near the top right corner of the screen
         #  so that it doesn't cover up the img windows; also so that
         #  the bottom of the window is, hopefully, not below the bottom
-        #  of the screen.
-        # Need to set main window (self) to a minimum width so that entire
-        #   image contrast reporting line fits its maximum length,
-        #   as, for example,  beta == -120 and SD == 39.0.
-        #   (but is not an issue with smaller macOS font spacing)
-        if const.MY_OS == 'lin':
-            adjust_width = 740
-            self.minsize(690, 400)
-        elif const.MY_OS == 'dar':
-            adjust_width = 650
-        else:  # is Windows
-            adjust_width = 760
-            self.minsize(750, 400)
-
-        self.geometry(f'+{self.winfo_screenwidth() - adjust_width}+0')
+        #  of the screen. Make geometry offset a function of the screen width.
+        #  This is needed b/c of differences among platforms' window managers
+        #  for how they place windows.
+        w_offset = int(self.winfo_screenwidth() * 0.6)
+        self.geometry(f'+{w_offset}+0')
 
         # Color in all the master (app) Frame and use a yellow border;
         #   border highlightcolor changes to grey with loss of focus.
         self.config(
             bg=const.MASTER_BG,
-            # bg=const.CBLIND_COLOR_TK['sky blue'],  # for dev.
+            # bg=const.CBLIND_COLOR_TK['sky blue'],  # for development
             highlightthickness=5,
             highlightcolor=const.CBLIND_COLOR_TK['yellow'],
             highlightbackground=const.DRAG_GRAY,
@@ -1186,7 +1173,7 @@ class ImageViewer(ProcessImage):
         # Configure Shapes report window to match that of app (contour) window.
         self.shape_settings_win.config(
             bg=const.MASTER_BG,  # gray80 matches report_contour() txt fg.
-            # bg=const.CBLIND_COLOR_TK['sky blue'],  # for dev.
+            # bg=const.CBLIND_COLOR_TK['sky blue'],  # for development.
             highlightthickness=5,
             highlightcolor=const.CBLIND_COLOR_TK['yellow'],
             highlightbackground=const.DRAG_GRAY
@@ -1205,7 +1192,7 @@ class ImageViewer(ProcessImage):
         self.shape_selectors_frame.columnconfigure(1, weight=1)
 
         self.img_window['shaped'].geometry(f'+{self.winfo_screenwidth() - 830}+150')
-        self.img_window['shaped'].title(const.WIN_NAME['shapes'])
+        self.img_window['shaped'].title(const.WIN_NAME['shaped'])
         self.img_window['shaped'].protocol('WM_DELETE_WINDOW', no_exit_on_x)
         self.img_window['shaped'].columnconfigure(0, weight=1)
         self.img_window['shaped'].columnconfigure(1, weight=1)
@@ -2210,7 +2197,7 @@ class ImageViewer(ProcessImage):
         self.contour_settings_txt = (
             f'Image: {INPUT_PATH} (alpha SD: {start_std})\n\n'
             f'{"Contrast:".ljust(21)}convertScaleAbs alpha={alpha},'
-            f' beta={beta} (new alpha SD {new_std})\n'
+            f' beta={beta} (alpha SD {new_std})\n'
             f'{"Noise reduction:".ljust(21)}cv2.getStructuringElement ksize={noise_k},\n'
             f'{tab}cv2.getStructuringElement shape={morph_shape}\n'
             f'{tab}cv2.morphologyEx iterations={noise_iter}\n'
@@ -2318,7 +2305,6 @@ class ImageViewer(ProcessImage):
         self.size_the_contours(self.contours['selected_found_canny'], 'canny sized')
         self.report_contour()
         self.process_shapes(event)
-        # self.update_idletasks()
 
         return event
 
@@ -2340,7 +2326,6 @@ class ImageViewer(ProcessImage):
         self.report_contour()
         if self.cbox_val['polygon'].get() != 'Circle':
             self.process_shapes(event)
-        # self.update_idletasks()
 
         return event
 
@@ -2364,7 +2349,7 @@ class ImageViewer(ProcessImage):
             fg=const.CBLIND_COLOR_TK['yellow'],  # default widget fg
         )
 
-        # Note: can't use option 'fg' for Buttons.
+        # Note: can't use option 'fg' for ttk.Buttons.
         if self.cbox_val['polygon'].get() == 'Circle':
             self.shape_defaults_button.configure(state=tk.DISABLED)
             self.slider['epsilon_lbl'].config(**no_for_circle)
@@ -2422,7 +2407,6 @@ class ImageViewer(ProcessImage):
 
         self.select_shape(contours)
         self.report_shape()
-        # self.update_idletasks()
 
         return event
 

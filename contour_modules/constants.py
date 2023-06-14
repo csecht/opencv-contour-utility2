@@ -39,19 +39,21 @@ import cv2
 
 MY_OS = sys.platform[:3]
 
+# NOTE: keys here must match corresponding keys in contour_it.py
+#   img_window dict.
 WIN_NAME = {
-    'input+gray': 'Input <- | -> Grayscale for processing',
-    'contrast+redux': 'Adjusted contrast <- | -> Reduced noise',
+    'input': 'Input <- | -> Grayscale for processing',
+    'contrasted': 'Adjusted contrast <- | -> Reduced noise',
     'filtered': 'Filtered image',
-    'th+contours': 'Threshold <- | -> Selected Threshold contours',
+    'thresholded': 'Threshold <- | -> Selected Threshold contours',
     'th+cnt&hull': 'Threshold <- | -> Contours (yellow), hulls (blue)',
     'thresh sized': 'Threshold objects, with relative px sizes',
     'canny sized': 'Canny edged objects, with relative px sizes',
-    'canny+contours': 'Edges <- | -> Selected Canny contours',
-    'shapes': 'Shapes found',
+    'canny': 'Edges <- | -> Selected Canny contours',
+    'shaped': 'Shapes found',
     'shape_report': 'Shape Settings Report',
-    'thresh': 'Shapes found in threshold contours',
-    'canny': 'Shapes found in Canny edge contours',
+    'thresh shaped': 'Shapes found in threshold contours',
+    'canny shaped': 'Shapes found in Canny edge contours',
     'circle in filtered': 'Circles in the filtered image',
     'circle in thresh': 'Circles in an Otsu threshold image',
     'clahe': 'CLAHE adjusted',
