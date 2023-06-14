@@ -261,19 +261,16 @@ class ImageViewer(ProcessImage):
         # Prevent user from inadvertently resizing a window too small to use.
         # Need to disable default window Exit in display windows b/c
         #  subsequent calls to them need a valid path name.
-        for _, toplevel in self.img_window.items():
-            toplevel.minsize(200, 200)
+        # Allow image label panels in image windows to resize with window.
+        #  Note that images don't proportionally resize, just their boundaries;
+        #    images will remain anchored at their top left corners.
+        for _name, toplevel in self.img_window.items():
+            toplevel.minsize(200, 100)
             toplevel.protocol('WM_DELETE_WINDOW', no_exit_on_x)
-
-        self.img_window['input'].title(const.WIN_NAME['input'])
-        self.img_window['clahe'].title(const.WIN_NAME['clahe'])
-
-        # Allow images to maintain borders and relative positions with window resize.
-        self.img_window['input'].columnconfigure(0, weight=1)
-        self.img_window['input'].columnconfigure(1, weight=1)
-        self.img_window['input'].rowconfigure(0, weight=1)
-        self.img_window['clahe'].columnconfigure(0, weight=1)
-        self.img_window['clahe'].rowconfigure(0, weight=1)
+            toplevel.columnconfigure(0, weight=1)
+            toplevel.columnconfigure(1, weight=1)
+            toplevel.rowconfigure(0, weight=1)
+            toplevel.title(const.WIN_NAME[_name])
 
     def setup_report_window(self) -> None:
         """
