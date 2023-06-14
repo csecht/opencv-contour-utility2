@@ -265,7 +265,7 @@ class ImageViewer(ProcessImage):
             toplevel.minsize(200, 200)
             toplevel.protocol('WM_DELETE_WINDOW', no_exit_on_x)
 
-        self.img_window['input'].title(const.WIN_NAME['input+gray'])
+        self.img_window['input'].title(const.WIN_NAME['input'])
         self.img_window['clahe'].title(const.WIN_NAME['clahe'])
 
         # Allow images to maintain borders and relative positions with window resize.
