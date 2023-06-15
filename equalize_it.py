@@ -241,6 +241,20 @@ class ImageViewer(ProcessImage):
             'input': tk.Toplevel(),
         }
 
+        # Prevent user from inadvertently resizing a window too small to use.
+        # Need to disable default window Exit in display windows b/c
+        #  subsequent calls to them need a valid path name.
+        # Allow image label panels in image windows to resize with window.
+        #  Note that images don't proportionally resize, just their boundaries;
+        #    images will remain anchored at their top left corners.
+        for _name, toplevel in self.img_window.items():
+            toplevel.minsize(200, 100)
+            toplevel.protocol('WM_DELETE_WINDOW', no_exit_on_x)
+            toplevel.columnconfigure(0, weight=1)
+            toplevel.columnconfigure(1, weight=1)
+            toplevel.rowconfigure(0, weight=1)
+            toplevel.title(const.WIN_NAME[_name])
+
         # Move CLAHE window toward the center; stack the input images window
         #  below those. Histogram window by default will be on the left side.
         input_w_offset = int(self.winfo_screenwidth() * 0.25)
@@ -258,20 +272,6 @@ class ImageViewer(ProcessImage):
             'gray': tk.Label(self.img_window['input']),
             'clahe': tk.Label(self.img_window['clahe']),
         }
-
-        # Prevent user from inadvertently resizing a window too small to use.
-        # Need to disable default window Exit in display windows b/c
-        #  subsequent calls to them need a valid path name.
-        # Allow image label panels in image windows to resize with window.
-        #  Note that images don't proportionally resize, just their boundaries;
-        #    images will remain anchored at their top left corners.
-        for _name, toplevel in self.img_window.items():
-            toplevel.minsize(200, 100)
-            toplevel.protocol('WM_DELETE_WINDOW', no_exit_on_x)
-            toplevel.columnconfigure(0, weight=1)
-            toplevel.columnconfigure(1, weight=1)
-            toplevel.rowconfigure(0, weight=1)
-            toplevel.title(const.WIN_NAME[_name])
 
     def setup_report_window(self) -> None:
         """
