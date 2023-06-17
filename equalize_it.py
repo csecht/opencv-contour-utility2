@@ -143,7 +143,7 @@ class ProcessImage(tk.Tk):
         self.clahe_sd = int(self.clahe_img.std())
         self.clahe_mean = int(self.clahe_img.mean())
 
-        self.tkimg['clahe'] = manage.tk_image(self.clahe_img)
+        self.tkimg['clahe'] = manage.tk_image(self.clahe_img, colorspace='bgr')
         self.img_label['clahe'].configure(image=self.tkimg['clahe'])
 
 
@@ -276,8 +276,7 @@ class ImageViewer(ProcessImage):
     def setup_report_window(self) -> None:
         """
         Master (main tk window, "app") settings and reporting frames,
-        and utility buttons, configurations, keybindings, and grids in the
-        main "app" window.
+        utility buttons, configurations, keybindings, and grids.
         """
 
         # Need to provide exit info msg to Terminal.
@@ -486,11 +485,11 @@ class ImageViewer(ProcessImage):
         #  structure of processed images that do need updating.
         # Note: Use 'self' to scope the ImageTk.PhotoImage in the Class,
         #  otherwise it will/may not show b/c of garbage collection.
-        self.tkimg['input'] = manage.tk_image(INPUT_IMG)
+        self.tkimg['input'] = manage.tk_image(INPUT_IMG, colorspace='bgr')
         self.img_label['input'].configure(image=self.tkimg['input'])
         self.img_label['input'].grid(**const.PANEL_LEFT)
 
-        self.tkimg['gray'] = manage.tk_image(GRAY_IMG)
+        self.tkimg['gray'] = manage.tk_image(GRAY_IMG, colorspace='bgr')
         self.img_label['gray'].configure(image=self.tkimg['gray'])
         self.img_label['gray'].grid(**const.PANEL_RIGHT)
 
@@ -518,9 +517,6 @@ class ImageViewer(ProcessImage):
         """
         Updates CLAHE adjusted histogram plot with Matplotlib from
         trackbar changes. Called from apply_clahe().
-
-        Args: A flattened (1-D) ndarray of the image so that its
-            histogram can be displayed.
 
         Returns: None
         """
@@ -591,6 +587,7 @@ class ImageViewer(ProcessImage):
 
         Args:
             event: The implicit mouse button event.
+
         Returns: *event* as a formality; is functionally None.
         """
         self.apply_clahe()  # inherited from ProcessImage

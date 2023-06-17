@@ -218,14 +218,16 @@ class ProcessImage(tk.Tk):
             cv2.convertScaleAbs(
                 src=GRAY_IMG,
                 alpha=self.slider_val['alpha'].get(),
-                beta=self.slider_val['beta'].get())
+                beta=self.slider_val['beta'].get()
+            )
         )
 
         self.input_contrast_std.set(int(np.std(GRAY_IMG)))
         self.curr_contrast_std.set(int(np.std(contrasted)))
         # Using .configure to update image avoids the white flash each time an
         #  image is updated were a Label() to be re-made here each call.
-        self.tkimg['contrast'] = manage.tk_image(contrasted)
+        self.tkimg['contrast'] = manage.tk_image(image=contrasted,
+                                                 colorspace='bgr')
         self.img_label['contrast'].configure(image=self.tkimg['contrast'])
 
         return contrasted
@@ -275,7 +277,8 @@ class ProcessImage(tk.Tk):
             borderType=border_type
         )
 
-        self.tkimg['redux'] = manage.tk_image(self.reduced_noise_img)
+        self.tkimg['redux'] = manage.tk_image(image=self.reduced_noise_img,
+                                              colorspace='bgr')
         self.img_label['redux'].configure(image=self.tkimg['redux'])
 
         return self.reduced_noise_img
@@ -347,7 +350,8 @@ class ProcessImage(tk.Tk):
                                     ksize=(filter_k, filter_k),
                                     borderType=border_type)
 
-        self.tkimg['filter'] = manage.tk_image(filtered_img)
+        self.tkimg['filter'] = manage.tk_image(image=filtered_img,
+                                               colorspace='bgr')
         self.img_label['filter'].configure(image=self.tkimg['filter'])
 
         return filtered_img
@@ -446,10 +450,12 @@ class ProcessImage(tk.Tk):
 
         # Need to use self for image objects to retain the attribute
         #   reference and thus prevent garbage collection.
-        self.tkimg['thresh'] = manage.tk_image(thresh_img)
+        self.tkimg['thresh'] = manage.tk_image(image=thresh_img,
+                                               colorspace='bgr')
         self.img_label['thresh'].configure(image=self.tkimg['thresh'])
 
-        self.tkimg['drawn_thresh'] = manage.tk_image(self.contours['drawn_thresh'])
+        self.tkimg['drawn_thresh'] = manage.tk_image(self.contours['drawn_thresh'],
+                                                     colorspace='bgr')
         self.img_label['th_contour'].configure(image=self.tkimg['drawn_thresh'])
 
         return event
@@ -506,11 +512,11 @@ class ProcessImage(tk.Tk):
         if c_type == 'cv2.contourArea':
             self.contours['selected_found_canny'] = [
                 _c for _c in found_contours
-                if max_area > cv2.contourArea(_c) >= c_limit]
+                if max_area > cv2.contourArea(contour=_c) >= c_limit]
         else:  # type is cv2.arcLength; aka "perimeter"
             self.contours['selected_found_canny'] = [
                 _c for _c in found_contours
-                if max_length > cv2.arcLength(_c, closed=False) >= c_limit]
+                if max_length > cv2.arcLength(curve=_c, closed=False) >= c_limit]
 
         # Used only for reporting.
         self.num_contours['canny_all'].set(len(found_contours))
@@ -545,10 +551,12 @@ class ProcessImage(tk.Tk):
             thickness=LINE_THICKNESS * 2,
             lineType=cv2.LINE_AA)
 
-        self.tkimg['canny'] = manage.tk_image(canny_img)
+        self.tkimg['canny'] = manage.tk_image(image=canny_img,
+                                              colorspace='bgr')
         self.img_label['canny'].configure(image=self.tkimg['canny'])
 
-        self.tkimg['drawn_canny'] = manage.tk_image(self.contours['drawn_canny'])
+        self.tkimg['drawn_canny'] = manage.tk_image(self.contours['drawn_canny'],
+                                                    colorspace='bgr')
         self.img_label['can_contour'].configure(image=self.tkimg['drawn_canny'])
 
         return event
@@ -612,10 +620,12 @@ class ProcessImage(tk.Tk):
         #   the respective size Button 'command' kw call in
         #   ContourViewer.config_buttons().  Ugh, messy hard coding.
         if called_by == 'thresh sized':
-            self.tkimg['circled_th'] = manage.tk_image(circled_contours)
+            self.tkimg['circled_th'] = manage.tk_image(image=circled_contours,
+                                                       colorspace='bgr')
             self.img_label['circled_th'].configure(image=self.tkimg['circled_th'])
         else:  # Is called by 'canny sized'.
-            self.tkimg['circled_can'] = manage.tk_image(circled_contours)
+            self.tkimg['circled_can'] = manage.tk_image(image=circled_contours,
+                                                        colorspace='bgr')
             self.img_label['circled_can'].configure(image=self.tkimg['circled_can'])
 
     def select_shape(self, contour_pointset: list) -> None:
@@ -733,7 +743,7 @@ class ProcessImage(tk.Tk):
 
         if selected_contours:
             for _c in selected_contours:
-                cv2.drawContours(img4shaping,
+                cv2.drawContours(image=img4shaping,
                                  contours=[_c],
                                  contourIdx=-1,
                                  color=cnt_color,
@@ -741,7 +751,8 @@ class ProcessImage(tk.Tk):
                                  lineType=cv2.LINE_AA
                                  )
 
-        self.tkimg['shaped'] = manage.tk_image(img4shaping)
+        self.tkimg['shaped'] = manage.tk_image(image=img4shaping,
+                                               colorspace='bgr')
         self.img_label['shaped'].configure(image=self.tkimg['shaped'])
 
     def find_circles(self) -> None:
@@ -827,7 +838,7 @@ class ProcessImage(tk.Tk):
 
         # If circles are found, they will be displayed in outline.
         #   Otherwise, the input image will be displayed as-is.
-        self.tkimg['shaped'] = manage.tk_image(img4shaping)
+        self.tkimg['shaped'] = manage.tk_image(img4shaping, colorspace='bgr')
         self.img_label['shaped'].configure(image=self.tkimg['shaped'])
 
         # Note: reporting of shape/circle metrics and settings is handled
@@ -1388,12 +1399,13 @@ class ImageViewer(ProcessImage):
         #  structure of processed images that do need updating.
         # Note: Use 'self' to scope the ImageTk.PhotoImage in the Class,
         #  otherwise it will/may not show b/c of garbage collection.
-        self.tkimg['input'] = manage.tk_image(INPUT_IMG)
+        self.tkimg['input'] = manage.tk_image(INPUT_IMG, colorspace='bgr')
         self.img_label['input'].configure(image=self.tkimg['input'])
         self.img_label['input'].grid(column=0, row=0,
                                      padx=5, pady=5)
 
-        self.tkimg['gray'] = manage.tk_image(GRAY_IMG)
+        self.tkimg['gray'] = manage.tk_image(image=GRAY_IMG,
+                                             colorspace='bgr')
         self.img_label['gray'].configure(image=self.tkimg['gray'])
         self.img_label['gray'].grid(column=1, row=0,
                                     padx=5, pady=5)

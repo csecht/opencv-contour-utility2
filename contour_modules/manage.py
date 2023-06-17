@@ -155,14 +155,15 @@ def scale(img: np.ndarray, scalefactor: float) -> np.ndarray:
     return scaled_image
 
 
-# def tkimage(input_tkimg: tuple, gray_tkimg: tuple = None):
-def tk_image(image: np.ndarray) -> PhotoImage:
+def tk_image(image: np.ndarray, colorspace: str) -> PhotoImage:
     """
     Scales and converts cv2 images to a compatible format for display
     in tk window. Be sure that the returned image is properly scoped in
     the Class where it is called; e.g., use as self.tk_image attribute.
 
     Args:
+        colorspace: The color-space to convert to RGB for tk.PhotoImage,
+                    e.g., 'bgr', 'hsv' (does no conversion), etc.
         image: A cv2 numpy array of the image to scale and convert to
                a PIL ImageTk.PhotoImage.
 
@@ -170,11 +171,14 @@ def tk_image(image: np.ndarray) -> PhotoImage:
     """
 
     # Need to scale images for display; images for processing are left raw.
-    #   Default --scale arg is 1.0, so no scaling when option in not used.
+    #   Default --scale arg is 1.0, so no scaling when option is not used.
     scaled_img = scale(image, arguments()['scale'])
 
     # based on tutorial: https://pyimagesearch.com/2016/05/23/opencv-with-tkinter/
-    scaled_img = cv2.cvtColor(scaled_img, cv2.COLOR_BGR2RGB)
+    if colorspace == 'bgr':
+        scaled_img = cv2.cvtColor(scaled_img, cv2.COLOR_BGR2RGB)
+        # Note that HSV images receive no conversion.
+
     scaled_img = Image.fromarray(scaled_img)
     tk_img = ImageTk.PhotoImage(scaled_img)
     # Need to prevent garbage collection to show image in tk.Label, etc.
