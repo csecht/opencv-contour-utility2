@@ -35,7 +35,7 @@ Be aware that CLAHE works best on images that have a more-or-less continuous ran
 Note that the `--color` command line argument does nothing with `equalize_it.py`.
 
 ## color_it.py
-The module `equalize_it.py` does not involve contours, but explores HSV colorspace for finding objects of specific colors. HSV color boundaries are set with two sets of three slide bars for the upper and lower bounds using a 0-255 scale (screenshot below). There is also a pull-down menu of pre-selected colors, which can be optimized using the sliders to suit your specific needs. Selected HSV values and the resulting color-masked image can be saved.
+The module `equalize_it.py` does not involve contours, but explores HSV colorspace for finding specific colors using cv2.COLOR_BGR2HSV; masking is performed with cv2.inRange and cv2.bitwise_and methods. HSV color boundaries are set with two sets of three slide bars for the upper and lower bounds. The sliders use a 0-255 scale of BRG values to be converted to HSV colorspace (screenshot below). There is also a pull-down menu of pre-selected colors. The color can be used as a starting point for subsequent optimization for your specific images. Selected values and the resulting color-masked image can be saved.
 
 There are button toggles to apply or remove a blurring filter for the input image and noise reduction for the color mask. These operations, while adjustable in `contour_it.py`, are hard-coded here, but generally work well for color masking. The hard-coded parameter values used are listed in the report window.
 
