@@ -772,12 +772,12 @@ class ImageViewer(ProcessImage):
         selected_color = self.cbox['choose_color'].get()
 
         if selected_color == self.color_list[0]:  # is 'Use sliders'
-            range_txt = (f'Selected BRG values for lower HSV range: {self.lobound}\n'
-                         f'Selected BRG values for upper HSV range: {self.hibound}\n')
+            range_txt = (f'Selected BGR values for lower HSV range: {self.lobound}\n'
+                         f'Selected BGR values for upper HSV range: {self.hibound}\n')
         else:  # a color is selected
             lobound, hibound = const.COLOR_BOUNDARIES[selected_color]
-            range_txt = (f'Pre-set BRG values for lower HSV range: {lobound}\n'
-                         f'Pre-set BRG values for upper HSV range: {hibound}\n')
+            range_txt = (f'Pre-set BGR values for lower HSV range: {lobound}\n'
+                         f'Pre-set BGR values for upper HSV range: {hibound}\n')
 
         # Note: these values need to be updated with those is used in find_colors().
         # In 'else' statement, keep the same number of newlines as in True statement.
