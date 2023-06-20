@@ -52,7 +52,7 @@ def arguments() -> dict:
                         required=False,
                         metavar='X')
     parser.add_argument('--color', '-c',
-                        help='CV contour color, C. (default: green; option: yellow).',
+                        help='cv2 contour color, C. (default: green; option: yellow).',
                         default='green',
                         choices=('green', 'yellow'),
                         metavar='C')
