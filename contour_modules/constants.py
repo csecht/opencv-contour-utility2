@@ -64,6 +64,8 @@ WIN_NAME = {
     'circle in thresh': 'Circles in an Otsu threshold image',
     'clahe': 'CLAHE adjusted',
     'histo': 'Histograms',
+    # 'histogram': 'Histograms',
+    'input2color': 'Input <- | -> Color objects found',
 }
 
 # Set ranges for trackbars used to adjust contrast and brightness for
@@ -313,3 +315,35 @@ PANEL_RIGHT = dict(
             column=1, row=0,
             padx=5, pady=5,
             sticky='nsew')
+
+# Sets of BGR color values for HSV color ranges.
+COLOR_BOUNDARIES = {
+    'red': ((0, 100, 100), (10, 255, 255)),  # the "light" set for HSV red.
+    'red+light pink': ((155, 50, 0), (179, 255, 255)),  # dark red & light pink/purples
+    'red+dark pink': ((155, 200, 0), (179, 255, 255)),  # only dark red
+    'red+purple': ((140, 50, 0), (180, 255, 255)),  # dark red, purple, darker pink/purple
+    'red+dark violet': ((140, 200, 0), (190, 255, 255)),  # only dark red and pure purple
+    'orange': ((1, 190, 200), (18, 255, 255)),
+    'yellow': ((20, 80, 80), (30, 255, 255)),
+    'green': ((36, 25, 25), (70, 255, 255)),
+    'green+cyan': ((50, 20, 20), (100, 255, 255)),
+    'blue': ((110, 150, 50), (120, 255, 255)),  # Deep true blues
+    'no_true_blue': ((80, 50, 45), (130, 200, 255)),  # Royal, turquoise, pale blue
+    'royal+slate': ((110, 50, 50), (130, 200, 255)),  # Mostly royal & slate (purplish)
+    'blue+cyan': ((80, 50, 45), (120, 255, 255)),  # Blue, turquoise, cyan, light blues
+    'royal_blue': ((105, 150, 0), (129, 200, 250)),
+    'bold': ((1, 250, 1), (150, 255, 255)),
+    'vivid': ((0, 200, 0), (179, 255, 255)),
+    'white': ((0, 0, 200), (125, 60, 255)),  # includes some blue shaded white
+    'midgray': ((0, 0, 75), (0, 0, 175)),
+    'grays&white': ((0, 0, 0), (0, 0, 255)),
+}
+
+# HSV upper range set used to complete mask for red discrimination.
+#  Includes red, crimson, salmon, maroon, coral when joined with
+#    'red' (0, 100, 100), (10, 255, 255).
+LOWER_RED = (170, 100, 100)
+UPPER_RED = (180, 255, 255)
+# doesn't include crimson
+# lower_red = (179, 100, 100)
+# upper_red = (180, 255, 255)
