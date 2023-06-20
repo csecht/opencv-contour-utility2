@@ -653,6 +653,14 @@ class ImageViewer(ProcessImage):
                 pady=(0, 5),
                 sticky=tk.W)
 
+        # Need custom padding for the color Combobox.
+        if const.MY_OS == 'lin':
+            padx_choice = (150, 0)
+        elif const.MY_OS == 'win':
+            padx_choice = (180, 0)
+        else:  # is macOS
+            padx_choice = (130, 0)
+
         # Widgets gridded in the self.color_selectors_frame Frame.
         # Sorted by row number:
         self.slider['H_min_lbl'].grid(column=0, row=0,
@@ -690,7 +698,7 @@ class ImageViewer(ProcessImage):
                                            pady=(5, 5),
                                            sticky=tk.W)
         self.cbox['choose_color'].grid(column=1, row=9,
-                                       padx=(150, 0),
+                                       padx=padx_choice,
                                        pady=(5, 5),
                                        sticky=tk.W)
 
