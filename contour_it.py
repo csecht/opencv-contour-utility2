@@ -54,7 +54,7 @@ except (ImportError, ModuleNotFoundError) as import_err:
         'Alternative command formats (system dependent):\n'
         '   py -m pip install -r requirements.txt (Windows)\n'
         '   pip install -r requirements.txt\n\n'
-        'You my also install directly using, for example, this command,'
+        'You may also install directly using, for example, this command,'
         ' for the Python package installer (PIP):\n'
         '   python3 -m pip install opencv-python\n\n'
         'A package may already be installed, but needs an update;\n'

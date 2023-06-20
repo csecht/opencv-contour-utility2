@@ -12,3 +12,7 @@ Pillow
 #  macOS 13.4
 # Note that matplotlib, and it's dependency Pillow, are needed only with
 #  the 'equalize_it.py' module.
+
+# Note that for PyCharm 2023, to get opencv documentation working, the interpreter
+#  needs to use opencv-python 4.5.5.64 or possibly 4.6. Ver 4.7+ doesn't do
+#  documentation for opencv.
