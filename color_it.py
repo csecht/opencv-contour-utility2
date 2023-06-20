@@ -455,7 +455,7 @@ class ImageViewer(ProcessImage):
 
         self.slider['H_min_lbl'].configure(text='H minimum:',
                                            **const.LABEL_PARAMETERS)
-        self.slider['H_min'].configure(from_=1, to=255,
+        self.slider['H_min'].configure(from_=0, to=255,
                                        resolution=1,
                                        tickinterval=20,
                                        variable=self.slider_val['H_min'],
@@ -464,7 +464,7 @@ class ImageViewer(ProcessImage):
 
         self.slider['S_min_lbl'].configure(text='S minimum:',
                                            **const.LABEL_PARAMETERS)
-        self.slider['S_min'].configure(from_=1, to=255,
+        self.slider['S_min'].configure(from_=0, to=255,
                                        resolution=1,
                                        tickinterval=20,
                                        variable=self.slider_val['S_min'],
@@ -473,7 +473,7 @@ class ImageViewer(ProcessImage):
 
         self.slider['V_min_lbl'].configure(text='V minimum:',
                                            **const.LABEL_PARAMETERS)
-        self.slider['V_min'].configure(from_=1, to=255,
+        self.slider['V_min'].configure(from_=0, to=255,
                                        resolution=1,
                                        tickinterval=20,
                                        variable=self.slider_val['V_min'],
@@ -482,7 +482,7 @@ class ImageViewer(ProcessImage):
 
         self.slider['H_max_lbl'].configure(text='H maximum:',
                                            **const.LABEL_PARAMETERS)
-        self.slider['H_max'].configure(from_=1, to=255,
+        self.slider['H_max'].configure(from_=0, to=255,
                                        resolution=1,
                                        tickinterval=20,
                                        variable=self.slider_val['H_max'],
@@ -491,7 +491,7 @@ class ImageViewer(ProcessImage):
 
         self.slider['S_max_lbl'].configure(text='S maximum:',
                                            **const.LABEL_PARAMETERS)
-        self.slider['S_max'].configure(from_=1, to=255,
+        self.slider['S_max'].configure(from_=0, to=255,
                                        resolution=1,
                                        tickinterval=20,
                                        variable=self.slider_val['S_max'],
@@ -500,7 +500,7 @@ class ImageViewer(ProcessImage):
 
         self.slider['V_max_lbl'].configure(text='V maximum:',
                                            **const.LABEL_PARAMETERS)
-        self.slider['V_max'].configure(from_=1, to=255,
+        self.slider['V_max'].configure(from_=0, to=255,
                                        resolution=1,
                                        tickinterval=20,
                                        variable=self.slider_val['V_max'],
