@@ -319,7 +319,7 @@ PANEL_RIGHT = dict(
             padx=5, pady=5,
             sticky='nsew')
 
-# Sets of BGR color values for HSV color ranges.
+# Sets of BGR color values for converting to HSV color ranges.
 COLOR_BOUNDARIES = {
     'red': ((0, 100, 100), (10, 255, 255)),  # the "light" set for HSV red.
     'red+light pink': ((155, 50, 0), (179, 255, 255)),  # dark red & light pink/purples
@@ -327,7 +327,7 @@ COLOR_BOUNDARIES = {
     'red+purple': ((140, 50, 0), (180, 255, 255)),  # dark red, purple, darker pink/purple
     'red+dark violet': ((140, 200, 0), (190, 255, 255)),  # only dark red and pure purple
     'orange': ((1, 190, 200), (18, 255, 255)),
-    'light orange:': ((1, 102, 102), (21, 255, 255)),
+    'light orange': ((1, 102, 102), (21, 255, 255)),
     'yellow': ((20, 80, 80), (30, 255, 255)),
     'green': ((36, 25, 25), (70, 255, 255)),
     'green+cyan': ((50, 20, 20), (100, 255, 255)),

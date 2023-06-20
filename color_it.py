@@ -715,7 +715,7 @@ class ImageViewer(ProcessImage):
         self.radio['filter_lbl'].grid(column=1, row=7,
                                       **grid_params)
         self.radio['filter_yes'].grid(column=1, row=7,
-                                      padx=(0, 70),
+                                      padx=(0, 60),
                                       pady=(0, 5),
                                       sticky=tk.E)
         self.radio['filter_no'].grid(column=1, row=7,
@@ -726,7 +726,7 @@ class ImageViewer(ProcessImage):
         self.radio['redux_lbl'].grid(column=1, row=8,
                                      **grid_params)
         self.radio['redux_yes'].grid(column=1, row=8,
-                                     padx=(0, 45),
+                                     padx=(0, 35),
                                      pady=(0, 5),
                                      sticky=tk.E)
         self.radio['redux_no'].grid(column=1, row=8,
@@ -772,12 +772,12 @@ class ImageViewer(ProcessImage):
         selected_color = self.cbox['choose_color'].get()
 
         if selected_color == self.color_list[0]:  # is 'Use sliders'
-            range_txt = (f'Selected values, lower HSV range: {self.lobound}\n'
-                         f'Selected values, upper HSV range: {self.hibound}\n')
+            range_txt = (f'Selected BRG values for lower HSV range: {self.lobound}\n'
+                         f'Selected BRG values for upper HSV range: {self.hibound}\n')
         else:  # a color is selected
             lobound, hibound = const.COLOR_BOUNDARIES[selected_color]
-            range_txt = (f'Pre-set values, lower HSV range: {lobound}\n'
-                         f'Pre-set values, upper HSV range: {hibound}\n')
+            range_txt = (f'Pre-set BRG values for lower HSV range: {lobound}\n'
+                         f'Pre-set BRG values for upper HSV range: {hibound}\n')
 
         # Note: these values need to be updated with those is used in find_colors().
         # In 'else' statement, keep the same number of newlines as in True statement.
