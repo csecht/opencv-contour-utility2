@@ -321,25 +321,25 @@ PANEL_RIGHT = dict(
 
 # Sets of BGR color values for converting to HSV color ranges.
 COLOR_BOUNDARIES = {
-    'red': ((0, 100, 100), (10, 255, 255)),  # the "light" set for HSV red.
-    'red+light pink': ((155, 50, 0), (179, 255, 255)),  # dark red & light pink/purples
-    'red+dark pink': ((155, 200, 0), (179, 255, 255)),  # only dark red
-    'red+purple': ((140, 50, 0), (180, 255, 255)),  # dark red, purple, darker pink/purple
-    'red+dark violet': ((140, 200, 0), (190, 255, 255)),  # only dark red and pure purple
-    'orange': ((1, 190, 200), (18, 255, 255)),
-    'light orange': ((1, 102, 102), (21, 255, 255)),
+    'red+brown': ((0, 100, 100), (6, 255, 255)),  # Also used for HSV red><red.
+    'red><red': ((0, 0, 0), (0, 0, 0)),  # Values are defined in find_colors().
+    'crimson+deep pink': ((170, 100, 100), (180, 255, 255)),  # Also used for HSV red><red.
+    'pink': ((155, 50, 120), (180, 255, 255)),
+    'deep pink': ((155, 200, 0), (180, 255, 255)),
+    'purple': ((130, 120, 160), (160, 240, 240)),
+    'orange': ((5, 190, 200), (18, 255, 255)),
+    'light orange': ((3, 102, 102), (20, 255, 255)),
     'yellow': ((20, 80, 80), (30, 255, 255)),
     'green': ((36, 25, 25), (70, 255, 255)),
     'green+cyan': ((50, 20, 20), (100, 255, 255)),
-    'blue': ((110, 150, 50), (120, 255, 255)),  # Deep true blues
-    'no true blue': ((80, 50, 45), (130, 200, 255)),  # Royal, turquoise, pale blue
-    'royal+slate': ((110, 50, 50), (130, 200, 255)),  # Mostly royal & slate (purplish)
-    'blue+cyan': ((80, 50, 45), (120, 255, 255)),  # Blue, turquoise, cyan, light blues
+    'blue': ((110, 150, 50), (120, 255, 255)),  # Deep true blues.
+    'blue+cyan': ((80, 50, 45), (120, 255, 255)),
     'royal blue': ((105, 150, 0), (129, 200, 250)),
-    'bold': ((1, 250, 1), (150, 255, 255)),
-    'vivid': ((0, 200, 0), (179, 255, 255)),
+    'royal+slate': ((110, 50, 50), (130, 200, 255)),
+    'bold': ((0, 250, 0), (150, 255, 255)),
+    'bold2': ((0, 200, 0), (180, 255, 255)),
     'earthtone': ((0, 14, 80), (120, 120, 225)),
-    'white': ((0, 0, 200), (125, 60, 255)),  # includes some blue shaded white
+    'white': ((0, 0, 200), (125, 60, 255)),  # Includes some blue shaded white.
     'midgray': ((0, 0, 75), (0, 0, 175)),
     'grays+white': ((0, 0, 0), (0, 0, 255)),
 }

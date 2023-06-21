@@ -175,8 +175,7 @@ class ProcessImage(tk.Tk):
             lower, upper = const.COLOR_BOUNDARIES[color2find]
             mask = cv2.inRange(self.hsv_img, lower, upper)
 
-            # Note that this 'red' selection includes a red-orange also
-            #  found by 'orange'.  Red color wraps around the HSV boundary,
+            # Red color wraps around the HSV boundary,
             #  so need to merge two range sets to include all likely reds,
             #  as explained in:
             # https://stackoverflow.com/questions/30331944/
@@ -184,12 +183,14 @@ class ProcessImage(tk.Tk):
             # and in:
             # https://answers.opencv.org/question/28899/
             #   correct-hsv-inrange-values-for-red-objects/
-            # The lower boundary set red is defined, now do the upper set
-            #   to straddle over the HSV red break and join the masks.
-            if color2find == 'red':
-                mask_red = cv2.inRange(self.hsv_img,
-                                       const.LOWER_RED, const.UPPER_RED)
-                mask = mask + mask_red
+            if color2find == 'red><red':
+                mask_red1 = cv2.inRange(self.hsv_img,
+                                        const.COLOR_BOUNDARIES['red+brown'][0],
+                                        const.COLOR_BOUNDARIES['red+brown'][1])
+                mask_red2 = cv2.inRange(self.hsv_img,
+                                        const.COLOR_BOUNDARIES['crimson+deep pink'][0],
+                                        const.COLOR_BOUNDARIES['crimson+deep pink'][1])
+                mask = mask_red1 + mask_red2
         else:  # using sliders
             mask = cv2.inRange(self.hsv_img,
                                self.lobound, self.hibound)
@@ -524,7 +525,7 @@ class ImageViewer(ProcessImage):
         self.cbox['choose_color_lbl'].config(text='Use sliders or pick colors:',
                                              **const.LABEL_PARAMETERS)
         self.cbox['choose_color'].config(textvariable=self.cbox_val['color_pref'],
-                                         width=14 + width_correction,
+                                         width=16 + width_correction,
                                          values=self.color_list,
                                          **const.COMBO_PARAMETERS)
         # Set to green at startup, or 1st color in list.
@@ -603,14 +604,14 @@ class ImageViewer(ProcessImage):
 
         # Set/Reset Scale widgets.
         #  Default color range is green.
-        self.slider_val['H_min'].set(36)
-        self.slider_val['S_min'].set(25)
-        self.slider_val['V_min'].set(25)
-        self.slider_val['H_max'].set(70)
+        self.slider_val['H_min'].set(0)
+        self.slider_val['S_min'].set(100)
+        self.slider_val['V_min'].set(100)
+        self.slider_val['H_max'].set(6)
         self.slider_val['S_max'].set(255)
         self.slider_val['V_max'].set(255)
 
-        self.cbox_val['color_pref'].set('green')
+        self.cbox_val['color_pref'].set('red+brown')
 
         self.radio['filter_yes'].select()
         self.radio['redux_yes'].select()
@@ -806,11 +807,11 @@ class ImageViewer(ProcessImage):
             f'Pre-set color: {selected_color}\n\n'
             f'{range_txt}\n'
             'Displayed min and max values are the BGR values used\n'
-            '  for HSV color discrimination.\n'
-            'Note that when "red" is selected, the cv2.inRange mask\n'
-            '  used to find HSV colors is a composite of displayed\n'
-            '  values plus hard-coded lower and upper ranges:\n'
-            f'  {const.LOWER_RED} and {const.UPPER_RED}\n'
+            '  for HSV color discrimination when using the method:\n'
+            '  cv2.cvtColor(src, cv2.COLOR_BGR2HSV).\n'
+            '"red><red" joins the cv2.inRange masks for "red+brown"\n'
+            '  and "crimson+deep pink"; it spans red shades across\n'
+            '  the cylindrical HSV colorspace.\n'
             f'Image filter: {filter_txt}\n'
             f'Mask noise reduction: {redux_txt}\n'
         )
