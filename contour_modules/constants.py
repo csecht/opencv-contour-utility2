@@ -322,13 +322,13 @@ PANEL_RIGHT = dict(
 # Sets of BGR color values for converting to HSV color ranges.
 COLOR_BOUNDARIES = {
     'red+brown': ((0, 100, 100), (6, 255, 255)),  # Also used for HSV red><red.
-    'red><red': ((0, 0, 0), (0, 0, 0)),  # Values are defined in find_colors().
+    'red><red': ((0, 0, 0), (0, 0, 0)),  # Stub values: see find_colors().
     'crimson+deep pink': ((170, 100, 100), (180, 255, 255)),  # Also used for HSV red><red.
     'pink': ((155, 50, 120), (180, 255, 255)),
     'deep pink': ((155, 200, 0), (180, 255, 255)),
     'purple': ((130, 120, 160), (160, 240, 240)),
     'orange': ((5, 190, 200), (18, 255, 255)),
-    'light orange': ((3, 102, 102), (20, 255, 255)),
+    'lt orange': ((3, 102, 102), (20, 255, 255)),
     'yellow': ((20, 80, 80), (30, 255, 255)),
     'green': ((36, 25, 25), (70, 255, 255)),
     'green+cyan': ((50, 20, 20), (100, 255, 255)),
@@ -338,17 +338,8 @@ COLOR_BOUNDARIES = {
     'royal+slate': ((105, 50, 50), (130, 200, 255)),
     'bold': ((0, 250, 0), (150, 255, 255)),
     'bold2': ((0, 200, 0), (180, 255, 255)),
-    'earthtone': ((0, 14, 80), (120, 120, 225)),
-    'white': ((0, 0, 200), (125, 60, 255)),  # Includes some blue shaded white.
-    'midgray': ((0, 0, 75), (0, 0, 175)),
-    'grays+white': ((0, 0, 0), (0, 0, 255)),
+    'earthtones': ((0, 14, 80), (120, 120, 225)),
+    'whites': ((0, 0, 200), (125, 60, 255)),  # Includes some red & blue whites.
+    'mid grays': ((0, 0, 55), (0, 0, 200)),
+    'lt grays+white': ((0, 0, 200), (0, 0, 255)),
 }
-
-# HSV upper range set used to complete mask for red discrimination.
-#  Includes red, crimson, salmon, maroon, coral when joined with
-#    'red' (0, 100, 100), (10, 255, 255).
-LOWER_RED = (170, 100, 100)
-UPPER_RED = (180, 255, 255)
-# doesn't include crimson
-# lower_red = (179, 100, 100)
-# upper_red = (180, 255, 255)
