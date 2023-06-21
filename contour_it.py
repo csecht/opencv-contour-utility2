@@ -595,7 +595,7 @@ class ProcessImage(tk.Tk):
             #  Draw a filled black circle to use for text background.
             cv2.circle(img=circled_contours,
                        center=center,
-                       radius=int(radius * 0.7),
+                       radius=int(radius * 0.5),
                        color=(0, 0, 0),
                        thickness=-1,
                        lineType=cv2.LINE_AA)
