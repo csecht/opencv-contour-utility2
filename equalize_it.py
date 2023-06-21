@@ -40,6 +40,7 @@ from contour_modules import (vcheck,
 try:
     import cv2
     import tkinter as tk
+    import matplotlib
     from matplotlib import pyplot as plt
     from tkinter import ttk
 
@@ -85,6 +86,10 @@ class ProcessImage(tk.Tk):
 
     def __init__(self):
         super().__init__()
+
+        # Need to make sure Linux isn't using an invalid backend (QtAgg, GTK*, etc.)
+        if const.MY_OS == 'lin':
+            matplotlib.use('TkAgg')
 
         # Matplotlib plotting with live updates.
         plt.ion()
