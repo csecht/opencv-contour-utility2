@@ -122,22 +122,24 @@ def save_settings_and_img(img2save,
 
     img_ext = Path(Path(manage.arguments()['input']).suffix)
     img_stem = Path(Path(manage.arguments()['input']).stem)
-    first_word = txt2save.split()[0]
 
-    # Note: What's happening here is that separate files are saved for
-    #   the contoured and shape images, while the one settings text file
-    #   is appended to with both sets of text; condition is needed only
-    #   when the shape_it.py file is the caller.
-    #   BECAUSE first_word match is hard coded, we need to keep the
-    #   same first word in the contour settings text in all modules
-    #   that use it.
+    settings2save = (f'\n\nTime saved: {time2print}\n'
+                     'Settings for image:'
+                     f' {img_stem}_{caller}_{curr_time}{img_ext}\n'
+                     f'{txt2save}')
+
+    # Use this Path function for saving individual settings files:
+    # Path(f'{img_stem}_clahe_settings{curr_time}.txt').write_text(settings2save)
+    # Use this for appending multiple settings to single file:
+    with Path(f'{img_stem}_{caller}_settings.txt').open('a', encoding='utf-8') as _fp:
+        _fp.write(settings2save)
+
+    # Contour images are np.ndarray direct from cv2 functions, while
+    #   other images are those displayed as ImageTk.PhotoImage.
     if isinstance(img2save, np.ndarray):
-        if first_word == 'Image:':  # text is from contoured_txt
-            file_name = f'{img_stem}_{caller}_contoured_{curr_time}{img_ext}'
-            cv2.imwrite(file_name, img2save)
-        else:  # text is from shaped_txt
-            file_name = f'{img_stem}_{caller}_shaped_{curr_time}{img_ext}'
-            cv2.imwrite(file_name, img2save)
+        # if first_word == 'Image:':  # text is from contoured_txt
+        file_name = f'{img_stem}_{caller}_{curr_time}{img_ext}'
+        cv2.imwrite(file_name, img2save)
     elif isinstance(img2save, ImageTk.PhotoImage):
         # Need to get the ImageTK image into a format that can be saved to file.
         # source: https://stackoverflow.com/questions/45440746/
@@ -149,24 +151,10 @@ def save_settings_and_img(img2save,
         if imgpil.mode in ("RGBA", "P"):
             imgpil = imgpil.convert("RGB")
 
-        if first_word == 'Image:':  # First word is from main report_clahe window.
-            img_name = Path(f'{img_stem}_{caller}_contoured_{curr_time}{img_ext}')
-            imgpil.save(img_name)
-        else:  # ...is from shaped report_clahe window
-            img_name = Path(f'{img_stem}_{caller}_shaped_{curr_time}{img_ext}')
-            imgpil.save(img_name)
-
-    settings2save = (f'\n\nTime saved: {time2print}\n'
-                     'Settings for image:'
-                     f' {img_stem}_{caller}_{curr_time}{img_ext}\n'
-                     f'{txt2save}')
-
-    # Use this Path function for saving individual settings files:
-    # Path(f'{img_stem}_clahe_settings{curr_time}.txt').write_text(settings2save)
-
-    # Use this for appending multiple settings to single file:
-    with Path(f'{img_stem}_{caller}_settings.txt').open('a', encoding='utf-8') as _fp:
-        _fp.write(settings2save)
+        img_name = Path(f'{img_stem}_{caller}_{curr_time}{img_ext}')
+        imgpil.save(img_name)
+    else:
+        print('The specified image needs to be a np.ndarray or ImageTk.PhotoImage ')
 
     print(f'Result image and its settings were saved to files.'
           f'{settings2save}')

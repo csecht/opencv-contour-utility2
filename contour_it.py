@@ -728,7 +728,7 @@ class ProcessImage(tk.Tk):
 
         if self.radio_val['find_shape_in'].get() == 'Threshold':
             shapeimg_win_name = 'thresh shaped'
-        else:  # == 'canny'
+        else:  # == 'Canny'
             shapeimg_win_name = 'canny shaped'
         self.img_window['shaped'].title(const.WIN_NAME[shapeimg_win_name])
 
@@ -773,9 +773,9 @@ class ProcessImage(tk.Tk):
         min_radius = self.slider_val['circle_minradius'].get()
         max_radius = self.slider_val['circle_maxradius'].get()
 
-        # Note: 'thresholded' needs to match the "value" kw value as configured for
+        # Note: 'threshed' needs to match the "value" kw value as configured for
         #  self.radiobtn['find_circle_in_th'] and self.radiobtn['find_circle_in_filtered'].
-        if self.radio_val['find_circle_in'].get() == 'thresholded':
+        if self.radio_val['find_circle_in'].get() == 'threshed':
             self.img_window['shaped'].title(const.WIN_NAME['circle in thresh'])
 
             # OTSU & TRIANGLE compute thresh value, hence thresh=0 is replaced
@@ -1235,16 +1235,30 @@ class ImageViewer(ProcessImage):
                                  sticky=tk.EW)
 
         def save_shape_cmd():
-            if self.radio_val['find_shape_in'].get() == 'Threshold':
-                utils.save_settings_and_img(
-                    img2save=self.tkimg['shaped'],
-                    txt2save=self.shape_settings_txt,
-                    caller='thresh_shape')
-            else:  # == 'canny'
-                utils.save_settings_and_img(
-                    img2save=self.tkimg['shaped'],
-                    txt2save=self.shape_settings_txt,
-                    caller='canny_shape')
+            poly_choice = self.cbox_val['polygon'].get()
+            # NOTE: poly_choice must match num_vertices key in select_shape().
+            if poly_choice == 'Circle':
+                if self.radio_val['find_circle_in'].get() == 'threshed':
+                    utils.save_settings_and_img(
+                        img2save=self.tkimg['shaped'],
+                        txt2save=self.shape_settings_txt,
+                        caller='SHAPE_circle_from_th')
+                else:  # is 'filtered':
+                    utils.save_settings_and_img(
+                        img2save=self.tkimg['shaped'],
+                        txt2save=self.shape_settings_txt,
+                        caller='SHAPE_circle_from_filter')
+            else:  # is one of the polygons
+                if self.radio_val['find_shape_in'].get() == 'Threshold':
+                    utils.save_settings_and_img(
+                        img2save=self.tkimg['shaped'],
+                        txt2save=self.shape_settings_txt,
+                        caller='SHAPE_thresh')
+                else:  # is 'Canny':
+                    utils.save_settings_and_img(
+                        img2save=self.tkimg['shaped'],
+                        txt2save=self.shape_settings_txt,
+                        caller='SHAPE_canny')
 
         # Note that ttk.Styles are defined in manage.ttk_styles().
         self.shape_defaults_button.configure(text='Set contour defaults',
@@ -1299,7 +1313,7 @@ class ImageViewer(ProcessImage):
             """
             utils.save_settings_and_img(img2save=self.contours['drawn_thresh'],
                                         txt2save=self.contour_settings_txt,
-                                        caller='Threshold')
+                                        caller='CONTOUR_thresh')
 
         def save_can_settings():
             """
@@ -1308,7 +1322,7 @@ class ImageViewer(ProcessImage):
             """
             utils.save_settings_and_img(img2save=self.contours['drawn_canny'],
                                         txt2save=self.contour_settings_txt,
-                                        caller='Canny')
+                                        caller='CONTOUR_canny')
 
         def show_shapes_windows():
             self.shape_settings_win.deiconify()
@@ -1750,7 +1764,7 @@ class ImageViewer(ProcessImage):
                                              **const.LABEL_PARAMETERS)
         self.radio['find_circle_in_th'].configure(text='Threshold img',
                                                   variable=self.radio_val['find_circle_in'],
-                                                  value='thresholded',
+                                                  value='threshed',
                                                   command=self.process_all,
                                                   **const.RADIO_PARAMETERS)
         self.radio['find_circle_in_filtered'].configure(text='Filtered img',
@@ -2263,7 +2277,7 @@ class ImageViewer(ProcessImage):
             self.radio_val['hull_shape'].set('no')
             app.update_idletasks()
             # Need to specify text based on selections.
-            if use_image4circle == 'thresholded':
+            if use_image4circle == 'threshed':
                 shape_found_in = 'Otsu threshold of Filtered image.\n'
                 hough_img = '...an Otsu threshold of the Filtered image.'
             else:  # is 'filtered'
@@ -2280,6 +2294,7 @@ class ImageViewer(ProcessImage):
         indent = " ".ljust(justify)
 
         self.shape_settings_txt = (
+            f'Image: {INPUT_PATH}\n\n'
             f'{"cv2.approxPolyDP:".ljust(justify)}epsilon coefficient is {epsilon_coef}\n'
             f'{indent}({epsilon_pct}% contour length, cv2.arcLength)\n'
             f'{indent}closed=True\n'
