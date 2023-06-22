@@ -173,7 +173,9 @@ class ProcessImage(tk.Tk):
         #   BGR colorspace range boundaries to use for HSV color discrimination.
         if color2find:
             lower, upper = const.COLOR_BOUNDARIES[color2find]
-            mask = cv2.inRange(self.hsv_img, lower, upper)
+            mask = cv2.inRange(self.hsv_img,
+                               lowerb=lower,
+                               upperb=upper)
 
             # Red color wraps around the HSV boundary,
             #  so need to merge two range sets to include all likely reds,
@@ -185,15 +187,16 @@ class ProcessImage(tk.Tk):
             #   correct-hsv-inrange-values-for-red-objects/
             if color2find == 'red><red':
                 mask_red1 = cv2.inRange(self.hsv_img,
-                                        const.COLOR_BOUNDARIES['red+brown'][0],
-                                        const.COLOR_BOUNDARIES['red+brown'][1])
+                                        lowerb=const.COLOR_BOUNDARIES['red+brown'][0],
+                                        upperb=const.COLOR_BOUNDARIES['red+brown'][1])
                 mask_red2 = cv2.inRange(self.hsv_img,
-                                        const.COLOR_BOUNDARIES['crimson+deep pink'][0],
-                                        const.COLOR_BOUNDARIES['crimson+deep pink'][1])
+                                        lowerb=const.COLOR_BOUNDARIES['crimson+deep pink'][0],
+                                        upperb=const.COLOR_BOUNDARIES['crimson+deep pink'][1])
                 mask = mask_red1 + mask_red2
         else:  # using sliders
             mask = cv2.inRange(self.hsv_img,
-                               self.lobound, self.hibound)
+                               lowerb=self.lobound,
+                               upperb=self.hibound)
 
         # Remove unnecessary noise from mask
         element = cv2.getStructuringElement(
@@ -522,6 +525,7 @@ class ImageViewer(ProcessImage):
 
         self.color_list = list(const.COLOR_BOUNDARIES.keys())
         self.color_list.insert(0, 'Use sliders')
+        self.color_list.append('Use sliders')
         self.cbox['choose_color_lbl'].config(text='Use sliders or pick colors:',
                                              **const.LABEL_PARAMETERS)
         self.cbox['choose_color'].config(textvariable=self.cbox_val['color_pref'],
