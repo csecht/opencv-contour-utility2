@@ -36,9 +36,11 @@ Be aware that CLAHE works best on images that have a more-or-less continuous ran
 Note that the `--color` command line argument does nothing with `equalize_it.py`.
 
 ## color_it.py
-The module `equalize_it.py` does not involve contours, but explores HSV colorspace for finding specific colors using cv2.COLOR_BGR2HSV; masking is performed with cv2.inRange and cv2.bitwise_and methods. HSV color boundaries are set with two sets of three slide bars for the upper and lower bounds. The sliders use a 0-255 scale of BGR values to be converted to HSV colorspace (screenshot below). There is also a pull-down menu of pre-selected colors. The color can be used as a starting point for subsequent optimization for your specific images. Selected values and the resulting color-masked image can be saved.
+The module `color_it.py` does not involve contours, but explores HSV colorspace using: `cv2.cvtColor(src, cv2.COLOR_BGR2HSV)` for colorspace conversion, `cv2.inRange` for HSV thresholding, and `cv2.bitwise_and` for masking. Colors can be adjusted using slide bars for the upper and lower bounds to set the HSV color threshold. Sliders use a 0-255 scale of BGR values (screenshot below), which are converted to HSV values. A pull-down menu of pre-selected colors is available. These pre-set colors and color groups can be used as a starting point for subsequent optimization with the sliders.
 
-There are button toggles to apply or remove a blurring filter for the input image and noise reduction for the color mask. These operations, while adjustable in `contour_it.py`, are hard-coded here, but generally work well for color masking. The hard-coded parameter values used are listed in the report window.
+There are button toggles to apply or remove a blurring filter for the input image and noise reduction for the color mask. These operations, while adjustable in `contour_it.py`, are hard-coded here, but generally work well for color masking. The applied filter and noise reduction methods and parameters are posted in the report window. 
+
+Selected color values and the resulting color-masked image can be saved to files.
 
 Note that the `--color` command line argument does nothing with `color_it.py`. Strange, but true.
 

@@ -791,8 +791,8 @@ class ImageViewer(ProcessImage):
         selected_color = self.cbox['choose_color'].get()
 
         if selected_color == self.color_list[0]:  # is 'Use sliders'
-            range_txt = (f'Selected BGR values for lower HSV range: {self.lobound}\n'
-                         f'Selected BGR values for upper HSV range: {self.hibound}\n\n')
+            range_txt = (f'Selected BGR values for lower HSV bound: {self.lobound}\n'
+                         f'Selected BGR values for upper HSV bound: {self.hibound}\n\n')
         else:  # a pre-set color is selected
             if selected_color == 'red><red':  # strings must match dict keys.
                 l_mask1, u_mask1 = const.COLOR_BOUNDARIES['red & brown']
@@ -803,8 +803,8 @@ class ImageViewer(ProcessImage):
                              '    masks to span red hues across the HSV colorspace.')
             else:
                 lowerb, upperb = const.COLOR_BOUNDARIES[selected_color]
-                range_txt = (f'Pre-set BGR values for lower HSV range: {lowerb}\n'
-                             f'Pre-set BGR values for upper HSV range: {upperb}\n\n')
+                range_txt = (f'Pre-set BGR values for lower HSV bound: {lowerb}\n'
+                             f'Pre-set BGR values for upper HSV bound: {upperb}\n\n')
 
         # Note: these values need to be updated with those is used in find_colors().
         # In 'else' statement, keep the same number of newlines as in True statement.
