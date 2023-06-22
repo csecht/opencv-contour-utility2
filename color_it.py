@@ -534,7 +534,7 @@ class ImageViewer(ProcessImage):
         self.color_list = list(const.COLOR_BOUNDARIES.keys())
         self.color_list.insert(0, 'Use sliders')
         self.color_list.append('Use sliders')
-        self.cbox['choose_color_lbl'].config(text='Use sliders or pick colors:',
+        self.cbox['choose_color_lbl'].config(text='Select a color or "Use sliders":',
                                              **const.LABEL_PARAMETERS)
         self.cbox['choose_color'].config(textvariable=self.cbox_val['color_pref'],
                                          width=16 + width_correction,
@@ -668,11 +668,11 @@ class ImageViewer(ProcessImage):
 
         # Need custom padding for the color Combobox.
         if const.MY_OS == 'lin':
-            padx_choice = (150, 0)
+            padx_choice = (175, 0)
         elif const.MY_OS == 'win':
-            padx_choice = (180, 0)
+            padx_choice = (205, 0)
         else:  # is macOS
-            padx_choice = (130, 0)
+            padx_choice = (155, 0)
 
         # Widgets gridded in the self.color_selectors_frame Frame.
         # Sorted by row number:
@@ -789,11 +789,10 @@ class ImageViewer(ProcessImage):
         indent = ' '.ljust(18)
         bigindent = ' '.ljust(26)
         selected_color = self.cbox['choose_color'].get()
-        # red_txt = '\n'
 
         if selected_color == self.color_list[0]:  # is 'Use sliders'
             range_txt = (f'Selected BGR values for lower HSV range: {self.lobound}\n'
-                         f'Selected BGR values for upper HSV range: {self.hibound}\n\n\n')
+                         f'Selected BGR values for upper HSV range: {self.hibound}\n\n')
         else:  # a pre-set color is selected
             if selected_color == 'red><red':  # strings must match dict keys.
                 l_mask1, u_mask1 = const.COLOR_BOUNDARIES['red & brown']
@@ -801,11 +800,11 @@ class ImageViewer(ProcessImage):
                 range_txt = (f'Lower red HSV mask range: {l_mask1}, {u_mask1}\n'
                              f'Upper red HSV mask range: {l_mask2}, {u_mask2}\n'
                              '   "red><red" joins "red & brown" and "red & deep pink"\n'
-                             '    masks to span red hues across the HSV colorspace.\n')
+                             '    masks to span red hues across the HSV colorspace.')
             else:
                 lowerb, upperb = const.COLOR_BOUNDARIES[selected_color]
                 range_txt = (f'Pre-set BGR values for lower HSV range: {lowerb}\n'
-                             f'Pre-set BGR values for upper HSV range: {upperb}\n\n\n')
+                             f'Pre-set BGR values for upper HSV range: {upperb}\n\n')
 
         # Note: these values need to be updated with those is used in find_colors().
         # In 'else' statement, keep the same number of newlines as in True statement.
@@ -814,8 +813,8 @@ class ImageViewer(ProcessImage):
                 'cv2.bilateralFilter(src=INPUT_IMG, d=0,\n'
                 f'{indent}sigmaColor=9, sigmaSpace=9,\n'
                 f'{indent}borderType=cv2.BORDER_REPLICATE)')
-        else:  # is False, 'No' selected
-            filter_txt = 'None selected.\n\n'
+        else:  # is False, 'No' radiobutton selected
+            filter_txt = 'Not selected.\n\n'
 
         if self.radio_val['redux_pref'].get():
             redux_txt = (
@@ -825,13 +824,13 @@ class ImageViewer(ProcessImage):
                 f'{bigindent}borderType=cv2.BORDER_DEFAULT)\n'
                 ' ...with cv2.getStructuringElement(shape=cv2.MORPH_CROSS,\n'
                 f'{bigindent}ksize=(3, 3), anchor=(-1, -1))')
-        else:  # is False, 'No' selected
-            redux_txt = 'None selected.\n\n\n\n\n'
+        else:  # is False, 'No' radiobutton selected
+            redux_txt = 'Not selected.\n\n\n\n\n'
 
         # Text is formatted for clarity in window, terminal, and saved file.
         self.color_settings_txt = (
             f'Image: {INPUT_PATH}\n\n'
-            f'Pre-set color: {selected_color}\n\n'
+            f'Pre-set color: {selected_color}\n'
             f'{range_txt}\n'
             f'Image filter: {filter_txt}\n'
             f'Mask noise reduction: {redux_txt}\n'
