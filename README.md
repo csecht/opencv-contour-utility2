@@ -11,11 +11,12 @@ Programs that run from the command line:
 * `contour_it.py` draws contours based on edges, thresholds, or shapes.
 * `equalize_it.py` does CLAHE histogram equalization.
 * `color_it.py` finds colors.
-All can be run on Linux, Windows, and macOS platforms. `contour_it.py` is an upgrade of the original module found in the opencv-contour-utils repository that uses the native OpenCV GUI, but only for Linux systems.
+* 
+All modules can be executed on Linux, Windows, and macOS platforms. `contour_it.py` is an upgrade of the original module found in the opencv-contour-utils repository that uses the native OpenCV GUI, but only runs on Linux systems.
 
 All contour processing steps are conducted on grayscale conversions of the specified input file. A text file of chosen settings and the resulting image file of drawn contours, overlaid on the original image, can be saved. Image file samples, listed below, are provided in the `images` folder.
 
-The default `contour_it.py` color for outlining objects is green, but can be changed to yellow with the `--color yellow` command line argument. This may be useful for certain images or users with a green color vision impairment.
+The default `contour_it.py` contour outline color is green, but can be changed to yellow with the `--color yellow` command line argument. This may be useful for certain images or users with a green color vision impairment.
 
 <sub>Project inspired by code from Adrian Rosebrock:
 https://pyimagesearch.com/2016/03/28/measuring-size-of-objects-in-an-image-with-opencv/
@@ -39,7 +40,7 @@ The module `equalize_it.py` does not involve contours, but explores HSV colorspa
 
 There are button toggles to apply or remove a blurring filter for the input image and noise reduction for the color mask. These operations, while adjustable in `contour_it.py`, are hard-coded here, but generally work well for color masking. The hard-coded parameter values used are listed in the report window.
 
-Note that the `--color` command line argument does nothing with `color_it.py`.
+Note that the `--color` command line argument does nothing with `color_it.py`. Strange, but true.
 
 ### Usage examples:
 From within the program's folder, example command line invocations:
@@ -52,8 +53,9 @@ From within the program's folder, example command line invocations:
 
        python3 -m equalize_it --i images/sample2.jpg -s 0.5
 
-Note that with no input argument, as in the first example, the default sample1.jpg from the `images` folder is used for input. Three additional sample input files are provided in the `images` folder.
- On Windows systems, you may need to replace 'python3' with 'python' or 'py'.
+Note that with no input argument, as in the first example, the default sample1.jpg from the `images` folder is used for input. Additional sample input files are provided in the `images` folder.
+
+On Windows systems, you may need to replace 'python3' with 'python' or 'py'.
 
 Be aware that very large image file may require a few seconds to display the program widows, depending on your system performance. Be patient.
 
@@ -73,7 +75,7 @@ To view basic information, author, version, license, etc.: `python3 -m contour_i
  
 The Esc or Q key will quit any running module.
 
-Images that are too large to fit on the screen can have their display size adjusted with the `--scale` command line argument. All image processing is performed at the original image resolution.
+The displayed image size can be adjusted with the `--scale` command line argument. All image processing, however, is performed at the original image resolution.
 
 Image file examples provided in the `images` folder:
 * sample1.jpg (pills, 800x600 692 kB),
@@ -123,8 +125,8 @@ The windows, manually rearranged, showing default settings for the two CLAHE par
 Above: The report and settings window for `color_it.py` at default settings. 
 Command line: `python3 -m color_it -i images/sample5.png -s 0.5`. 
 
-Below: Input and processed images.
-![colors_scrnshot.png](images%2Fcolors_scrnshot.png)
+Below: The input and processed images.
+![colors_scrnshot.png](images/colors_scrnshot.png)
 
 ### Known Issues:
 
