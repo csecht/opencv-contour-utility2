@@ -1365,14 +1365,14 @@ class ImageViewer(ProcessImage):
 
         # Widget grid for the main window.
         if const.MY_OS == 'lin':
-            save_th_padx = (0, 90)
-            save_canny_padx = (0, 35)
+            save_th_padx = (0, 80)
+            save_canny_padx = (0, 25)
         elif const.MY_OS == 'win':
-            save_th_padx = (0, 105)
-            save_canny_padx = (0, 45)
+            save_th_padx = (0, 100)
+            save_canny_padx = (0, 40)
         else:  # is macOS
-            save_th_padx = (0, 60)
-            save_canny_padx = (0, 5)
+            save_th_padx = (0, 55)
+            save_canny_padx = (0, 0)
 
         reset_btn.grid(column=0, row=2,
                        padx=(70, 0),
@@ -1463,9 +1463,9 @@ class ImageViewer(ProcessImage):
                                             **const.SCALE_PARAMETERS)
 
         self.slider['filter_k_lbl'].configure(text='Filter kernel size\n'
-                                                   '(only odd integers used):',
+                                                   '(only odd integers or 0 used):',
                                               **const.LABEL_PARAMETERS)
-        self.slider['filter_k'].configure(from_=3, to=111,
+        self.slider['filter_k'].configure(from_=0, to=111,
                                           tickinterval=9,
                                           variable=self.slider_val['filter_k'],
                                           **const.SCALE_PARAMETERS)
@@ -2196,7 +2196,10 @@ class ImageViewer(ProcessImage):
 
         # Need to use only odd kernel integers.
         _k = self.slider_val['filter_k'].get()
-        filter_k = _k + 1 if _k % 2 == 0 else _k
+        if _k != 0:
+            filter_k = _k + 1 if _k % 2 == 0 else _k
+        else:
+            filter_k = _k
 
         th_type = self.cbox_val['th_type_pref'].get()
         c_limit = self.slider_val['c_limit'].get()
