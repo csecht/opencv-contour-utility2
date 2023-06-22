@@ -120,12 +120,13 @@ The windows, manually rearranged, showing default settings for the two CLAHE par
 
 ![color_settings](images/color_settings_screenshot.png)
 
-The report and settings window for `color_it.py` at default settings. 
-Command line: `python3 -m color_it -i images/sample5.png -s 0.5`
+Above: The report and settings window for `color_it.py` at default settings. 
+Command line: `python3 -m color_it -i images/sample5.png -s 0.5`. 
+
+Below: Input and processed images.
+![colors_scrnshot.png](images%2Fcolors_scrnshot.png)
 
 ### Known Issues:
-
-While `equalize_it.py` should work on all platforms, some Linux installations may not show the histograms. The problem may be with the specific version of the required Matplotlib packages.
 
 While not a program issue, there is a potential source of confusion when using the example image, sample4.jpg (shapes). With the default settings, the white border around the black background will display a hexagon-shaped contour, which may be difficult to see, especially when using yellow --color option. Consequently, it will be counted as a hexagon shape unless, in main settings, it is not recognized as a selected contour by clicking the cv2.arcLength button instead of cv2.contourArea.
 
