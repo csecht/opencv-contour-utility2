@@ -187,11 +187,11 @@ class ProcessImage(tk.Tk):
             #   correct-hsv-inrange-values-for-red-objects/
             if color2find == 'red><red':
                 mask_red1 = cv2.inRange(self.hsv_img,
-                                        lowerb=const.COLOR_BOUNDARIES['red+brown'][0],
-                                        upperb=const.COLOR_BOUNDARIES['red+brown'][1])
+                                        lowerb=const.COLOR_BOUNDARIES['red & brown'][0],
+                                        upperb=const.COLOR_BOUNDARIES['red & brown'][1])
                 mask_red2 = cv2.inRange(self.hsv_img,
-                                        lowerb=const.COLOR_BOUNDARIES['crimson+deep pink'][0],
-                                        upperb=const.COLOR_BOUNDARIES['crimson+deep pink'][1])
+                                        lowerb=const.COLOR_BOUNDARIES['red & deep pink'][0],
+                                        upperb=const.COLOR_BOUNDARIES['red & deep pink'][1])
                 mask = mask_red1 + mask_red2
         else:  # using sliders
             mask = cv2.inRange(self.hsv_img,
@@ -248,8 +248,8 @@ class ImageViewer(ProcessImage):
 
     __slots__ = (
         'color_list', 'color_report_frame', 'color_selectors_frame',
-        'color_settings_txt', 'flat_gray', 'reset_btn', 'save_btn',
-        'filter_btn', 'redux_btn', 'separator', 'slider',
+        'color_settings_txt', 'explain', 'flat_gray', 'reset_btn',
+        'save_btn', 'filter_btn', 'redux_btn', 'separator', 'slider',
     )
 
     def __init__(self):
@@ -298,6 +298,7 @@ class ImageViewer(ProcessImage):
 
         self.reset_btn = ttk.Button(master=self)
         self.save_btn = ttk.Button(master=self)
+        self.explain = tk.Label(master=self.color_selectors_frame)
 
         # Separator used in settings report window.
         self.separator = ttk.Separator(master=self)
@@ -422,6 +423,13 @@ class ImageViewer(ProcessImage):
                                              borderwidth=5, )
         self.color_selectors_frame.columnconfigure(0, weight=1)
         self.color_selectors_frame.columnconfigure(1, weight=1)
+
+        self.explain.config(
+            text=('Displayed min and max values are the BGR values used'
+                  ' for HSV color conversion\n'
+                  ' when using the method: cv2.cvtColor(src, cv2.COLOR_BGR2HSV).'),
+            **const.LABEL_PARAMETERS
+        )
 
         self.color_report_frame.grid(column=0, row=0,
                                      columnspan=2,
@@ -615,7 +623,7 @@ class ImageViewer(ProcessImage):
         self.slider_val['S_max'].set(255)
         self.slider_val['V_max'].set(255)
 
-        self.cbox_val['color_pref'].set('red+brown')
+        self.cbox_val['color_pref'].set('red & brown')
 
         self.radio['filter_yes'].select()
         self.radio['redux_yes'].select()
@@ -707,6 +715,12 @@ class ImageViewer(ProcessImage):
                                        pady=(5, 5),
                                        sticky=tk.W)
 
+        self.explain.grid(column=0, row=10,
+                          columnspan=2,
+                          padx=(0, 0),
+                          pady=(0, 0),
+                          sticky=tk.EW)
+
         self.separator.grid(column=0, row=6,
                             columnspan=2,
                             pady=6,
@@ -765,9 +779,9 @@ class ImageViewer(ProcessImage):
 
     def report_color_settings(self) -> None:
         """
-        Write the current settings and cv2 metrics in a Text widget of
-        the report_frame. Same text is printed in Terminal from "Save"
-        button. Called from __init__ and process_all().
+        Write the current settings and cv2 parameters in a Text widget of
+        the report_frame. The same text is printed in Terminal when using
+        the "Save" button. Called from and process_all().
 
         Returns: None
         """
@@ -775,14 +789,23 @@ class ImageViewer(ProcessImage):
         indent = ' '.ljust(18)
         bigindent = ' '.ljust(26)
         selected_color = self.cbox['choose_color'].get()
+        # red_txt = '\n'
 
         if selected_color == self.color_list[0]:  # is 'Use sliders'
             range_txt = (f'Selected BGR values for lower HSV range: {self.lobound}\n'
-                         f'Selected BGR values for upper HSV range: {self.hibound}\n')
-        else:  # a color is selected
-            lobound, hibound = const.COLOR_BOUNDARIES[selected_color]
-            range_txt = (f'Pre-set BGR values for lower HSV range: {lobound}\n'
-                         f'Pre-set BGR values for upper HSV range: {hibound}\n')
+                         f'Selected BGR values for upper HSV range: {self.hibound}\n\n\n')
+        else:  # a pre-set color is selected
+            if selected_color == 'red><red':  # strings must match dict keys.
+                l_mask1, u_mask1 = const.COLOR_BOUNDARIES['red & brown']
+                l_mask2, u_mask2  = const.COLOR_BOUNDARIES['red & deep pink']
+                range_txt = (f'Lower red HSV mask range: {l_mask1}, {u_mask1}\n'
+                             f'Upper red HSV mask range: {l_mask2}, {u_mask2}\n'
+                             '   "red><red" joins "red & brown" and "red & deep pink"\n'
+                             '    masks to span red hues across the HSV colorspace.\n')
+            else:
+                lowerb, upperb = const.COLOR_BOUNDARIES[selected_color]
+                range_txt = (f'Pre-set BGR values for lower HSV range: {lowerb}\n'
+                             f'Pre-set BGR values for upper HSV range: {upperb}\n\n\n')
 
         # Note: these values need to be updated with those is used in find_colors().
         # In 'else' statement, keep the same number of newlines as in True statement.
@@ -810,12 +833,6 @@ class ImageViewer(ProcessImage):
             f'Image: {INPUT_PATH}\n\n'
             f'Pre-set color: {selected_color}\n\n'
             f'{range_txt}\n'
-            'Displayed min and max values are the BGR values used\n'
-            '  for HSV color discrimination when using the method:\n'
-            '  cv2.cvtColor(src, cv2.COLOR_BGR2HSV).\n'
-            '"red><red" joins the cv2.inRange masks for "red+brown"\n'
-            '  and "crimson+deep pink"; it spans red shades across\n'
-            '  the cylindrical HSV colorspace.\n'
             f'Image filter: {filter_txt}\n'
             f'Mask noise reduction: {redux_txt}\n'
         )

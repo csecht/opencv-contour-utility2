@@ -321,25 +321,25 @@ PANEL_RIGHT = dict(
 
 # Sets of BGR color values for converting to HSV color ranges.
 COLOR_BOUNDARIES = {
-    'red+brown': ((0, 100, 100), (6, 255, 255)),  # Also used for HSV red><red.
+    'red & brown': ((0, 100, 100), (6, 255, 255)),  # Also used for HSV red><red.
     'red><red': ((0, 0, 0), (0, 0, 0)),  # Stub values: see find_colors().
-    'crimson+deep pink': ((170, 100, 100), (180, 255, 255)),  # Also used for HSV red><red.
+    'red & deep pink': ((170, 100, 100), (180, 255, 255)),  # Also used for HSV red><red.
     'pink': ((155, 50, 120), (180, 255, 255)),
     'deep pink': ((155, 200, 0), (180, 255, 255)),
     'purple': ((130, 120, 160), (160, 240, 240)),
     'orange': ((5, 190, 200), (18, 255, 255)),
-    'lt orange': ((3, 102, 102), (20, 255, 255)),
+    'orange2': ((3, 102, 102), (20, 255, 255)),
     'yellow': ((20, 80, 80), (30, 255, 255)),
     'green': ((36, 25, 25), (70, 255, 255)),
-    'green+cyan': ((50, 20, 20), (100, 255, 255)),
+    'green & cyan': ((50, 20, 20), (100, 255, 255)),
     'blue': ((110, 150, 50), (120, 255, 255)),  # Deep true blues.
-    'blue+cyan': ((80, 50, 45), (120, 255, 255)),
+    'blue & cyan': ((80, 50, 45), (120, 255, 255)),
     'royal blue': ((105, 150, 0), (130, 200, 255)),
-    'royal+slate': ((105, 50, 50), (130, 200, 255)),
+    'royal & slate': ((105, 50, 50), (130, 200, 255)),
     'bold': ((0, 220, 90), (150, 255, 255)),
     'bold2': ((0, 200, 120), (180, 255, 255)),
     'earthtones': ((0, 14, 80), (120, 120, 225)),
     'whites': ((0, 0, 200), (125, 60, 255)),  # Includes some red & blue whites.
     'mid grays': ((0, 0, 55), (0, 0, 200)),
-    'lt grays+white': ((0, 0, 200), (0, 0, 255)),
+    'lt grays & white': ((0, 0, 200), (0, 0, 255)),
 }
