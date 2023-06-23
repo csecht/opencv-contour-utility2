@@ -69,8 +69,7 @@ class ProcessImage(tk.Tk):
     Uses OpenCV methods to apply color-specific masks to the image
     specified in the input file.
 
-    Class methods:
-   find_colors()
+    Class methods:  find_colors()
     """
 
     __slots__ = (
@@ -119,12 +118,6 @@ class ProcessImage(tk.Tk):
         self.img_label = None
 
         self.hsv_img = None
-
-        # The highlight color used to draw contours and shapes.
-        # if arguments['color'] == 'yellow':
-        #     self.contour_color = const.CBLIND_COLOR_CV['yellow']
-        # else:  # is default cv2 contour color, green, as (B,G,R).
-        #     self.contour_color = arguments['color']
 
     def find_colors(self, color2find=None) -> None:
         """
@@ -425,9 +418,9 @@ class ImageViewer(ProcessImage):
         self.color_selectors_frame.columnconfigure(1, weight=1)
 
         self.explain.config(
-            text=('Displayed min and max values are the BGR values used'
-                  ' for HSV color conversion\n'
-                  ' when using the method: cv2.cvtColor(src, cv2.COLOR_BGR2HSV).'),
+            text=('Min and max slider values are the BGR values used for'
+                  ' HSV color conversion\n'
+                  ' with the function cv2.cvtColor(src, cv2.COLOR_BGR2HSV).'),
             **const.LABEL_PARAMETERS
         )
 

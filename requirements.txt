@@ -14,5 +14,5 @@ Pillow
 #  the 'equalize_it.py' module.
 
 # Note that for PyCharm 2023, to get opencv documentation working, the interpreter
-#  needs to use opencv-python 4.5.5.64 or possibly 4.6. Ver 4.7+ doesn't do
-#  documentation for opencv.
+#  needs to use opencv-python 4.5.5.62. Higher versions with PIP installation
+#  don't do opencv documentation.
