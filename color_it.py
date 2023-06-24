@@ -133,6 +133,8 @@ class ProcessImage(tk.Tk):
         # Coding ideas from:
         # https://techvidvan.com/tutorials/detect-objects-of-similar-color-using-opencv-in-python/
 
+        # Note that the slider values are actually BGR values that will
+        #   be converted to the corresponding HSV colorspace.
         h_min = self.slider_val['H_min'].get()
         s_min = self.slider_val['S_min'].get()
         v_min = self.slider_val['V_min'].get()
@@ -194,8 +196,7 @@ class ProcessImage(tk.Tk):
         # Remove unnecessary noise from mask
         element = cv2.getStructuringElement(
             # shape=cv2.MORPH_ELLIPSE,  # cv2.MORPH_RECT, default
-            # ksize=(3, 3),  # smaller ksize preserves details of mask.
-            shape=cv2.MORPH_CROSS,  # CROSS to best bring out mask detail.
+            shape=cv2.MORPH_CROSS,  # CROSS is best bring out mask detail.
             ksize=(3, 3),  # smaller kernel preserves more details.
             anchor=(-1, -1)  # anchor cross kernel to center with -1.
         )
@@ -211,7 +212,7 @@ class ProcessImage(tk.Tk):
 
         # Segment only the detected region. cv2.bitwise_and() applies mask on
         #  frame in only that region where the mask is true means white.
-        # masked_img = cv2.bitwise_and(INPUT_IMG, INPUT_IMG, mask=filtered_mask)
+        # 'redux' means noise reduction.
         if self.radio_val['redux_pref'].get():
             masked_img = cv2.bitwise_and(INPUT_IMG, INPUT_IMG, mask=redux_mask)
         else:
@@ -793,7 +794,7 @@ class ImageViewer(ProcessImage):
                 range_txt = (f'Lower red HSV mask range: {l_mask1}, {u_mask1}\n'
                              f'Upper red HSV mask range: {l_mask2}, {u_mask2}\n'
                              '   "red><red" joins "red & brown" and "red & deep pink"\n'
-                             '    masks to span red hues across the HSV colorspace.')
+                             '    masks to span red hues around the HSV colorspace.')
             else:
                 lowerb, upperb = const.COLOR_BOUNDARIES[selected_color]
                 range_txt = (f'Pre-set BGR values for lower HSV bound: {lowerb}\n'

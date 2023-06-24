@@ -1055,10 +1055,10 @@ class ImageViewer(ProcessImage):
         # NOTE: keys here must match corresponding keys in const.WIN_NAME
         self.img_window = {
             'shaped': tk.Toplevel(),
-            'canny sized': tk.Toplevel(),
-            'thresh sized': tk.Toplevel(),
             'canny': tk.Toplevel(),
             'thresholded': tk.Toplevel(),
+            'canny sized': tk.Toplevel(),
+            'thresh sized': tk.Toplevel(),
             'filtered': tk.Toplevel(),
             'contrasted': tk.Toplevel(),
             'input': tk.Toplevel(),
