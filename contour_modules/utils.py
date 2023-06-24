@@ -123,16 +123,16 @@ def save_settings_and_img(img2save,
     img_ext = Path(Path(manage.arguments()['input']).suffix)
     img_stem = Path(Path(manage.arguments()['input']).stem)
 
-    settings2save = (f'\n\nTime saved: {time2print}\n'
-                     'Settings for image:'
-                     f' {img_stem}_{caller}_{curr_time}{img_ext}\n'
-                     f'{txt2save}')
+    data2save = (f'\n\nTime saved: {time2print}\n'
+                 f'Saved image file: {img_stem}_{caller}_{curr_time}{img_ext}\n'
+                 f'Saved settings file: {img_stem}_{caller}_settings.txt\n'
+                 f'{txt2save}')
 
     # Use this Path function for saving individual settings files:
-    # Path(f'{img_stem}_clahe_settings{curr_time}.txt').write_text(settings2save)
+    # Path(f'{img_stem}_clahe_settings{curr_time}.txt').write_text(data2save)
     # Use this for appending multiple settings to single file:
     with Path(f'{img_stem}_{caller}_settings.txt').open('a', encoding='utf-8') as _fp:
-        _fp.write(settings2save)
+        _fp.write(data2save)
 
     # Contour images are np.ndarray direct from cv2 functions, while
     #   other images are those displayed as ImageTk.PhotoImage.
@@ -157,7 +157,7 @@ def save_settings_and_img(img2save,
         print('The specified image needs to be a np.ndarray or ImageTk.PhotoImage ')
 
     print(f'Result image and its settings were saved to files.'
-          f'{settings2save}')
+          f'{data2save}')
 
 
 def scale_img(img: np.ndarray, scale: float) -> np.ndarray:

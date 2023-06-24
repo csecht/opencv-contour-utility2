@@ -822,8 +822,8 @@ class ImageViewer(ProcessImage):
 
         # Text is formatted for clarity in window, terminal, and saved file.
         self.color_settings_txt = (
-            f'Image: {INPUT_PATH}\n\n'
-            f'Pre-set color: {selected_color}\n'
+            f'Image used: {INPUT_PATH}\n\n'
+            f'Pre-set color selected: {selected_color}\n'
             f'{range_txt}\n'
             f'Image filter: {filter_txt}\n'
             f'Mask noise reduction: {redux_txt}\n'
