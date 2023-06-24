@@ -803,15 +803,15 @@ class ImageViewer(ProcessImage):
         # In 'else' statement, keep the same number of newlines as in True statement.
         if self.radio_val['filter_pref'].get():
             filter_txt = (
-                'cv2.bilateralFilter(src=INPUT_IMG, d=0,\n'
-                f'{indent}sigmaColor=9, sigmaSpace=9,\n'
+                'cv2.bilateralFilter(src=your_img,\n'
+                f'{indent}d=0, sigmaColor=9, sigmaSpace=9,\n'
                 f'{indent}borderType=cv2.BORDER_REPLICATE)')
         else:  # is False, 'No' radiobutton selected
             filter_txt = 'Not selected.\n\n'
 
         if self.radio_val['redux_pref'].get():
             redux_txt = (
-                'cv2.morphologyEx(src=mask,\n'
+                'cv2.morphologyEx(src=your_mask,\n'
                 f'{bigindent}op=cv2.MORPH_HITMISS,\n'
                 f'{bigindent}kernel=element, iterations=1,\n'
                 f'{bigindent}borderType=cv2.BORDER_DEFAULT)\n'
