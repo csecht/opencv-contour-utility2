@@ -889,10 +889,9 @@ if __name__ == "__main__":
                  "  If spelled correctly, then try using the file's absolute (full) path.")
 
     # All checks are good, so define some additional run-specific constants...
-    infile_dict = manage.infile()
-    INPUT_IMG = infile_dict['input_img']
-    GRAY_IMG = infile_dict['gray_img']
-    LINE_THICKNESS = infile_dict['line_thickness']
+    INPUT_IMG = manage.infile()['input_img']
+    GRAY_IMG = manage.infile()['gray_img']
+    LINE_THICKNESS = manage.infile()['line_thickness']
 
     try:
         app = ImageViewer()
