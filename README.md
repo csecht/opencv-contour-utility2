@@ -130,11 +130,37 @@ Command line: `python3 -m color_it -i images/sample5.png -s 0.5`.
 Below: The input and processed images.
 ![colors_scrnshot.png](images/colors_scrnshot.png)
 
+Pre-set BGR values that are converted HSV color bounds, from the "Select a color..." pull-down menu. (Values from the COLOR_BOUNDARIES dictionary in contour_modules/constants.py.)
+
+| color choice     | lower bound     | upper bound     | Notes                          |
+|------------------|-----------------|-----------------|--------------------------------|
+| red & brown      | (0, 100, 100)   | (6, 255, 255)   | Used for HSV red><red.         |
+| red><red         | (0, 0, 0)       | (0, 0, 0)       | Stub values; masks are joined. |
+| red & deep pink  | (170, 100, 100) | (180, 255, 255) | Used for HSV red><red.         |
+| pink             | (155, 50, 120)  | (180, 255, 255) |
+| deep pink        | (155, 200, 0)   | (180, 255, 255) |
+| purple           | (130, 120, 160) | (160, 240, 240) |
+| orange           | (5, 190, 200)   | (18, 255, 255)  |
+| orange2          | (3, 102, 102)   | (20, 255, 255)  |
+| yellow           | (20, 70, 80)    | (30, 255, 255)  |
+| green            | (36, 25, 25)    | (70, 255, 255)  |
+| green & cyan     | (50, 20, 20)    | (100, 255, 255) |
+| blue             | (110, 150, 50)  | (120, 255, 255) | Deep true blues.               |
+| blue & cyan      | (80, 50, 45)    | (120, 255, 255) |
+| royal blue       | (105, 150, 0)   | (130, 200, 255) |
+| royal & slate    | (105, 50, 50)   | (130, 200, 255) |
+| vivid            | (0, 220, 90)    | (150, 255, 255) |
+| vivid2           | (0, 175, 150)   | (180, 255, 255) |
+| earthtones       | (0, 14, 80)     | (120, 120, 225) |
+| whites           | (0, 0, 200)     | (125, 60, 255)  | Includes pale red & blue       |
+| mid grays        | (0, 0, 55)      | (0, 0, 200)     |
+| lt grays & white | (0, 0, 200)     | (0, 0, 255)     |
+
 ### Known Issues:
 
 While not a program issue, there is a potential source of confusion when using the example image, sample4.jpg (shapes). With the default settings, the white border around the black background will display a hexagon-shaped contour, which may be difficult to see, especially when using yellow --color option. Consequently, it will be counted as a hexagon shape unless, in main settings, it is not recognized as a selected contour by clicking the cv2.arcLength button instead of cv2.contourArea.
 
-With `equalize_it.py` on Linux Ubuntu, moving the slider bar triggers updates only on button release, but updates are continuous with slide on Windows and macOS. The update-on-release feature is implemented to avoid annoying report text flickering.
+With `equalize_it.py` on Linux Ubuntu, moving the slider bar triggers updates only on button release, but updates are continuous with slide on Windows and macOS. The update-on-release feature is implemented to avoid annoying report text flickering in the report window.
 
 ### Attributions
 
