@@ -130,7 +130,7 @@ Command line: `python3 -m color_it -i images/sample5.png -s 0.5`.
 Below: The input and processed images.
 ![colors_scrnshot.png](images/colors_scrnshot.png)
 
-Pre-set BGR values that are converted HSV color bounds, from the "Select a color..." pull-down menu. (Values from the COLOR_BOUNDARIES dictionary in contour_modules/constants.py.)
+Pre-set BGR values, to be converted to HSV color bounds, for color selections in the "Select a color..." pull-down menu. (Values are from the COLOR_BOUNDARIES dictionary in contour_modules/constants.py.)
 
 | color choice     | lower bound     | upper bound     | Notes                          |
 |------------------|-----------------|-----------------|--------------------------------|
@@ -158,9 +158,7 @@ Pre-set BGR values that are converted HSV color bounds, from the "Select a color
 
 ### Known Issues:
 
-While not a program issue, there is a potential source of confusion when using the example image, sample4.jpg (shapes). With the default settings, the white border around the black background will display a hexagon-shaped contour, which may be difficult to see, especially when using yellow --color option. Consequently, it will be counted as a hexagon shape unless, in main settings, it is not recognized as a selected contour by clicking the cv2.arcLength button instead of cv2.contourArea.
-
-With `equalize_it.py` on Linux Ubuntu, moving the slider bar triggers updates only on button release, but updates are continuous with slide on Windows and macOS. The update-on-release feature is implemented to avoid annoying report text flickering in the report window.
+While not a program issue, there is a potential source of confusion when using the example image, sample4.jpg (shapes). With the default settings, the white border around the black background will display a hexagon-shaped contour, which may be difficult to see, especially when using yellow --color option. Consequently, it will be counted as a hexagon shape unless, in main settings, it is not displayed as a contour by clicking the button for cv2.arcLength button instead of cv2.contourArea.
 
 ### Attributions
 
