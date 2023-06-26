@@ -442,22 +442,14 @@ class ImageViewer(ProcessImage):
         Returns: None
         """
 
-        # On the development Linux Ubuntu PC, calling process_all() for
-        #  slider command arguments causes flickering of the report
-        #  Frame text. This doesn't happen on Windows or macOS. Therefore,
-        #  replace continuous slide processing on Linux with bindings
-        #  to call process_all() only on left button release so no flicker.
+        # Note that the if '_lbl' condition isn't needed to improve
+        #   performance; it's just there for clarity's sake.
+        #   This bind call to process_all() replaces the need to use
+        #   the Scale() 'command' parameter.
+        for name, widget in self.slider.items():
+            if '_lbl' not in name:
+                widget.bind('<ButtonRelease-1>', self.process_all)
 
-        if const.MY_OS == 'lin':
-            slider_cmd = ''
-
-            # Note that the if '_lbl' condition isn't needed to improve
-            #   performance; it's just there for clarity's sake.
-            for name, widget in self.slider.items():
-                if '_lbl' not in name:
-                    widget.bind('<ButtonRelease-1>', self.process_all)
-        else:  # is Windows or macOS
-            slider_cmd = self.process_all
 
         self.slider['H_min_lbl'].configure(text='H minimum:',
                                            **const.LABEL_PARAMETERS)
@@ -465,7 +457,6 @@ class ImageViewer(ProcessImage):
                                        resolution=1,
                                        tickinterval=20,
                                        variable=self.slider_val['H_min'],
-                                       command=slider_cmd,
                                        **const.SCALE_PARAMETERS)
 
         self.slider['S_min_lbl'].configure(text='S minimum:',
@@ -474,7 +465,6 @@ class ImageViewer(ProcessImage):
                                        resolution=1,
                                        tickinterval=20,
                                        variable=self.slider_val['S_min'],
-                                       command=slider_cmd,
                                        **const.SCALE_PARAMETERS)
 
         self.slider['V_min_lbl'].configure(text='V minimum:',
@@ -483,7 +473,6 @@ class ImageViewer(ProcessImage):
                                        resolution=1,
                                        tickinterval=20,
                                        variable=self.slider_val['V_min'],
-                                       command=slider_cmd,
                                        **const.SCALE_PARAMETERS)
 
         self.slider['H_max_lbl'].configure(text='H maximum:',
@@ -492,7 +481,6 @@ class ImageViewer(ProcessImage):
                                        resolution=1,
                                        tickinterval=20,
                                        variable=self.slider_val['H_max'],
-                                       command=slider_cmd,
                                        **const.SCALE_PARAMETERS)
 
         self.slider['S_max_lbl'].configure(text='S maximum:',
@@ -501,7 +489,6 @@ class ImageViewer(ProcessImage):
                                        resolution=1,
                                        tickinterval=20,
                                        variable=self.slider_val['S_max'],
-                                       command=slider_cmd,
                                        **const.SCALE_PARAMETERS)
 
         self.slider['V_max_lbl'].configure(text='V maximum:',
@@ -510,7 +497,6 @@ class ImageViewer(ProcessImage):
                                        resolution=1,
                                        tickinterval=20,
                                        variable=self.slider_val['V_max'],
-                                       command=slider_cmd,
                                        **const.SCALE_PARAMETERS)
 
     def config_cbox(self) -> None:
@@ -656,7 +642,7 @@ class ImageViewer(ProcessImage):
                 pady=(4, 0),
                 sticky=tk.E)
             grid_params = dict(
-                padx=(0, 0),
+                padx=(5, 0),
                 pady=(0, 5),
                 sticky=tk.W)
 
