@@ -80,6 +80,8 @@ class ProcessImage(tk.Tk):
     def __init__(self):
         super().__init__()
 
+        # These keys must match keys in the corresponding ImageViewer __init__,
+        #   selector widget dictionaries.
         self.slider_val = {
             'H_min': tk.IntVar(),
             'S_min': tk.IntVar(),
@@ -254,7 +256,8 @@ class ImageViewer(ProcessImage):
         # self.configure(bg='green')  # for development.
 
         # Note: The matching control variable attributes for the
-        #   slider widgets are in ProcessImage __init__.
+        #   slider widgets are in ProcessImage __init__, slider_val
+        #   dictionary.
         self.slider = {
             'H_min': tk.Scale(master=self.color_selectors_frame),
             'H_min_lbl': tk.Label(master=self.color_selectors_frame),
@@ -834,16 +837,15 @@ class ImageViewer(ProcessImage):
         selected_color = self.cbox_val['color_pref'].get()
 
         # For user convenience, set sliders to match selected color,
-        #   but don't allow changing sliders until 'Use sliders' is selected.
-        if selected_color == self.color_list[0]:  # 'Use sliders'
+        #   but don't allow changing sliders until 'Use sliders' is
+        #   selected (as the first listed Combobox value).
+        if selected_color == self.color_list[0]:
             for _s in self.slider_val:
                 self.slider[_s].config(state=tk.NORMAL)
 
             self.find_colors()
-        else:  # A color has been chosen from the combobox.
-            lobound, hibound = const.COLOR_BOUNDARIES[selected_color]
-            lo_h, lo_s, lo_v = lobound
-            hi_h, hi_s, hi_v = hibound
+        else:  # A color has been chosen from the Combobox.
+            (lo_h, lo_s, lo_v), (hi_h, hi_s, hi_v) = const.COLOR_BOUNDARIES[selected_color]
             self.slider_val['H_min'].set(lo_h)
             self.slider_val['S_min'].set(lo_s)
             self.slider_val['V_min'].set(lo_v)
