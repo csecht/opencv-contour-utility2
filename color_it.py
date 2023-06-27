@@ -66,8 +66,7 @@ except (ImportError, ModuleNotFoundError) as import_err:
 
 class ProcessImage(tk.Tk):
     """
-    Uses OpenCV methods to apply color-specific masks to the image
-    specified in the input file.
+    Uses OpenCV  to apply color-specific masks to an image.
 
     Class methods:  find_colors()
     """
@@ -123,8 +122,9 @@ class ProcessImage(tk.Tk):
 
     def find_colors(self, color2find=None) -> None:
         """
-        Applies a mask to image for the specified color range. Provides
-        optional pre-filtering of image and post-noise reduction of mask.
+        Applies a mask to the input image for the specified color range
+        using cv2.inRange() and cv2.bitwise_and(). Provides for optional
+        pre-filtering of image and noise reduction of the mask.
 
         Args:
             color2find: Uses pre-set color ranges from a dictionary when
@@ -168,13 +168,15 @@ class ProcessImage(tk.Tk):
 
         # Dict values are the lower and upper (light & dark)
         #   BGR colorspace range boundaries to use for HSV color discrimination.
+        # Note that cv2.inRange thresholds all elements within the
+        # color bounds to white and everything else to black.
         if color2find:
             lower, upper = const.COLOR_BOUNDARIES[color2find]
             mask = cv2.inRange(self.hsv_img,
                                lowerb=lower,
                                upperb=upper)
 
-            # Red color wraps around the HSV boundary,
+            # Red color wraps around the cylindrical HSV boundary,
             #  so need to merge two range sets to include all likely reds,
             #  as explained in:
             # https://stackoverflow.com/questions/30331944/
@@ -189,13 +191,13 @@ class ProcessImage(tk.Tk):
                 mask_red2 = cv2.inRange(self.hsv_img,
                                         lowerb=const.COLOR_BOUNDARIES['red & deep pink'][0],
                                         upperb=const.COLOR_BOUNDARIES['red & deep pink'][1])
-                mask = mask_red1 + mask_red2
+                mask = cv2.add(mask_red1, mask_red2)
         else:  # using sliders
             mask = cv2.inRange(self.hsv_img,
                                lowerb=self.lobound,
                                upperb=self.hibound)
 
-        # Remove unnecessary noise from mask
+        # Structuring element for cv2.morphologyEx noise reduction.
         element = cv2.getStructuringElement(
             # shape=cv2.MORPH_ELLIPSE,  # cv2.MORPH_RECT, default
             shape=cv2.MORPH_CROSS,  # CROSS is best bring out mask detail.
@@ -203,7 +205,7 @@ class ProcessImage(tk.Tk):
             anchor=(-1, -1)  # anchor cross kernel to center with -1.
         )
 
-        # Apply noise reduction to the mask.
+        # Apply noise reduction to the mask; conditional.
         redux_mask = cv2.morphologyEx(
             src=mask,
             op=cv2.MORPH_HITMISS,
@@ -213,8 +215,10 @@ class ProcessImage(tk.Tk):
         )
 
         # Segment only the detected region. cv2.bitwise_and() applies mask on
-        #  frame in only that region where the mask is true means white.
-        # 'redux' means noise reduction.
+        #  the array only in regions where the mask is white, that is,
+        #  it retains only the parts of the image thresholded to white.
+        # From docs: "mask" is an 8-bit single channel array that specifies
+        #   elements of the output array to be changed.
         if self.radio_val['redux_pref'].get():
             masked_img = cv2.bitwise_and(INPUT_IMG, INPUT_IMG, mask=redux_mask)
         else:

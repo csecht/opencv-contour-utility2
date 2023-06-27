@@ -67,8 +67,7 @@ WIN_NAME = {
     'circle in thresh': 'Circles in an Otsu threshold image',
     'clahe': 'CLAHE adjusted',
     'histo': 'Histograms',
-    # 'histogram': 'Histograms',
-    'input2color': 'Input <- | -> Color objects found',
+    'input2color': 'Input <- | -> Elements in selected color range',
 }
 
 # Set ranges for trackbars used to adjust contrast and brightness for
