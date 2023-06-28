@@ -189,8 +189,8 @@ class ProcessImage(tk.Tk):
                                         lowerb=const.COLOR_BOUNDARIES['red & brown'][0],
                                         upperb=const.COLOR_BOUNDARIES['red & brown'][1])
                 mask_red2 = cv2.inRange(self.hsv_img,
-                                        lowerb=const.COLOR_BOUNDARIES['red & deep pink'][0],
-                                        upperb=const.COLOR_BOUNDARIES['red & deep pink'][1])
+                                        lowerb=const.COLOR_BOUNDARIES['red & hot pink'][0],
+                                        upperb=const.COLOR_BOUNDARIES['red & hot pink'][1])
                 mask = cv2.add(mask_red1, mask_red2)
         else:  # using sliders
             mask = cv2.inRange(self.hsv_img,
@@ -216,7 +216,7 @@ class ProcessImage(tk.Tk):
 
         # Segment only the detected region. cv2.bitwise_and() applies mask on
         #  the array only in regions where the mask is white, that is,
-        #  it retains only the parts of the image thresholded to white.
+        #  it retains only the parts of the image that are thresholded to white.
         # From docs: "mask" is an 8-bit single channel array that specifies
         #   elements of the output array to be changed.
         if self.radio_val['redux_pref'].get():
@@ -326,8 +326,8 @@ class ImageViewer(ProcessImage):
 
     def setup_image_windows(self) -> None:
         """
-        Create and configure Toplevel window and to display input and
-        processed images.
+        Create and configure Toplevel window to display input and
+        processed image.
 
         Returns: None
         """
@@ -594,15 +594,14 @@ class ImageViewer(ProcessImage):
                                       **const.RADIO_PARAMETERS)
 
     def set_color_defaults(self) -> None:
-        """
-        Sets selector widgets values.
+        """ Sets selector widgets values.
         Called from "Reset" button and __init__. Calls process_all().
 
         Returns: None
         """
 
         # Set/Reset Scale widgets.
-        #  Default color range is green.
+        #  Default color range is 'red & brown'.
         self.slider_val['H_min'].set(0)
         self.slider_val['S_min'].set(100)
         self.slider_val['V_min'].set(100)
@@ -610,8 +609,10 @@ class ImageViewer(ProcessImage):
         self.slider_val['S_max'].set(255)
         self.slider_val['V_max'].set(255)
 
+        # Set/Reset Combobox widgets.
         self.cbox_val['color_pref'].set('red & brown')
 
+        # Set/Reset Radiobutton widgets.
         self.radio['filter_yes'].select()
         self.radio['redux_yes'].select()
 
@@ -783,10 +784,10 @@ class ImageViewer(ProcessImage):
         else:  # a pre-set color is selected
             if selected_color == 'red><red':  # strings must match dict keys.
                 l_mask1, u_mask1 = const.COLOR_BOUNDARIES['red & brown']
-                l_mask2, u_mask2  = const.COLOR_BOUNDARIES['red & deep pink']
+                l_mask2, u_mask2  = const.COLOR_BOUNDARIES['red & hot pink']
                 range_txt = (f'Lower red HSV mask range: {l_mask1}, {u_mask1}\n'
                              f'Upper red HSV mask range: {l_mask2}, {u_mask2}\n'
-                             '   "red><red" joins "red & brown" and "red & deep pink"\n'
+                             '   "red><red" joins "red & brown" and "red & hot pink"\n'
                              '    masks to span red hues around the HSV colorspace.')
             else:
                 lowerb, upperb = const.COLOR_BOUNDARIES[selected_color]
@@ -849,13 +850,13 @@ class ImageViewer(ProcessImage):
 
             self.find_colors()
         else:  # A color has been chosen from the Combobox.
-            (lo_h, lo_s, lo_v), (hi_h, hi_s, hi_v) = const.COLOR_BOUNDARIES[selected_color]
-            self.slider_val['H_min'].set(lo_h)
-            self.slider_val['S_min'].set(lo_s)
-            self.slider_val['V_min'].set(lo_v)
-            self.slider_val['H_max'].set(hi_h)
-            self.slider_val['S_max'].set(hi_s)
-            self.slider_val['V_max'].set(hi_v)
+            (h_lo, s_lo, v_lo), (h_hi, s_hi, v_hi) = const.COLOR_BOUNDARIES[selected_color]
+            self.slider_val['H_min'].set(h_lo)
+            self.slider_val['S_min'].set(s_lo)
+            self.slider_val['V_min'].set(v_lo)
+            self.slider_val['H_max'].set(h_hi)
+            self.slider_val['S_max'].set(s_hi)
+            self.slider_val['V_max'].set(v_hi)
 
             for _s in self.slider_val:
                 self.slider[_s].config(state=tk.DISABLED)

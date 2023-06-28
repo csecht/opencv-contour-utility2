@@ -322,7 +322,7 @@ PANEL_RIGHT = dict(
 COLOR_BOUNDARIES = {
     'red & brown': ((0, 100, 100), (6, 255, 255)),  # Also used for HSV red><red.
     'red><red': ((0, 0, 0), (0, 0, 0)),  # Stub values: see find_colors().
-    'red & deep pink': ((170, 100, 100), (180, 255, 255)),  # Also used for HSV red><red.
+    'red & hot pink': ((165, 100, 100), (180, 255, 255)),  # Also used for HSV red><red.
     'pink': ((155, 50, 120), (180, 255, 255)),
     'deep pink': ((155, 200, 0), (180, 255, 255)),
     'purple': ((130, 120, 160), (160, 240, 240)),
