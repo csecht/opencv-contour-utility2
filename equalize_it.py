@@ -79,9 +79,9 @@ class ProcessImage(tk.Tk):
     """
 
     __slots__ = (
-        'ax1', 'ax2', 'clahe_img', 'clahe_mean', 'clahe_sd', 'curr_contrast_std', 'fig',
-        'img_label', 'img_window', 'input_contrast_std', 'input_mean', 'input_sd', 'slider_val',
-        'tkimg', 'tk', 'plt'
+        'ax1', 'ax2', 'clahe_img', 'clahe_mean', 'clahe_sd', 'curr_contrast_std',
+        'fig', 'img_label', 'img_window', 'input_contrast_std', 'input_mean',
+        'input_sd',  'slider_val', 'tkimg', 'tk', 'plt'
     )
 
     def __init__(self):
@@ -172,7 +172,7 @@ class ImageViewer(ProcessImage):
     __slots__ = (
         'clahe_report_frame', 'clahe_selectors_frame', 'clahe_settings_txt',
         'flat_gray', 'img_label', 'img_window', 'reset_btn', 'save_btn',
-        'separator', 'slider'
+        'slider'
     )
 
     def __init__(self):
@@ -192,11 +192,10 @@ class ImageViewer(ProcessImage):
             'tile_size_lbl': tk.Label(master=self.clahe_selectors_frame),
         }
 
+        # Attribute buttons here instead of locally in setup_report_window()
+        #  so can use the platform-specific grid params in grid_widgets().
         self.reset_btn = ttk.Button(master=self)
         self.save_btn = ttk.Button(master=self)
-
-        # Separator used in settings report window.
-        self.separator = ttk.Separator(master=self)
 
         # Is an instance attribute here only because it is used in call
         #  to utils.save_settings_and_img() from the Save button.
@@ -341,6 +340,10 @@ class ImageViewer(ProcessImage):
                                         padx=5, pady=(0, 5),
                                         ipadx=4, ipady=4,
                                         sticky=tk.EW)
+        ttk.Separator().grid(column=0, row=2,
+                             columnspan=2,
+                             pady=6,
+                             sticky=tk.NSEW)
 
         # Provide a descriptive title for the Histogram window. Need to
         #  place statement here for proper geometry and focus of the
@@ -464,11 +467,6 @@ class ImageViewer(ProcessImage):
                                           **label_grid_params)
         self.slider['tile_size'].grid(column=1, row=1,
                                       **slider_grid_params)
-
-        self.separator.grid(column=0, row=2,
-                            columnspan=2,
-                            pady=6,
-                            sticky=tk.NSEW)
 
         self.reset_btn.grid(column=0, row=3,
                             **grid_params)
