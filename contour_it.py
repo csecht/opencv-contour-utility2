@@ -374,7 +374,7 @@ class ProcessImage(tk.Tk):
         #   image, like Gaussian or Bilateral.
         # see: https://docs.opencv.org/3.4/d7/d4d/tutorial_py_thresholding.html
         # https://theailearner.com/tag/cv2-thresh_otsu/
-        th_type = const.TH_TYPE[self.cbox_val['th_type_pref'].get()]
+        th_type = const.THRESH_TYPE[self.cbox_val['th_type_pref'].get()]
         c_mode = const.CONTOUR_MODE[self.radio_val['c_mode_pref'].get()]
         c_method = const.CONTOUR_METHOD[self.cbox_val['c_method_pref'].get()]
         c_type = self.radio_val['c_type_pref'].get()
@@ -1220,7 +1220,7 @@ class ImageViewer(ProcessImage):
 
         def save_shape_cmd():
             poly_choice = self.cbox_val['polygon'].get()
-            # NOTE: poly_choice must match num_vertices key in select_shape().
+            # NOTE: poly_choice string must match const.SHAPE_VERTICES key.
             if poly_choice == 'Circle':
                 if self.radio_val['find_circle_in'].get() == 'threshed':
                     utils.save_settings_and_img(
@@ -1582,74 +1582,51 @@ class ImageViewer(ProcessImage):
                                                **const.LABEL_PARAMETERS)
         self.cbox['choose_morphop'].config(textvariable=self.cbox_val['morphop_pref'],
                                            width=18 + width_correction,
-                                           values=('cv2.MORPH_OPEN',  # cv2 returns 2
-                                                   'cv2.MORPH_CLOSE',  # cv2 returns 3
-                                                   'cv2.MORPH_GRADIENT',  # cv2 returns 4
-                                                   'cv2.MORPH_BLACKHAT',  # cv2 returns 6
-                                                   'cv2.MORPH_HITMISS'),  # cv2 returns 7
+                                           values=list(const.CV_MORPHOP.keys()),
                                            **const.COMBO_PARAMETERS)
 
         self.cbox['choose_morphshape_lbl'].config(text='... shape:',
                                                   **const.LABEL_PARAMETERS)
         self.cbox['choose_morphshape'].config(textvariable=self.cbox_val['morphshape_pref'],
                                               width=16 + width_correction,
-                                              values=('cv2.MORPH_RECT',  # cv2 returns 0
-                                                      'cv2.MORPH_CROSS',  # cv2 returns 1
-                                                      'cv2.MORPH_ELLIPSE'),  # cv2 returns 2
+                                              values=list(const.CV_MORPH_SHAPE.keys()),
                                               **const.COMBO_PARAMETERS)
 
         self.cbox['choose_border_lbl'].config(text='Border type:',
                                               **const.LABEL_PARAMETERS)
         self.cbox['choose_border'].config(textvariable=self.cbox_val['border_pref'],
                                           width=22 + width_correction,
-                                          values=(
-                                              'cv2.BORDER_REFLECT_101',  # cv2 returns 4, default
-                                              'cv2.BORDER_REFLECT',  # cv2 returns 2
-                                              'cv2.BORDER_REPLICATE',  # cv2 returns 1
-                                              'cv2.BORDER_ISOLATED'),  # cv2 returns 16
+                                          values=list(const.CV_BORDER.keys()),
                                           **const.COMBO_PARAMETERS)
 
         self.cbox['choose_filter_lbl'].config(text='Filter type:',
                                               **const.LABEL_PARAMETERS)
         self.cbox['choose_filter'].config(textvariable=self.cbox_val['filter_pref'],
                                           width=14 + width_correction,
-                                          values=(
-                                              'cv2.blur',  # is default, 0, a box filter.
-                                              'cv2.bilateralFilter',  # cv2 returns 1
-                                              'cv2.GaussianBlur',  # cv2 returns 2
-                                              'cv2.medianBlur'),  # cv2 returns 3
+                                          values=list(const.CV_FILTER.keys()),
                                           **const.COMBO_PARAMETERS)
 
         self.cbox['choose_th_type_lbl'].config(text='Threshold type:',
                                                **const.LABEL_PARAMETERS)
         self.cbox['choose_th_type'].config(textvariable=self.cbox_val['th_type_pref'],
                                            width=26 + width_correction,
-                                           values=('cv2.THRESH_BINARY',  # cv2 returns 0
-                                                   'cv2.THRESH_BINARY_INVERSE',  # cv2 returns 1
-                                                   'cv2.THRESH_OTSU',  # cv2 returns 8
-                                                   'cv2.THRESH_OTSU_INVERSE',  # cv2 returns 9
-                                                   'cv2.THRESH_TRIANGLE',  # cv2 returns 16
-                                                   'cv2.THRESH_TRIANGLE_INVERSE'),  # returns 17
+                                           values=list(const.THRESH_TYPE.keys()),
                                            **const.COMBO_PARAMETERS)
 
         self.cbox['choose_c_method_lbl'].config(text='... method:',
                                                 **const.LABEL_PARAMETERS)
         self.cbox['choose_c_method'].config(textvariable=self.cbox_val['c_method_pref'],
                                             width=26 + width_correction,
-                                            values=('cv2.CHAIN_APPROX_NONE',  # cv2 returns 1
-                                                    'cv2.CHAIN_APPROX_SIMPLE',  # cv2 returns 2
-                                                    'cv2.CHAIN_APPROX_TC89_L1',  # cv2 returns 3
-                                                    'cv2.CHAIN_APPROX_TC89_KCOS'),  # cv2 returns 4
+                                            values=list(const.CONTOUR_METHOD.keys()),
                                             **const.COMBO_PARAMETERS)
 
         # Shape Comboboxes:
         self.cbox['choose_shape_lbl'].config(text='Select shape to find:',
                                              **const.LABEL_PARAMETERS)
-        shape_names = [_k for _k in const.SHAPE_VERTICES]
         self.cbox['choose_shape'].config(
             textvariable=self.cbox_val['polygon'],
             width=12 + width_correction,
-            values=shape_names,
+            values=list(const.SHAPE_VERTICES.keys()),
             **const.COMBO_PARAMETERS)
         self.cbox['choose_shape'].current(0)
 

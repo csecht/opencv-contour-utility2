@@ -1,39 +1,38 @@
 """
 Constants used throughout main script and modules:
-
-MY_OS
-STUB_ARRAY
-WIN_NAME
 ALPHA_MAX
 BETA_MAX
-CV_BORDER
-TH_TYPE
-CV_MORPHOP
-CV_MORPH_SHAPE
-CONTOUR_MODE
-CONTOUR_METHOD
 CBLIND_COLOR_CV
 CBLIND_COLOR_TK
-STD_CONTOUR_COLOR
-FONT_TYPE
-TEXT_THICKNESS
-TEXT_COLOR
-LINE_SCALE
-FONT_SCALE
 CENTER_XSCALE
-MASTER_BG
+COLOR_BOUNDARIES
+CONTOUR_METHOD
+CONTOUR_MODE
+CV_BORDER
+CV_FILTER
+CV_MORPH_SHAPE
+CV_MORPHOP
 DARK_BG
 DRAG_GRAY
-WIDGET_FG
+FONT_SCALE
+FONT_TYPE
 LABEL_PARAMETERS
-SCALE_PARAMETERS
-SHAPE_SCALE_PARAMETERS
-RADIO_PARAMETERS
+LINE_SCALE
+MASTER_BG
+MY_OS
 PANEL_LEFT
 PANEL_RIGHT
-COLOR_BOUNDARIES
-LOWER_RED
-UPPER_RED
+RADIO_PARAMETERS
+SCALE_PARAMETERS
+SHAPE_SCALE_PARAMETERS
+SHAPE_VERTICES
+STD_CONTOUR_COLOR
+STUB_ARRAY
+TEXT_COLOR
+TEXT_THICKNESS
+THRESH_TYPE
+WIDGET_FG
+WIN_NAME
 """
 # Copyright (C) 2023 C.S. Echt, under GNU General Public License'
 
@@ -75,17 +74,17 @@ WIN_NAME = {
 ALPHA_MAX = 400
 BETA_MAX = 254  # Provides a range of [-127 -- 127].
 
+# CV dict values are cv2 constants' (key) returned integers.
+# Some of these dictionaries are used only to populate Combobox lists.
 CV_BORDER = {
-    # Value of cv2.BORDER_* returns an integer.
     'cv2.BORDER_REFLECT_101': 4,  # is same as cv2.BORDER_DEFAULT.
     'cv2.BORDER_REFLECT': 2,
     'cv2.BORDER_REPLICATE': 1,
     'cv2.BORDER_ISOLATED': 16,
 }
 
-TH_TYPE = {
+THRESH_TYPE = {
     # Note: Can mimic inverse types by adjusting alpha and beta channels.
-    # Value is the cv2 constant's returned integer.
     # Note: THRESH_BINARY* is used with cv2.adaptiveThreshold, which is
     #  not implemented here.
     'cv2.THRESH_BINARY': 0,
@@ -97,7 +96,6 @@ TH_TYPE = {
 }
 
 CV_MORPHOP = {
-    # Value is the cv2 constant's returned integer.
     'cv2.MORPH_OPEN': 2,
     'cv2.MORPH_CLOSE': 3,
     'cv2.MORPH_GRADIENT': 4,
@@ -106,15 +104,21 @@ CV_MORPHOP = {
 }
 
 CV_MORPH_SHAPE = {
-    # Value is the cv2 constant's returned integer.
-    'cv2.MORPH_RECT': 0,  # (default)
+    'cv2.MORPH_RECT': 0,  # cv2 default
     'cv2.MORPH_CROSS': 1,
     'cv2.MORPH_ELLIPSE': 2,
 }
 
+CV_FILTER = {
+    'cv2.blur': 0,  # cv2 default
+    'cv2.bilateralFilter': 1,
+    'cv2.GaussianBlur': 2,
+    'cv2.medianBlur': 3,
+
+}
+
 CONTOUR_MODE = {
-    # Value is the cv2 constant's returned integer.
-    'cv2.RETR_EXTERNAL': 0,
+    'cv2.RETR_EXTERNAL': 0,  # cv2 default
     'cv2.RETR_LIST': 1,
     'cv2.RETR_CCOMP': 2,
     'cv2.RETR_TREE': 3,
@@ -131,7 +135,6 @@ CONTOUR_MODE = {
 # CHAIN_APPROX_TC89_KCOS
 # applies one of the flavors of the Teh-Chin chain approximation algorithm [229]
 CONTOUR_METHOD = {
-    # Value is the cv2 constant's returned integer.
     'cv2.CHAIN_APPROX_NONE': 1,
     'cv2.CHAIN_APPROX_SIMPLE': 2,
     'cv2.CHAIN_APPROX_TC89_L1': 3,
@@ -139,14 +142,14 @@ CONTOUR_METHOD = {
 }
 
 SHAPE_VERTICES = {
-            'Triangle': 3,
-            'Rectangle': 4,
-            'Pentagon': 5,
-            'Hexagon': 6,
-            'Heptagon': 7,
-            'Octagon': 8,
-            '5-pointed Star': 10,
-            'Circle': 0,
+    'Triangle': 3,
+    'Rectangle': 4,
+    'Pentagon': 5,
+    'Hexagon': 6,
+    'Heptagon': 7,
+    'Octagon': 8,
+    '5-pointed Star': 10,
+    'Circle': 0,
 }
 
 """
@@ -194,7 +197,7 @@ else:  # platform is 'win'  # Windows (10)
 STD_CONTOUR_COLOR = {'green': (0, 255, 0)}
 
 # 	cv::HersheyFonts {
-#   cv::FONT_HERSHEY_SIMPLEX = 0,
+#   cv::FONT_HERSHEY_SIMPLEX = 0, # cv2 default
 #   cv::FONT_HERSHEY_PLAIN = 1,
 #   cv::FONT_HERSHEY_DUPLEX = 2,
 #   cv::FONT_HERSHEY_COMPLEX = 3,
