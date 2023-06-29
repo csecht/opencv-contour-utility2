@@ -693,15 +693,10 @@ class ProcessImage(tk.Tk):
                                            epsilon=epsilon,
                                            closed=True)
 
-            # Need to cover shapes with 3 to 8 vertices (sides).
-            for _v in range(2, 8):
+            # Need to cover shapes with 3 to 10 vertices (sides).
+            for _v in range(2, 10):
                 if len(approx_poly) == num_vertices[poly_choice] == _v + 1:
                     selected_polygon_contours.append(point_set)
-
-            # Special case for a star:
-            if len(approx_poly) == (num_vertices[poly_choice] == 10
-                                    and not cv2.isContourConvex(point_set)):
-                selected_polygon_contours.append(point_set)
 
         # The main engine for contouring the selected shape.
         if self.radio_val['hull_shape'].get() == 'yes' and hull_pointset:
