@@ -647,19 +647,8 @@ class ProcessImage(tk.Tk):
 
         poly_choice = self.cbox_val['polygon'].get()
 
-        num_vertices = {
-            'Triangle': 3,
-            'Rectangle': 4,
-            'Pentagon': 5,
-            'Hexagon': 6,
-            'Heptagon': 7,
-            'Octagon': 8,
-            '5-pointed Star': 10,
-            'Circle': 0,
-        }
-
         # Finding circles is a special condition that uses Hough Transform
-        #   on either the filtered or an Ostu threshold input image and thus
+        #   on either the filtered or an Otsu threshold input image and thus
         #   sidesteps cv2.findContours and cv2.drawContours. Otherwise,
         #   proceed with finding one of the other selected shapes in either
         #   (or both) input contour set.
@@ -694,8 +683,8 @@ class ProcessImage(tk.Tk):
                                            closed=True)
 
             # Need to cover shapes with 3 to 10 vertices (sides).
-            for _v in range(2, 10):
-                if len(approx_poly) == num_vertices[poly_choice] == _v + 1:
+            for _v in range(3, 11):
+                if _v == len(approx_poly) == const.SHAPE_VERTICES[poly_choice]:
                     selected_polygon_contours.append(point_set)
 
         # The main engine for contouring the selected shape.
@@ -1656,17 +1645,11 @@ class ImageViewer(ProcessImage):
         # Shape Comboboxes:
         self.cbox['choose_shape_lbl'].config(text='Select shape to find:',
                                              **const.LABEL_PARAMETERS)
+        shape_names = [_k for _k in const.SHAPE_VERTICES]
         self.cbox['choose_shape'].config(
             textvariable=self.cbox_val['polygon'],
             width=12 + width_correction,
-            values=('Triangle',
-                    'Rectangle',
-                    'Pentagon',
-                    'Hexagon',
-                    'Heptagon',
-                    'Octagon',
-                    '5-pointed Star',
-                    'Circle'),
+            values=shape_names,
             **const.COMBO_PARAMETERS)
         self.cbox['choose_shape'].current(0)
 

@@ -138,6 +138,17 @@ CONTOUR_METHOD = {
     'cv2.CHAIN_APPROX_TC89_KCOS': 4
 }
 
+SHAPE_VERTICES = {
+            'Triangle': 3,
+            'Rectangle': 4,
+            'Pentagon': 5,
+            'Hexagon': 6,
+            'Heptagon': 7,
+            'Octagon': 8,
+            '5-pointed Star': 10,
+            'Circle': 0,
+}
+
 """
 Colorblind color pallet source:
   Wong, B. Points of view: Color blindness. Nat Methods 8, 441 (2011).
