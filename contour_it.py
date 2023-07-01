@@ -860,7 +860,7 @@ class ImageViewer(ProcessImage):
         'cbox', 'circle_defaults_button', 'circle_msg_lbl',
         'contour_report_frame', 'contour_selectors_frame',
         'contour_settings_txt', 'img_label', 'img_window', 'radio',
-        'saveshape_button', 'separator', 'shape_defaults_button',
+        'saveshape_button', 'shape_defaults_button',
         'shape_report_frame', 'shape_selectors_frame',
         'shape_settings_txt', 'shape_settings_win', 'shapeimg_lbl',
         'slider',
@@ -1092,7 +1092,7 @@ class ImageViewer(ProcessImage):
         """
 
         #  Need to set this window near the top right corner of the screen
-        #  so that it doesn't cover up the img windows; also so that
+        #  so that it doesn't cover up the img windows; do also so that
         #  the bottom of the window is, hopefully, not below the bottom
         #  of the screen. Make geometry offset a function of the screen width.
         #  This is needed b/c of differences among platforms' window managers
@@ -1140,12 +1140,6 @@ class ImageViewer(ProcessImage):
                                           ipadx=4, ipady=4,
                                           sticky=tk.EW)
 
-        # # At startup, trying to reduce screen clutter, so
-        # #  the Shape settings or image windows are not shown.
-        # #  Subsequent show and hide are controlled with Buttons in config_buttons().
-        # self.shape_settings_win.withdraw()
-        # self.img_window['shaped'].withdraw()
-
     def setup_shape_win(self) -> None:
         """
         Shape settings and reporting frames, buttons, configuration,
@@ -1171,9 +1165,6 @@ class ImageViewer(ProcessImage):
 
         # Need to position window toward right of screen, overlapping
         #   contour settings window, so that it does not cover the img window.
-        # Need to position window toward right of screen, overlapping
-        #   contour settings window, so that it does not cover the img window.
-        # self.shape_settings_win.geometry(f'+{self.winfo_screenwidth() - 800}+100')
         w_offset = int(self.winfo_screenwidth() * 0.5)
         self.shape_settings_win.geometry(f'+{w_offset}+100')
 
@@ -1348,16 +1339,6 @@ class ImageViewer(ProcessImage):
         self.saveshape_button = ttk.Button(master=self.shape_settings_win)
 
         # Widget grid for the main window.
-        if const.MY_OS == 'lin':
-            save_th_padx = (0, 80)
-            save_canny_padx = (0, 25)
-        elif const.MY_OS == 'win':
-            save_th_padx = (0, 100)
-            save_canny_padx = (0, 40)
-        else:  # is macOS
-            save_th_padx = (0, 55)
-            save_canny_padx = (0, 0)
-
         reset_btn.grid(column=0, row=2,
                        padx=(70, 0),
                        pady=(0, 5),
