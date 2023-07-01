@@ -250,21 +250,6 @@ DARK_BG = 'gray20'
 DRAG_GRAY = 'gray65'
 WIDGET_FG = CBLIND_COLOR_TK['yellow']
 
-# Need to customize tk.Scale lengths for each platform's specific
-#   pixel length, thus achieving (mostly) proper spacing and alignment
-#   across platforms.
-if MY_OS == 'lin':
-    scale_len = 410
-    shape_scale_len = 400
-elif MY_OS == 'dar':
-    scale_len = 380
-    shape_scale_len = 320
-else:  # is Windows
-    scale_len = 450
-    shape_scale_len = 450
-
-# Use the dict() function with keyword arguments to mimic the
-#  keyword parameter structure of the configure() function.
 LABEL_PARAMETERS = dict(
     font=WIDGET_FONT,
     bg=DARK_BG,
@@ -272,19 +257,6 @@ LABEL_PARAMETERS = dict(
 )
 
 SCALE_PARAMETERS = dict(
-    length=scale_len,
-    width=10,
-    orient='horizontal',
-    showvalue=False,
-    sliderlength=20,
-    font=WIDGET_FONT,
-    bg=CBLIND_COLOR_TK['dark blue'],
-    fg=WIDGET_FG,
-    troughcolor=MASTER_BG,
-)
-
-SHAPE_SCALE_PARAMETERS = dict(
-    length=shape_scale_len,
     width=10,
     orient='horizontal',
     showvalue=False,
@@ -314,7 +286,7 @@ if MY_OS == 'lin':
 elif MY_OS == 'win':  # is Windows
     COMBO_PARAMETERS = dict(
         font=('TkTooltipFont', 7),
-        # takefocus=False,
+        takefocus=False,
         state='readonly')
 else:  # is macOS
     COMBO_PARAMETERS = dict(

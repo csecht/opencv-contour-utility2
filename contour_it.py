@@ -834,6 +834,7 @@ class ImageViewer(ProcessImage):
     A suite of methods to display cv2 contours based on chosen settings
     and parameters as applied in ProcessImage().
     Methods:
+    no_exit_on_x
     setup_image_windows
     setup_contour_window
     shape_win_setup
@@ -982,9 +983,6 @@ class ImageViewer(ProcessImage):
         self.contour_settings_txt = ''
         self.shape_settings_txt = ''
 
-        # Separator used in shape report window.
-        self.separator = None  # ttk.Separator()
-
         # Attributes for shape windows.
         self.circle_msg_lbl = tk.Label(master=self.shape_selectors_frame)
         self.shapeimg_lbl = None
@@ -1008,10 +1006,26 @@ class ImageViewer(ProcessImage):
         # Shape windows are withdrawn at startup in setup_contour_window(),
         #   but are pre-processed and ready for display with deiconify()
         #   from the 'Show Shapes' Button.
-        self.shape_win_setup()
+        self.setup_shape_win()
         self.set_shape_defaults()
         self.grid_shape_widgets()
         self.report_shape()
+        # At startup, need to reduce screen clutter, so
+        #  the Shape settings and image windows are not shown.
+        #  Subsequent show and hide are controlled with Buttons in config_buttons().
+        self.shape_settings_win.withdraw()
+        self.img_window['shaped'].withdraw()
+
+    @staticmethod
+    def no_exit_on_x():
+            """
+            Provide a notice in Terminal. Called from .protocol() in loop.
+            """
+            print('This window cannot be closed from the window bar.\n'
+                  'It can be minimized to get it out of the way.\n'
+                  'You can quit the program from the OpenCV Settings Report'
+                  '  window bar or Esc or Ctrl-Q keys.'
+                  )
 
     def setup_image_windows(self) -> None:
         """
@@ -1020,16 +1034,6 @@ class ImageViewer(ProcessImage):
 
         Returns: None
         """
-
-        def no_exit_on_x():
-            """
-            Provide a notice in Terminal. Called from .protocol() in loop.
-            """
-            print('Image windows cannot be closed from the window bar.\n'
-                  'They can be minimized to get them out of the way.\n'
-                  'You can quit the program from the OpenCV Settings Report'
-                  '  window bar or Esc or Ctrl-Q keys.'
-                  )
 
         # NOTE: dict item order affects the order that windows are
         #  drawn, so here use an inverse order of processing steps to
@@ -1056,7 +1060,7 @@ class ImageViewer(ProcessImage):
         #    images will remain anchored at their top left corners.
         for _name, toplevel in self.img_window.items():
             toplevel.minsize(200, 100)
-            toplevel.protocol('WM_DELETE_WINDOW', no_exit_on_x)
+            toplevel.protocol('WM_DELETE_WINDOW', self.no_exit_on_x)
             toplevel.columnconfigure(0, weight=1)
             toplevel.columnconfigure(1, weight=1)
             toplevel.rowconfigure(0, weight=1)
@@ -1120,12 +1124,11 @@ class ImageViewer(ProcessImage):
                                                bg=const.DARK_BG,
                                                borderwidth=5)
 
-        # Need col & row configures so frame fills the window with sticky.
-        #  Note that resize=False, so do not need same for main (self) window.
+        # Config columns to allow only sliders to expand with window.
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=2)
         self.contour_report_frame.columnconfigure(0, weight=1)
-        self.contour_report_frame.columnconfigure(1, weight=1)
-        self.contour_selectors_frame.columnconfigure(0, weight=1)
-        self.contour_selectors_frame.columnconfigure(1, weight=1)
+        self.contour_selectors_frame.columnconfigure(1, weight=2)
 
         self.contour_report_frame.grid(column=0, row=0,
                                        columnspan=2,
@@ -1137,37 +1140,42 @@ class ImageViewer(ProcessImage):
                                           ipadx=4, ipady=4,
                                           sticky=tk.EW)
 
-        # At startup, trying to reduce screen clutter, so
-        #  the Shape settings or image windows are not shown.
-        #  Subsequent show and hide are controlled with Buttons in config_buttons().
-        self.shape_settings_win.withdraw()
-        self.img_window['shaped'].withdraw()
+        # # At startup, trying to reduce screen clutter, so
+        # #  the Shape settings or image windows are not shown.
+        # #  Subsequent show and hide are controlled with Buttons in config_buttons().
+        # self.shape_settings_win.withdraw()
+        # self.img_window['shaped'].withdraw()
 
-    def shape_win_setup(self) -> None:
+    def setup_shape_win(self) -> None:
         """
         Shape settings and reporting frames, buttons, configuration,
          keybindings, and grids.
         """
 
-        def no_exit_on_x():
-            """Notice in Terminal. Called from .protocol() in loop."""
-            print('The Shape window cannot be closed from the window bar.\n'
-                  'It can be closed with the "Close" button.\n'
-                  'You may quit the program from the OpenCV Settings Report window bar'
-                  ' or Esc or Ctrl-Q key.'
-                  )
-
-        self.separator = ttk.Separator(master=self.shape_selectors_frame,
-                                       orient='horizontal')
+        ttk.Separator(master=self.shape_selectors_frame,
+                      orient='horizontal').grid(column=0, row=3,
+                                                columnspan=2,
+                                                padx=10,
+                                                pady=(8, 5),
+                                                sticky=tk.EW)
 
         self.shape_settings_win.title(const.WIN_NAME['shape_report'])
-        self.shape_settings_win.resizable(False, False)
+        self.shape_settings_win.resizable(True, False)
+        self.shape_settings_win.protocol('WM_DELETE_WINDOW', self.no_exit_on_x)
+
+        # Config columns to allow only sliders to expand with window.
+        self.shape_settings_win.columnconfigure(0, weight=1)
+        self.shape_settings_win.columnconfigure(1, weight=2)
+        self.shape_report_frame.columnconfigure(0, weight=1)
+        self.shape_selectors_frame.columnconfigure(1, weight=2)
 
         # Need to position window toward right of screen, overlapping
         #   contour settings window, so that it does not cover the img window.
         # Need to position window toward right of screen, overlapping
         #   contour settings window, so that it does not cover the img window.
-        self.shape_settings_win.geometry(f'+{self.winfo_screenwidth() - 800}+100')
+        # self.shape_settings_win.geometry(f'+{self.winfo_screenwidth() - 800}+100')
+        w_offset = int(self.winfo_screenwidth() * 0.5)
+        self.shape_settings_win.geometry(f'+{w_offset}+100')
 
         # Configure Shapes report window to match that of app (contour) window.
         self.shape_settings_win.config(
@@ -1181,18 +1189,14 @@ class ImageViewer(ProcessImage):
         self.shape_report_frame.configure(relief='flat',
                                           bg=const.CBLIND_COLOR_TK['sky blue']
                                           )  # bg won't show with grid sticky EW.
-        self.shape_report_frame.columnconfigure(1, weight=1)
-        self.shape_report_frame.rowconfigure(0, weight=1)
 
         self.shape_selectors_frame.configure(relief='raised',
                                              bg=const.DARK_BG,
                                              borderwidth=5, )
-        self.shape_selectors_frame.columnconfigure(0, weight=1)
-        self.shape_selectors_frame.columnconfigure(1, weight=1)
 
-        self.img_window['shaped'].geometry(f'+{self.winfo_screenwidth() - 830}+150')
+        self.img_window['shaped'].geometry(f'+{w_offset - 150}+150')
         self.img_window['shaped'].title(const.WIN_NAME['shaped'])
-        self.img_window['shaped'].protocol('WM_DELETE_WINDOW', no_exit_on_x)
+        self.img_window['shaped'].protocol('WM_DELETE_WINDOW', self.no_exit_on_x)
         self.img_window['shaped'].columnconfigure(0, weight=1)
         self.img_window['shaped'].columnconfigure(1, weight=1)
 
@@ -1260,22 +1264,18 @@ class ImageViewer(ProcessImage):
                                         width=0,
                                         command=save_shape_cmd)
 
-        # Reset button should be centered under slider labels.
         # Save button should be on same row (bottom of frame), right side.
-        if const.MY_OS == 'lin':
-            os_padx = (0, 60)
-        elif const.MY_OS == 'dar':
-            os_padx = (0, 0)
-        else:  # is Windows
-            os_padx = (0, 40)
         self.shape_defaults_button.grid(column=0, row=3,
                                         padx=(10, 0),
                                         pady=(0, 5),
                                         sticky=tk.W)
+        self.update_idletasks()
+        shape_default_btn_width = self.shape_defaults_button.winfo_width()
+        circle_default_padx = (shape_default_btn_width + 15, 0)
         self.circle_defaults_button.grid(column=0, row=3,
-                                         padx=os_padx,
+                                         padx=circle_default_padx,
                                          pady=(0, 5),
-                                         sticky=tk.E)
+                                         sticky=tk.W)
         self.saveshape_button.grid(column=1, row=3,
                                    padx=(0, 5),
                                    pady=(0, 5),
@@ -1366,14 +1366,6 @@ class ImageViewer(ProcessImage):
                             padx=(10, 0),
                             pady=(0, 5),
                             sticky=tk.W)
-        save_th_btn.grid(column=0, row=3,
-                         padx=save_th_padx,
-                         pady=(0, 5),
-                         sticky=tk.E)
-        save_canny_btn.grid(column=0, row=3,
-                            padx=save_canny_padx,
-                            pady=(0, 5),
-                            sticky=tk.E)
 
         show_shapes_btn.grid(column=1, row=2,
                              padx=(0, 5),
@@ -1383,6 +1375,23 @@ class ImageViewer(ProcessImage):
                              padx=(0, 5),
                              pady=(0, 5),
                              sticky=tk.E)
+
+        # self.update_idletasks()
+        self.update()
+        save_lbl_width = save_btn_label.winfo_width()
+        save_th_padx = (save_lbl_width + 15, 0)
+        save_th_btn.grid(column=0, row=3,
+                         padx=save_th_padx,
+                         pady=(0, 5),
+                         sticky=tk.W)
+
+        self.update_idletasks()
+        save_th_btn_width = save_th_btn.winfo_width()
+        save_canny_padx = (save_lbl_width + save_th_btn_width + 25, 0)
+        save_canny_btn.grid(column=0, row=3,
+                            padx=save_canny_padx,
+                            pady=(0, 5),
+                            sticky=tk.W)
 
     def display_input_images(self) -> None:
         """
@@ -1416,9 +1425,16 @@ class ImageViewer(ProcessImage):
 
         Returns: None
         """
+        # Set minimum width for the enclosing Toplevel by setting a length
+        #   for a single Scale widget that is sufficient to fit everything
+        #   in the Frame given current padding parameters. Need to use only
+        #  for one Scale() in each Toplevel().
+        scale_len = int(self.winfo_screenwidth() * 0.2)
+
         self.slider['alpha_lbl'].configure(text='Contrast/gain/alpha:',
                                            **const.LABEL_PARAMETERS)
         self.slider['alpha'].configure(from_=0.0, to=4.0,
+                                       length=scale_len,
                                        resolution=0.1,
                                        tickinterval=0.5,
                                        variable=self.slider_val['alpha'],
@@ -1491,10 +1507,11 @@ class ImageViewer(ProcessImage):
                                                   '(epsilon coef.):',
                                              **const.LABEL_PARAMETERS)
         self.slider['epsilon'].configure(from_=0.001, to=0.06,
+                                         length=scale_len,
                                          resolution=0.001,
                                          tickinterval=0.01,
                                          variable=self.slider_val['epsilon'],
-                                         **const.SHAPE_SCALE_PARAMETERS)
+                                         **const.SCALE_PARAMETERS)
 
         self.slider['circle_mindist_lbl'].configure(text='Minimum px dist between circles:',
                                                     **const.LABEL_PARAMETERS)
@@ -1502,7 +1519,7 @@ class ImageViewer(ProcessImage):
                                                 resolution=1,
                                                 tickinterval=20,
                                                 variable=self.slider_val['circle_mindist'],
-                                                **const.SHAPE_SCALE_PARAMETERS)
+                                                **const.SCALE_PARAMETERS)
 
         self.slider['circle_param1_lbl'].configure(text='cv2.HoughCircles, param1:',
                                                    **const.LABEL_PARAMETERS)
@@ -1510,7 +1527,7 @@ class ImageViewer(ProcessImage):
                                                resolution=100,
                                                tickinterval=100,
                                                variable=self.slider_val['circle_param1'],
-                                               **const.SHAPE_SCALE_PARAMETERS)
+                                               **const.SCALE_PARAMETERS)
 
         self.slider['circle_param2_lbl'].configure(text='cv2.HoughCircles, param2:',
                                                    **const.LABEL_PARAMETERS)
@@ -1518,7 +1535,7 @@ class ImageViewer(ProcessImage):
                                                resolution=0.1,
                                                tickinterval=0.1,
                                                variable=self.slider_val['circle_param2'],
-                                               **const.SHAPE_SCALE_PARAMETERS)
+                                               **const.SCALE_PARAMETERS)
 
         self.slider['circle_minradius_lbl'].configure(text='cv2.HoughCircles, min px radius):',
                                                       **const.LABEL_PARAMETERS)
@@ -1526,7 +1543,7 @@ class ImageViewer(ProcessImage):
                                                   resolution=10,
                                                   tickinterval=20,
                                                   variable=self.slider_val['circle_minradius'],
-                                                  **const.SHAPE_SCALE_PARAMETERS)
+                                                  **const.SCALE_PARAMETERS)
 
         self.slider['circle_maxradius_lbl'].configure(text='cv2.HoughCircles, max px radius:',
                                                       **const.LABEL_PARAMETERS)
@@ -1534,7 +1551,7 @@ class ImageViewer(ProcessImage):
                                                   resolution=10,
                                                   tickinterval=100,
                                                   variable=self.slider_val['circle_maxradius'],
-                                                  **const.SHAPE_SCALE_PARAMETERS)
+                                                  **const.SCALE_PARAMETERS)
 
         # To avoid grabbing all the intermediate values between normal
         #  click and release movement, bind sliders to call the main
@@ -1735,103 +1752,18 @@ class ImageViewer(ProcessImage):
 
         # Use the dict() function with keyword arguments to mimic the
         #  keyword parameter structure of the grid() function.
-        if const.MY_OS in 'lin, win':
-            slider_grid_params = dict(
-                padx=5,
-                pady=(7, 0),
-                sticky=tk.W)
-            label_grid_params = dict(
-                padx=5,
-                pady=(5, 0),
-                sticky=tk.E)
-
-            # Used for some Combobox and Radiobutton widgets.
-            grid_params = dict(
-                padx=(8, 0),
-                pady=(5, 0),
-                sticky=tk.W)
-
-            # Parameters for specific widgets:
-            shape_cbox_param = dict(
-                padx=(0, 20),
-                pady=(5, 0),
-                sticky=tk.E)
-
-        else:  # is macOS
-            slider_grid_params = dict(
-                padx=5,
-                pady=(4, 0))
-            label_grid_params = dict(
-                padx=5,
-                pady=(4, 0),
-                sticky=tk.E)
-
-            # Used for some Combobox and Radiobutton widgets.
-            grid_params = dict(
-                padx=(8, 0),
-                pady=(4, 0),
-                sticky=tk.W)
-
-            # Parameters for specific widgets:
-            shape_cbox_param = dict(
-                padx=(245, 0),
-                pady=(5, 0),
-                sticky=tk.W)
-
-        # Special cases where each platform is different. Messy, but, oh well.
-        if const.MY_OS == 'lin':
-            c_method_lbl_params = dict(
-                padx=(145, 0),
-                pady=(5, 0),
-                sticky=tk.W)
-            shape_lbl_param = dict(
-                padx=(0, 155),
-                pady=(5, 0),
-                sticky=tk.E)
-            filter_lbl_param = dict(
-                padx=(0, 140),
-                pady=(5, 0),
-                sticky=tk.E)
-            filter_cbox_param = dict(
-                padx=(0, 15),
-                pady=(5, 0),
-                sticky=tk.E)
-
-        elif const.MY_OS == 'win':
-            c_method_lbl_params = dict(
-                padx=(0, 240),
-                pady=(5, 0),
-                sticky=tk.E)
-            shape_lbl_param = dict(
-                padx=(0, 170),
-                pady=(5, 0),
-                sticky=tk.E)
-            filter_lbl_param = dict(
-                padx=(0, 175),
-                pady=(5, 0),
-                sticky=tk.E)
-            filter_cbox_param = dict(
-                padx=(0, 20),
-                pady=(5, 0),
-                sticky=tk.E)
-
-        else:  # is macOS
-            c_method_lbl_params = dict(
-                padx=(140, 0),
-                pady=(4, 0),
-                sticky=tk.W)
-            shape_lbl_param = dict(
-                padx=(0, 160),
-                pady=(5, 0),
-                sticky=tk.E)
-            filter_lbl_param = dict(
-                padx=(0, 140),
-                pady=(5, 0),
-                sticky=tk.E)
-            filter_cbox_param = dict(
-                padx=(0, 15),
-                pady=(5, 0),
-                sticky=tk.E)
+        label_grid_params = dict(
+            padx=5,
+            pady=(4, 0),
+            sticky=tk.E)
+        slider_grid_params = dict(
+            padx=5,
+            pady=(4, 0),
+            sticky=tk.EW)
+        general_grid_params = dict(
+            padx=(8, 0),
+            pady=(4, 0),
+            sticky=tk.W)
 
         # Widgets gridded in the self.contour_selectors_frame Frame.
         # Sorted by row number:
@@ -1848,14 +1780,13 @@ class ImageViewer(ProcessImage):
         self.cbox['choose_morphop_lbl'].grid(column=0, row=2,
                                              **label_grid_params)
         self.cbox['choose_morphop'].grid(column=1, row=2,
-                                         **grid_params)
+                                         **general_grid_params)
 
         # Note: Put morph shape on same row as morph op.
-        self.cbox['choose_morphshape_lbl'].grid(column=1, row=2,
-                                                **shape_lbl_param)
-
         self.cbox['choose_morphshape'].grid(column=1, row=2,
-                                            **shape_cbox_param)
+                                            padx=5,
+                                            pady=(5, 0),
+                                            sticky=tk.E)
 
         self.slider['noise_k_lbl'].grid(column=0, row=4,
                                         **label_grid_params)
@@ -1870,12 +1801,12 @@ class ImageViewer(ProcessImage):
         self.cbox['choose_border_lbl'].grid(column=0, row=6,
                                             **label_grid_params)
         self.cbox['choose_border'].grid(column=1, row=6,
-                                        **grid_params)
+                                        **general_grid_params)
 
-        self.cbox['choose_filter_lbl'].grid(column=1, row=6,
-                                            **filter_lbl_param)
         self.cbox['choose_filter'].grid(column=1, row=6,
-                                        **filter_cbox_param)
+                                        padx=5,
+                                        pady=(5, 0),
+                                        sticky=tk.E)
 
         self.slider['sigma_lbl'].grid(column=0, row=8,
                                       **label_grid_params)
@@ -1900,50 +1831,81 @@ class ImageViewer(ProcessImage):
         self.cbox['choose_th_type_lbl'].grid(column=0, row=12,
                                              **label_grid_params)
         self.cbox['choose_th_type'].grid(column=1, row=12,
-                                         **grid_params)
+                                         **general_grid_params)
 
         self.radio['hull_lbl'].grid(column=1, row=12,
                                     padx=(0, 10),
                                     pady=(5, 0),
                                     sticky=tk.E)
         self.radio['hull_no'].grid(column=1, row=13,
-                                   padx=(0, 80),
+                                   padx=(0, 100),
                                    pady=(0, 0),
                                    sticky=tk.E)
         self.radio['hull_yes'].grid(column=1, row=13,
-                                    padx=(0, 30),
-                                    pady=(0, 0),
+                                    padx=(0, 10),
+                                    pady=(5, 0),
                                     sticky=tk.E)
 
         self.radio['c_type_lbl'].grid(column=0, row=13,
                                       **label_grid_params)
         self.radio['c_type_area'].grid(column=1, row=13,
-                                       **grid_params)
-        self.radio['c_type_length'].grid(column=1, row=13,
-                                         padx=(120, 0),
-                                         pady=(5, 0),
-                                         sticky=tk.W)
+                                       **general_grid_params)
+
+        self.cbox['choose_c_method'].grid(column=1, row=14,
+                                          padx=(0, 5),
+                                          pady=(5, 0),
+                                          sticky=tk.E)
 
         self.radio['c_mode_lbl'].grid(column=0, row=14,
                                       **label_grid_params)
         self.radio['c_mode_external'].grid(column=1, row=14,
-                                           **grid_params)
-        self.radio['c_mode_list'].grid(column=1, row=14,
-                                       padx=(84, 0),
-                                       pady=(5, 0),
-                                       sticky=tk.W)
-
-        self.cbox['choose_c_method_lbl'].grid(column=1, row=14,
-                                              **c_method_lbl_params)
-        self.cbox['choose_c_method'].grid(column=1, row=14,
-                                          padx=(0, 15),
-                                          pady=(5, 0),
-                                          sticky=tk.E)
+                                           **general_grid_params)
 
         self.slider['c_limit_lbl'].grid(column=0, row=15,
                                         **label_grid_params)
         self.slider['c_limit'].grid(column=1, row=15,
                                     **slider_grid_params)
+
+        # Use update() because update_idletasks() doesn't always work to
+        #  get the gridded widgets' correct winfo_width.
+        self.update()
+
+        # Now grid widgets with relative padx values based on widths of
+        #  their corresponding partner widgets. Works across platforms.
+        choose_morph_width = self.cbox['choose_morphshape'].winfo_width()
+        morphshape_lbl_padx = (0, choose_morph_width + 10)
+        self.cbox['choose_morphshape_lbl'].grid(column=1, row=2,
+                                                padx=morphshape_lbl_padx,
+                                                pady=(5, 0),
+                                                sticky=tk.E)
+
+        choose_filter_width = self.cbox['choose_filter'].winfo_width()
+        filter_lbl_padx = (0, choose_filter_width + 10)
+        self.cbox['choose_filter_lbl'].grid(column=1, row=6,
+                                            padx=filter_lbl_padx,
+                                            pady=(5, 0),
+                                            sticky=tk.E)
+
+        type_area_width = self.radio['c_type_area'].winfo_width()
+        c_type_padx = (type_area_width + 15, 0)
+        self.radio['c_type_length'].grid(column=1, row=13,
+                                         padx=c_type_padx,
+                                         pady=(5, 0),
+                                         sticky=tk.W)
+
+        mode_ext_width = self.radio['c_mode_external'].winfo_width()
+        c_mode_padx = (mode_ext_width + 15, 0)
+        self.radio['c_mode_list'].grid(column=1, row=14,
+                                       padx=c_mode_padx,
+                                       pady=(5, 0),
+                                       sticky=tk.W)
+
+        choose_method_width = self.cbox['choose_c_method'].winfo_width()
+        choose_method_lbl_padx = (0, choose_method_width + 10)
+        self.cbox['choose_c_method_lbl'].grid(column=1, row=14,
+                                              padx=choose_method_lbl_padx,
+                                              pady=(5, 0),
+                                              sticky=tk.E)
 
     def grid_shape_widgets(self) -> None:
         """
@@ -1957,82 +1919,95 @@ class ImageViewer(ProcessImage):
             pady=(7, 0),
             sticky=tk.E)
 
-        selector_grid_params = dict(
+        slider_grid_params = dict(
             padx=5,
             pady=(7, 0),
-            sticky=tk.W)
+            sticky=tk.EW)
 
         self.cbox['choose_shape_lbl'].grid(column=0, row=0,
                                            **label_grid_params)
         self.cbox['choose_shape'].grid(column=1, row=0,
-                                       **selector_grid_params)
+                                       padx=5,
+                                       pady=(7, 0),
+                                       sticky=tk.W)
 
         self.radio['shape_hull_lbl'].grid(column=1, row=0,
                                           padx=(0, 110),
                                           pady=(7, 0),
                                           sticky=tk.E)
         self.radio['shape_hull_yes'].grid(column=1, row=0,
-                                          padx=(0, 70),
+                                          padx=(0, 5),
                                           pady=(7, 0),
                                           sticky=tk.E)
-        self.radio['shape_hull_no'].grid(column=1, row=0,
-                                         padx=(0, 35),
-                                         pady=(7, 0),
-                                         sticky=tk.E)
 
         self.radio['find_shape_lbl'].grid(column=0, row=1,
                                           **label_grid_params)
         self.radio['find_shape_in_thresh'].grid(column=1, row=1,
-                                                **selector_grid_params)
-        self.radio['find_shape_in_canny'].grid(column=1, row=1,
-                                               padx=(80, 0),
-                                               pady=(7, 0),
-                                               sticky=tk.W)
+                                                padx=5,
+                                                pady=(7, 0),
+                                                sticky=tk.W)
 
         self.slider['epsilon_lbl'].grid(column=0, row=2,
                                         **label_grid_params)
         self.slider['epsilon'].grid(column=1, row=2,
-                                    **selector_grid_params)
-
-        self.separator.grid(column=0, row=3,
-                            columnspan=2,
-                            padx=10,
-                            pady=(8, 5),
-                            sticky=tk.EW)
+                                    **slider_grid_params)
 
         self.radio['find_circle_lbl'].grid(column=0, row=5,
                                            **label_grid_params)
         self.radio['find_circle_in_th'].grid(column=1, row=5,
-                                             **selector_grid_params)
-        self.radio['find_circle_in_filtered'].grid(column=1, row=5,
-                                                   padx=100,
-                                                   pady=(7, 0),
-                                                   sticky=tk.W)
+                                             padx=(5, 0),
+                                             pady=(7, 0),
+                                             sticky=tk.W)
 
         self.slider['circle_mindist_lbl'].grid(column=0, row=6,
                                                **label_grid_params)
         self.slider['circle_mindist'].grid(column=1, row=6,
-                                           **selector_grid_params)
+                                           **slider_grid_params)
 
         self.slider['circle_param1_lbl'].grid(column=0, row=7,
                                               **label_grid_params)
         self.slider['circle_param1'].grid(column=1, row=7,
-                                          **selector_grid_params)
+                                          **slider_grid_params)
 
         self.slider['circle_param2_lbl'].grid(column=0, row=8,
                                               **label_grid_params)
         self.slider['circle_param2'].grid(column=1, row=8,
-                                          **selector_grid_params)
+                                          **slider_grid_params)
 
         self.slider['circle_minradius_lbl'].grid(column=0, row=9,
                                                  **label_grid_params)
         self.slider['circle_minradius'].grid(column=1, row=9,
-                                             **selector_grid_params)
+                                             **slider_grid_params)
 
         self.slider['circle_maxradius_lbl'].grid(column=0, row=10,
                                                  **label_grid_params)
         self.slider['circle_maxradius'].grid(column=1, row=10,
-                                             **selector_grid_params)
+                                             **slider_grid_params)
+
+        # Use update() because update_idletasks() doesn't always work to
+        #  get the gridded widgets' correct winfo_width.
+        self.update()
+        shape_hull_yes_width = self.radio['shape_hull_yes'].winfo_width()
+        print('hull yes width:', shape_hull_yes_width)
+        shape_hull_no_padx = (0, shape_hull_yes_width + 15)
+        self.radio['shape_hull_no'].grid(column=1, row=0,
+                                         padx=shape_hull_no_padx,
+                                         pady=(7, 0),
+                                         sticky=tk.E)
+
+        shape_in_th_width = self.radio['find_shape_in_thresh'].winfo_width()
+        shape_in_canny_padx = (shape_in_th_width + 15, 0)
+        self.radio['find_shape_in_canny'].grid(column=1, row=1,
+                                               padx=shape_in_canny_padx,
+                                               pady=(7, 0),
+                                               sticky=tk.W)
+
+        circle_in_th_width = self.radio['find_circle_in_th'].winfo_width()
+        find_in_filtered_padx = (circle_in_th_width + 15, 0)
+        self.radio['find_circle_in_filtered'].grid(column=1, row=5,
+                                                   padx=find_in_filtered_padx,
+                                                   pady=(7, 0),
+                                                   sticky=tk.W)
 
     def grid_img_labels(self) -> None:
         """
@@ -2425,7 +2400,7 @@ if __name__ == "__main__":
     try:
         app = ImageViewer()
         app.title('OpenCV Contour Settings Report')
-        app.resizable(False, False)
+        app.resizable(True, False)
         print(f'{Path(__file__).name} is now running...')
         app.mainloop()
     except KeyboardInterrupt:
