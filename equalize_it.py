@@ -619,7 +619,7 @@ if __name__ == "__main__":
     try:
         app = ImageViewer()
         app.title('CLAHE Settings Report')
-        app.resizable(False, False)
+        app.resizable(True, False)
         print(f'{Path(__file__).name} is now running...')
         app.mainloop()
     except KeyboardInterrupt:
