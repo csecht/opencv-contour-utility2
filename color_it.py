@@ -420,11 +420,8 @@ class ImageViewer(ProcessImage):
             **const.LABEL_PARAMETERS
         )
 
-        self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=2)
-        self.color_report_frame.rowconfigure(0, weight=1)
         self.color_report_frame.columnconfigure(1, weight=2)
-        self.color_selectors_frame.columnconfigure(0, weight=1)
         self.color_selectors_frame.columnconfigure(1, weight=2)
 
         self.color_report_frame.grid(column=0, row=0,
