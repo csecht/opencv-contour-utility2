@@ -394,14 +394,8 @@ class ImageViewer(ProcessImage):
         # ^^ Note: macOS Command-q will quit program without utils.quit_gui info msg.
 
         # Place settings/report window at upper right of screen.
-        #   Note: the report window (self, app) width is ~ 600 across platforms,
-        #   but instead of hard coding that, make geometry offset a function of
-        #   screen width. This is needed b/c of differences among platforms'
-        #   window managers in how they place windows.
         w_offset = int(self.winfo_screenwidth() * 0.66)
         self.geometry(f'+{w_offset}+0')
-
-        self.after(1, self.focus_force)
 
         self.config(
             bg=const.MASTER_BG,  # gray80 matches report_color_settings() txt fg.
@@ -462,7 +456,7 @@ class ImageViewer(ProcessImage):
         #   for a single Scale widget that is sufficient to fit everything
         #   in the Frame given current padding parameters. Need to use only
         #  for one Scale() in each Toplevel().
-        scale_len = int(self.winfo_screenwidth() * 0.2)
+        scale_len = int(self.winfo_screenwidth() * 0.25)
 
         self.slider['H_min_lbl'].configure(text='H minimum:',
                                            **const.LABEL_PARAMETERS)
