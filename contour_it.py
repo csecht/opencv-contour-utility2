@@ -1097,7 +1097,7 @@ class ImageViewer(ProcessImage):
         #  of the screen. Make geometry offset a function of the screen width.
         #  This is needed b/c of differences among platforms' window managers
         #  for how they place windows.
-        w_offset = int(self.winfo_screenwidth() * 0.6)
+        w_offset = int(self.winfo_screenwidth() * 0.55)
         self.geometry(f'+{w_offset}+0')
 
         # Color in all the master (app) Frame and use a yellow border;
@@ -1429,7 +1429,7 @@ class ImageViewer(ProcessImage):
         #   for a single Scale widget that is sufficient to fit everything
         #   in the Frame given current padding parameters. Need to use only
         #  for one Scale() in each Toplevel().
-        scale_len = int(self.winfo_screenwidth() * 0.2)
+        scale_len = int(self.winfo_screenwidth() * 0.25)
 
         self.slider['alpha_lbl'].configure(text='Contrast/gain/alpha:',
                                            **const.LABEL_PARAMETERS)
@@ -1988,7 +1988,6 @@ class ImageViewer(ProcessImage):
         #  get the gridded widgets' correct winfo_width.
         self.update()
         shape_hull_yes_width = self.radio['shape_hull_yes'].winfo_width()
-        print('hull yes width:', shape_hull_yes_width)
         shape_hull_no_padx = (0, shape_hull_yes_width + 15)
         self.radio['shape_hull_no'].grid(column=1, row=0,
                                          padx=shape_hull_no_padx,
