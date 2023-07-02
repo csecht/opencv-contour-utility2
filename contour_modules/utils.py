@@ -230,7 +230,7 @@ def display_report(frame: tk.Frame, report: str) -> None:
     reporttxt.delete('1.0', tk.END)
     reporttxt.insert(tk.INSERT, report)
     # Indent helps center text in the Frame.
-    reporttxt.tag_config('leftmargin', lmargin1=25)
+    reporttxt.tag_config('leftmargin', lmargin1=20)
     reporttxt.tag_add('leftmargin', '1.0', tk.END)
     reporttxt.configure(state=tk.DISABLED)
 

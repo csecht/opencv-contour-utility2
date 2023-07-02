@@ -410,20 +410,14 @@ class ImageViewer(ProcessImage):
             highlightcolor=const.CBLIND_COLOR_TK['yellow'],
             highlightbackground=const.DRAG_GRAY
         )
-        self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=1)
 
         self.color_report_frame.configure(relief='flat',
                                           bg=const.CBLIND_COLOR_TK['sky blue']
                                           )  # bg won't show with grid sticky EW.
-        self.color_report_frame.columnconfigure(1, weight=1)
-        self.color_report_frame.rowconfigure(0, weight=1)
 
         self.color_selectors_frame.configure(relief='raised',
                                              bg=const.DARK_BG,
                                              borderwidth=5, )
-        self.color_selectors_frame.columnconfigure(0, weight=1)
-        self.color_selectors_frame.columnconfigure(1, weight=1)
 
         self.explain.config(
             text=('Min and max slider values are the BGR values used for'
@@ -431,6 +425,13 @@ class ImageViewer(ProcessImage):
                   ' with the function cv2.cvtColor(src, cv2.COLOR_BGR2HSV).'),
             **const.LABEL_PARAMETERS
         )
+
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=2)
+        self.color_report_frame.rowconfigure(0, weight=1)
+        self.color_report_frame.columnconfigure(1, weight=2)
+        self.color_selectors_frame.columnconfigure(0, weight=1)
+        self.color_selectors_frame.columnconfigure(1, weight=2)
 
         self.color_report_frame.grid(column=0, row=0,
                                      columnspan=2,
@@ -457,10 +458,16 @@ class ImageViewer(ProcessImage):
             if '_lbl' not in name:
                 widget.bind('<ButtonRelease-1>', self.process_all)
 
+        # Set minimum width for the enclosing Toplevel by setting a length
+        #   for a single Scale widget that is sufficient to fit everything
+        #   in the Frame given current padding parameters. Need to use only
+        #  for one Scale() in each Toplevel().
+        scale_len = int(self.winfo_screenwidth() * 0.2)
 
         self.slider['H_min_lbl'].configure(text='H minimum:',
                                            **const.LABEL_PARAMETERS)
         self.slider['H_min'].configure(from_=0, to=255,
+                                       length=scale_len,
                                        resolution=1,
                                        tickinterval=20,
                                        variable=self.slider_val['H_min'],
@@ -628,39 +635,20 @@ class ImageViewer(ProcessImage):
 
         # Use the dict() function with keyword arguments to mimic the
         #  keyword parameter structure of the grid() function.
-        if const.MY_OS in 'lin, win':
-            slider_grid_params = dict(
-                padx=5,
-                pady=(7, 0),
-                sticky=tk.W)
-            label_grid_params = dict(
-                padx=5,
-                pady=(5, 0),
-                sticky=tk.E)
-            grid_params = dict(
-                padx=(10, 0),
-                pady=(0, 5),
-                sticky=tk.W)
-        else:  # is macOS
-            slider_grid_params = dict(
-                padx=5,
-                pady=(4, 0))
-            label_grid_params = dict(
-                padx=5,
-                pady=(4, 0),
-                sticky=tk.E)
-            grid_params = dict(
-                padx=(5, 0),
-                pady=(0, 5),
-                sticky=tk.W)
+        label_grid_params = dict(
+            padx=5,
+            pady=(4, 0),
+            sticky=tk.E)
 
-        # Need custom padding for the color Combobox.
-        if const.MY_OS == 'lin':
-            padx_choice = (175, 0)
-        elif const.MY_OS == 'win':
-            padx_choice = (205, 0)
-        else:  # is macOS
-            padx_choice = (155, 0)
+        slider_grid_params = dict(
+            padx=5,
+            pady=(4, 0),
+            sticky=tk.EW)
+
+        general_grid_params = dict(
+            padx=(8, 0),
+            pady=(4, 0),
+            sticky=tk.W)
 
         # Widgets gridded in the self.color_selectors_frame Frame.
         # Sorted by row number:
@@ -698,10 +686,6 @@ class ImageViewer(ProcessImage):
                                            padx=(0, 0),
                                            pady=(5, 5),
                                            sticky=tk.W)
-        self.cbox['choose_color'].grid(column=1, row=9,
-                                       padx=padx_choice,
-                                       pady=(5, 5),
-                                       sticky=tk.W)
 
         self.explain.grid(column=0, row=10,
                           columnspan=2,
@@ -715,31 +699,52 @@ class ImageViewer(ProcessImage):
                             sticky=tk.NSEW)
 
         self.reset_btn.grid(column=0, row=7,
-                            **grid_params)
+                            **general_grid_params)
         self.save_btn.grid(column=0, row=8,
-                           **grid_params)
+                           **general_grid_params)
 
         self.radio['filter_lbl'].grid(column=1, row=7,
-                                      **grid_params)
-        self.radio['filter_yes'].grid(column=1, row=7,
-                                      padx=(0, 60),
-                                      pady=(0, 5),
-                                      sticky=tk.E)
-        self.radio['filter_no'].grid(column=1, row=7,
-                                     padx=(0, 100),
-                                     pady=(0, 5),
-                                     sticky=tk.E)
+                                      **general_grid_params)
 
         self.radio['redux_lbl'].grid(column=1, row=8,
-                                     **grid_params)
+                                     **general_grid_params)
+
+        # Use update() because update_idletasks() doesn't always work to
+        #  get the gridded widgets' correct winfo_width.
+        self.update()
+
+        # Now grid widgets with relative padx values based on widths of
+        #  their corresponding partner widgets. Works across platforms.
+        choose_color_width = self.cbox['choose_color_lbl'].winfo_width()
+        choose_color_padx = (choose_color_width + 10, 0)
+        self.cbox['choose_color'].grid(column=1, row=9,
+                                       padx=choose_color_padx,
+                                       pady=5,
+                                       sticky=tk.W)
+
+        filter_lbl_width = self.radio['filter_lbl'].winfo_width()
+        filter_yes_padx = (filter_lbl_width + 12, 0)
+        filter_no_padx = (int(filter_lbl_width * 1.3), 0)
+        self.radio['filter_yes'].grid(column=1, row=7,
+                                      padx=filter_yes_padx,
+                                      pady=(4, 0),
+                                      sticky=tk.W)
+        self.radio['filter_no'].grid(column=1, row=7,
+                                     padx=filter_no_padx,
+                                     pady=(4, 0),
+                                     sticky=tk.W)
+
+        redux_lbl_width = self.radio['redux_lbl'].winfo_width()
+        redux_yes_padx = (redux_lbl_width + 12, 0)
+        redux_no_padx = (int(redux_lbl_width * 1.25), 0)
         self.radio['redux_yes'].grid(column=1, row=8,
-                                     padx=(0, 35),
-                                     pady=(0, 5),
-                                     sticky=tk.E)
+                                     padx=redux_yes_padx,
+                                     pady=(4, 0),
+                                     sticky=tk.W)
         self.radio['redux_no'].grid(column=1, row=8,
-                                    padx=(0, 75),
-                                    pady=(0, 5),
-                                    sticky=tk.E)
+                                    padx=redux_no_padx,
+                                    pady=(4, 0),
+                                    sticky=tk.W)
 
     def display_images(self) -> None:
         """
@@ -810,7 +815,7 @@ class ImageViewer(ProcessImage):
                 f'{bigindent}op=cv2.MORPH_HITMISS,\n'
                 f'{bigindent}kernel=element, iterations=1,\n'
                 f'{bigindent}borderType=cv2.BORDER_DEFAULT)\n'
-                ' ...with cv2.getStructuringElement(shape=cv2.MORPH_CROSS,\n'
+                '...with cv2.getStructuringElement(shape=cv2.MORPH_CROSS,\n'
                 f'{bigindent}ksize=(3, 3), anchor=(-1, -1))')
         else:  # is False, 'No' radiobutton selected
             redux_txt = 'Not selected.\n\n\n\n\n'
@@ -889,7 +894,7 @@ if __name__ == "__main__":
     try:
         app = ImageViewer()
         app.title('Color Settings Report')
-        app.resizable(False, False)
+        app.resizable(True, False)
         print(f'{Path(__file__).name} is now running...')
         app.mainloop()
     except KeyboardInterrupt:
