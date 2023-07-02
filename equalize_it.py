@@ -316,20 +316,18 @@ class ImageViewer(ProcessImage):
             highlightcolor=const.CBLIND_COLOR_TK['yellow'],
             highlightbackground=const.DRAG_GRAY
         )
-        self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=1)
 
         self.clahe_report_frame.configure(relief='flat',
                                           bg=const.CBLIND_COLOR_TK['sky blue']
                                           )  # bg won't show with grid sticky EW.
-        self.clahe_report_frame.columnconfigure(1, weight=1)
-        self.clahe_report_frame.rowconfigure(0, weight=1)
 
         self.clahe_selectors_frame.configure(relief='raised',
                                              bg=const.DARK_BG,
                                              borderwidth=5, )
-        self.clahe_selectors_frame.columnconfigure(0, weight=1)
-        self.clahe_selectors_frame.columnconfigure(1, weight=1)
+
+        self.columnconfigure(1, weight=2)
+        self.clahe_report_frame.columnconfigure(1, weight=2)
+        self.clahe_selectors_frame.columnconfigure(1, weight=2)
 
         self.clahe_report_frame.grid(column=0, row=0,
                                      columnspan=2,
@@ -374,9 +372,16 @@ class ImageViewer(ProcessImage):
         else:  # is Windows or macOS
             slider_cmd = self.process_all
 
+        # Set minimum width for the enclosing Toplevel by setting a length
+        #   for a single Scale widget that is sufficient to fit everything
+        #   in the Frame given current padding parameters. Need to use only
+        #  for one Scale() in each Toplevel().
+        scale_len = int(self.winfo_screenwidth() * 0.2)
+
         self.slider['clip_limit_lbl'].configure(text='Clip limit:',
                                                 **const.LABEL_PARAMETERS)
         self.slider['clip_limit'].configure(from_=0.1, to=5,
+                                            length=scale_len,
                                             resolution=0.1,
                                             tickinterval=1,
                                             variable=self.slider_val['clip_limit'],
@@ -430,31 +435,20 @@ class ImageViewer(ProcessImage):
 
         # Use the dict() function with keyword arguments to mimic the
         #  keyword parameter structure of the grid() function.
-        if const.MY_OS in 'lin, win':
-            slider_grid_params = dict(
-                padx=5,
-                pady=(7, 0),
-                sticky=tk.W)
-            label_grid_params = dict(
-                padx=5,
-                pady=(5, 0),
-                sticky=tk.E)
-            grid_params = dict(
-                padx=(10, 0),
-                pady=(0, 5),
-                sticky=tk.W)
-        else:  # is macOS
-            slider_grid_params = dict(
-                padx=5,
-                pady=(4, 0))
-            label_grid_params = dict(
-                padx=5,
-                pady=(4, 0),
-                sticky=tk.E)
-            grid_params = dict(
-                padx=(10, 0),
-                pady=(0, 5),
-                sticky=tk.W)
+        label_grid_params = dict(
+            padx=5,
+            pady=(4, 0),
+            sticky=tk.E)
+
+        slider_grid_params = dict(
+            padx=5,
+            pady=(4, 0),
+            sticky=tk.EW)
+
+        general_grid_params = dict(
+            padx=(8, 0),
+            pady=(4, 0),
+            sticky=tk.W)
 
         # Widgets gridded in the self.clahe_selectors_frame Frame.
         # Sorted by row number:
@@ -469,9 +463,9 @@ class ImageViewer(ProcessImage):
                                       **slider_grid_params)
 
         self.reset_btn.grid(column=0, row=3,
-                            **grid_params)
+                            **general_grid_params)
         self.save_btn.grid(column=0, row=4,
-                           **grid_params)
+                           **general_grid_params)
 
     def display_images(self) -> None:
         """
