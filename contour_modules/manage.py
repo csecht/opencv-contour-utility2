@@ -52,9 +52,9 @@ def arguments() -> dict:
                         required=False,
                         metavar='X')
     parser.add_argument('--color', '-c',
-                        help='cv2 contour color, C. (default: green; option: yellow).',
+                        help='cv2 contour color, C. (default: green; options: yellow, orange, red, purple, white).',
                         default='green',
-                        choices=('green', 'yellow'),
+                        choices=('green', 'yellow', 'orange', 'red', 'purple', 'white'),
                         metavar='C')
 
     args = parser.parse_args()
@@ -83,6 +83,14 @@ def arguments() -> dict:
         args.color = (0, 255, 0)
     elif args.color == 'yellow':
         args.color = const.CBLIND_COLOR_CV['yellow']
+    elif args.color == 'purple':
+        args.color = const.CBLIND_COLOR_CV['reddish purple']
+    elif args.color == 'red':
+        args.color = const.CBLIND_COLOR_CV['vermilion']
+    elif args.color == 'orange':
+        args.color = const.CBLIND_COLOR_CV['orange']
+    elif args.color == 'white':
+        args.color = const.CBLIND_COLOR_CV['white']
 
     arg_dict = {
         'about': args.about,
