@@ -20,13 +20,14 @@ from __main__ import __doc__
 # Third party imports.
 import cv2
 import numpy as np
+from pathlib import Path
 from PIL import Image, ImageTk
 from PIL.ImageTk import PhotoImage
 from tkinter import ttk
 
 # Local application imports.
 import contour_modules
-from contour_modules import constants as const
+from contour_modules import utils, constants as const
 
 
 def arguments() -> dict:
@@ -74,6 +75,11 @@ def arguments() -> dict:
         print('====================== ABOUT END ====================')
 
         sys.exit(0)
+
+    if not Path.exists(utils.valid_path_to(args.input)):
+       print(f'COULD NOT OPEN the image: {args.input}  <-Check spelling.\n'
+              "If spelled correctly, then try using the file's absolute (full) path.")
+       sys.exit(1)
 
     if args.scale <= 0:
         args.scale = 1

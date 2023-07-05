@@ -599,11 +599,6 @@ if __name__ == "__main__":
     vcheck.minversion('3.7')
 
     INPUT_PATH = manage.arguments()['input']
-    # Need file check here instead of in manage.arguments() to avoid
-    #   numerous calls to that module.
-    if not Path.exists(utils.valid_path_to(INPUT_PATH)):
-        sys.exit(f'COULD NOT OPEN the image: {INPUT_PATH}  <-Check spelling.\n'
-                 "  If spelled correctly, then try using the file's absolute (full) path.")
 
     # All checks are good, so define some additional run-specific constants...
     INPUT_IMG = manage.infile()['input_img']
