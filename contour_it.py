@@ -1479,7 +1479,7 @@ class ImageViewer(ProcessImage):
                                          variable=self.slider_val['c_limit'],
                                          **const.SCALE_PARAMETERS)
 
-        self.slider['sigma_lbl'].configure(text='bilateral sigmaColor / Gauss sigmaX:',
+        self.slider['sigma_lbl'].configure(text='bilat. sigmaColor or Gauss sigmaX:',
                                            **const.LABEL_PARAMETERS)
         self.slider['sigma'].configure(from_=0, to=240,
                                        tickinterval=20,
@@ -2247,6 +2247,7 @@ class ImageViewer(ProcessImage):
         self.filter_image()
         self.contour_threshold(event)
         self.contour_canny(event)
+        self.toggle_sigma()
         self.size_the_contours(contour_pointset=self.contours['selected_found_thresh'],
                                called_by='thresh sized')
         self.size_the_contours(contour_pointset=self.contours['selected_found_canny'],
@@ -2268,6 +2269,7 @@ class ImageViewer(ProcessImage):
         """
         self.contour_threshold(event)
         self.contour_canny(event)
+        self.toggle_sigma()
         self.size_the_contours(contour_pointset=self.contours['selected_found_thresh'],
                                called_by='thresh sized')
         self.size_the_contours(contour_pointset=self.contours['selected_found_canny'],
@@ -2277,6 +2279,33 @@ class ImageViewer(ProcessImage):
             self.process_shapes(event)
 
         return event
+
+    def toggle_sigma(self) -> None:
+        """
+        Make selector options obvious for the user depending on whether
+        the filter uses sigmas or not; gray out and disable the sigma
+        slider for those filter options that don't use it, enable for
+        those that do.
+
+        Returns: None
+        """
+        filter_selected = self.cbox_val['filter_pref'].get()
+
+        # Toggled keyword arguments for Scale() widget.
+        no_for_sigma = dict(
+            state=tk.DISABLED,
+            fg=const.MASTER_BG)
+        yes_for_sigma = dict(
+            state=tk.NORMAL,
+            fg=const.WIDGET_FG)
+
+        if filter_selected in 'cv2.bilateralFilter, cv2.GaussianBlur':
+            self.slider['sigma_lbl'].config(**yes_for_sigma)
+            self.slider['sigma'].config(**yes_for_sigma)
+
+        else:  # either cv2.blur or cv2.median_blur is selected.
+            self.slider['sigma_lbl'].config(**no_for_sigma)
+            self.slider['sigma'].config(**no_for_sigma)
 
     def toggle_circle_vs_polygons(self) -> None:
         """
