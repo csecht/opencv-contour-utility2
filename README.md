@@ -16,7 +16,7 @@ All modules can be executed on Linux, Windows, and macOS platforms. `contour_it.
 
 All contour processing steps are conducted on grayscale conversions of the specified input file. A text file of chosen settings and the resulting image file of drawn contours, overlaid on the original image, can be saved. Image file samples, listed below, are provided in the `images` folder.
 
-The default `contour_it.py` contour outline color is green, but can be changed to yellow with the `--color yellow` command line argument. This may be useful for certain images or users with a green color vision impairment.
+The default `contour_it.py` contour outline color is green, but can be changed using the `--color` command line argument followed by yellow, purple, red, orange, or white. This may be useful for certain images; all `--color` options are suitable for users with deuteranopia.
 
 <sub>Project inspired by code from Adrian Rosebrock:
 https://pyimagesearch.com/2016/03/28/measuring-size-of-objects-in-an-image-with-opencv/
@@ -158,7 +158,7 @@ Pre-set BGR values, to be converted to HSV color bounds, for color selections in
 
 ### Known Issues:
 
-While not a program issue, there is a potential source of confusion when using the example image, sample4.jpg (shapes). With the default settings, the white border around the black background will display a hexagon-shaped contour, which may be difficult to see, especially when using yellow --color option. Consequently, it will be counted as a hexagon shape unless, in main settings, it is not displayed as a contour by clicking the button for cv2.arcLength button instead of cv2.contourArea.
+While not a program issue, there is a potential source of confusion when using the example image, sample4.jpg (shapes). With the default settings, the white border around the black background will display a hexagon-shaped contour, which may be difficult to see, especially with some --color options. Consequently, it will be counted as a hexagon shape unless, in main settings, it is not displayed as a contour by clicking the button for cv2.arcLength button instead of cv2.contourArea.
 
 Widths and grid spacing were generalized across platforms for settings/report windows, but may not be optimal for your particular setup. If a settings window seems too wide or too narrow, you can horizontally resize it for a better layout.
 
