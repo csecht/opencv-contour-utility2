@@ -565,8 +565,9 @@ class ProcessImage(tk.Tk):
                           contour_pointset: list,
                           called_by: str) -> None:
         """
-        Draws a circles around contoured objects. Objects are expected
-        to be oblong so that circle diameter can represent object length.
+        Draws a circles around contoured objects and posts the pixel
+        diameter in each circled object. When objects are circles or
+        oblong, the diameter can represent object diameter or length.
         Called by process_*() methods. Calls manage.tk_image().
         Args:
             contour_pointset: List of selected contours from cv2.findContours.
@@ -819,6 +820,8 @@ class ProcessImage(tk.Tk):
                            thickness=LINE_THICKNESS * 2,
                            lineType=cv2.LINE_AA
                            )
+        else:
+            self.num_shapes = 0
 
         # If circles are found, they will be displayed in outline.
         #   Otherwise, the input image will be displayed as-is.
