@@ -601,9 +601,9 @@ if __name__ == "__main__":
     INPUT_PATH = manage.arguments()['input']
 
     # All checks are good, so define some additional run-specific constants...
-    INPUT_IMG = manage.infile()['input_img']
-    GRAY_IMG = manage.infile()['gray_img']
-    LINE_THICKNESS = manage.infile()['line_thickness']
+    INPUT_IMG = manage.input_metrics()['input_img']
+    GRAY_IMG = manage.input_metrics()['gray_img']
+    LINE_THICKNESS = manage.input_metrics()['line_thickness']
 
     try:
         app = ImageViewer()

@@ -579,7 +579,7 @@ class ProcessImage(tk.Tk):
         """
 
         circled_contours = INPUT_IMG.copy()
-        center_xoffset = infile_dict['center_xoffset']
+        offset = infile_dict['center_offset']
 
         for _c in contour_pointset:
             (_x, _y), radius = cv2.minEnclosingCircle(_c)
@@ -604,7 +604,7 @@ class ProcessImage(tk.Tk):
             cv2.putText(img=circled_contours,
                         text=f'{radius * 2}px',
                         # Center text in the enclosing circle, scaled by px size.
-                        org=(center[0] - center_xoffset, center[1] + 5),
+                        org=(int(_x - offset), int(_y + offset / 2)),
                         fontFace=const.FONT_TYPE,
                         fontScale=infile_dict['font_scale'],
                         color=self.contour_color,
@@ -1473,7 +1473,7 @@ class ImageViewer(ProcessImage):
                                              **const.LABEL_PARAMETERS)
 
         # Need to allow a higher limit for large images; 2000 is arbitrary.
-        c_max = 2000 if manage.infile()['size2scale'] > 2000 else 1000
+        c_max = 2000 if manage.input_metrics()['size2scale'] > 2000 else 1000
         self.slider['c_limit'].configure(from_=1, to=c_max,
                                          tickinterval=c_max / 10,
                                          variable=self.slider_val['c_limit'],
@@ -2399,7 +2399,7 @@ if __name__ == "__main__":
 
     # All checks are good, so grab as a 'global' the dictionary of
     #   command line argument values and define often used values...
-    infile_dict = manage.infile()
+    infile_dict = manage.input_metrics()
     INPUT_IMG = infile_dict['input_img']
     GRAY_IMG = infile_dict['gray_img']
     LINE_THICKNESS = infile_dict['line_thickness']

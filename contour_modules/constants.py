@@ -228,7 +228,7 @@ TEXT_COLOR = 180, 180, 180  # light gray for a dark gray background
 LINE_SCALE = 1e-03
 FONT_SCALE = 7.7e-04
 
-# Used in manage.infile() module.
+# Used in manage.input_metrics() module.
 CENTER_XSCALE = 0.035
 
 if MY_OS == 'lin':

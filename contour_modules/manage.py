@@ -2,7 +2,7 @@
 General housekeeping utilities.
 Functions:
 arguments: handles command line arguments
-infile: reads specified input image and derives associated metrics.
+input_metrics: reads specified input image and derives associated metrics.
 scale: manages the specified scale factor for display of images.
 tk_image: converts scaled cv2 image to a compatible tk.TK image format.
 """
@@ -73,7 +73,6 @@ def arguments() -> dict:
         print('====================== ABOUT START ====================')
         print(about_text)
         print('====================== ABOUT END ====================')
-
         sys.exit(0)
 
     if not Path.exists(utils.valid_path_to(args.input)):
@@ -82,8 +81,8 @@ def arguments() -> dict:
        sys.exit(1)
 
     if args.scale <= 0:
-        args.scale = 1
-        print('--scale X: X must be greater than zero. Resetting to 1.')
+        print('--scale X: X must be greater than zero.')
+        sys.exit(0)
 
     if args.color == 'green':
         args.color = (0, 255, 0)
@@ -108,37 +107,44 @@ def arguments() -> dict:
     return arg_dict
 
 
-def infile() -> dict:
+def input_metrics() -> dict:
     """
     Read the image file specified in the --input command line option,
-    then calculates and assign to a dictionary values that can be used
-    in the main script as constants for that input image.
+    then calculate and assign to a dictionary values that can be used
+    as constants for image file path, processing, and display.
 
-    Returns: Dictionary of various image metrics.
+    Returns: Dictionary of image values and metrics.
     """
 
     # manage.arguments() has verified the image path, so read from it.
     input_img = cv2.imread(arguments()['input'])
     gray_img = cv2.imread(arguments()['input'], cv2.IMREAD_GRAYSCALE)
 
+    current_scale = arguments()['scale']
+
     # Ideas for scaling: https://stackoverflow.com/questions/52846474/
     #   how-to-resize-text-for-cv2-puttext-according-to-the-image-size-in-opencv-python
     size2scale = min(input_img.shape[0], input_img.shape[1])
 
     font_scale = max(size2scale * const.FONT_SCALE, 0.5)
-    center_xoffset = math.ceil(size2scale * const.CENTER_XSCALE * arguments()['scale'])
+
+    # Linear equation was empirically determined to work for centering
+    #  scaled fonts with cv2.putText in the center of a circled contour.
+    scaling_factor = -0.067 * current_scale + 0.087
+
+    center_offset = math.ceil(size2scale * scaling_factor * current_scale)
 
     line_thickness = math.ceil(size2scale * const.LINE_SCALE)
 
-    managed_outputs = {
+    metrics = {
         'input_img': input_img,
         'gray_img': gray_img,
         'font_scale': font_scale,
-        'center_xoffset': center_xoffset,
+        'center_offset': center_offset,
         'line_thickness': line_thickness,
         'size2scale': size2scale,
     }
-    return managed_outputs
+    return metrics
 
 
 def scale(img: np.ndarray, scalefactor: float) -> np.ndarray:
