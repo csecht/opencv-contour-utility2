@@ -607,12 +607,10 @@ class ProcessImage(tk.Tk):
         offset = infile_dict['center_offset']
 
         for _c in contour_pointset:
-            (_x, _y), radius = cv2.minEnclosingCircle(_c)
-            center = (int(_x), int(_y))
-            radius = int(radius)
+            ((_x, _y), _r) = cv2.minEnclosingCircle(_c)
             cv2.circle(circled_contours,
-                       center=center,
-                       radius=radius,
+                       center=(int(_x), int(_y)),
+                       radius=int(_r),
                        color=self.contour_color,
                        thickness=LINE_THICKNESS * 2,
                        lineType=cv2.LINE_AA)
@@ -620,16 +618,16 @@ class ProcessImage(tk.Tk):
             # Display pixel diameter of each circled contour.
             #  Draw a filled black circle to use for text background.
             cv2.circle(img=circled_contours,
-                       center=center,
-                       radius=int(radius * 0.5),
+                       center=(int(_x), int(_y)),
+                       radius=int(_r * 0.5),
                        color=(0, 0, 0),
                        thickness=-1,
                        lineType=cv2.LINE_AA)
 
             cv2.putText(img=circled_contours,
-                        text=f'{radius * 2}px',
+                        text=f'{int(_r) * 2}px',  # display the diameter
                         # Center text in the enclosing circle, scaled by px size.
-                        org=(int(_x - offset), int(_y + offset / 2)),
+                        org=(int(_x - offset), int(_y + offset / 3)),
                         fontFace=const.FONT_TYPE,
                         fontScale=infile_dict['font_scale'],
                         color=self.contour_color,

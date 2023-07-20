@@ -215,20 +215,13 @@ STD_CONTOUR_COLOR = {'green': (0, 255, 0)}
 # https://vovkos.github.io/doxyrest-showcase/opencv/sphinx_rtd_theme/enum_cv_HersheyFonts.html
 FONT_TYPE = cv2.FONT_HERSHEY_SIMPLEX
 
-if MY_OS == 'lin':
-    TEXT_SCALER = 0.5
-elif MY_OS == 'dar':
-    TEXT_SCALER = 0.4
-else:  # is Windows
-    TEXT_SCALER = 0.6
-
 TEXT_THICKNESS = 1
 TEXT_COLOR = 180, 180, 180  # light gray for a dark gray background
 
 # Scaling factors for contours, circles and text, empirically determined;
 #  used in manage_input().
-LINE_SCALE = 1e-03
-FONT_SCALE = 7.7e-04
+LINE_SCALE = 5e-04  # 1e-03
+FONT_SCALE = 5.5e-04  # 7.7e-04
 
 # Used in manage.input_metrics() module.
 CENTER_XSCALE = 0.035
