@@ -114,7 +114,9 @@ CV_FILTER = {
     'cv2.bilateralFilter': 1,
     'cv2.GaussianBlur': 2,
     'cv2.medianBlur': 3,
-
+    'Convolve laplace': None,
+    'Convolve outline': None,
+    'Convolve sharpen': None,
 }
 
 CONTOUR_MODE = {

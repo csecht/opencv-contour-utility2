@@ -181,7 +181,9 @@ class ProcessImage(tk.Tk):
             'selected_found_canny': [const.STUB_ARRAY],
         }
 
+        self.contrasted_img = const.STUB_ARRAY
         self.reduced_noise_img = const.STUB_ARRAY
+        self.filtered_img = const.STUB_ARRAY
 
         self.num_contours = {
             'th_all': tk.IntVar(),
@@ -214,7 +216,7 @@ class ProcessImage(tk.Tk):
         # https://stackoverflow.com/questions/39308030/
         #   how-do-i-increase-the-contrast-of-an-image-in-python-opencv
 
-        contrasted = (
+        self.contrasted_img = (
             cv2.convertScaleAbs(
                 src=GRAY_IMG,
                 alpha=self.slider_val['alpha'].get(),
@@ -223,16 +225,15 @@ class ProcessImage(tk.Tk):
         )
 
         self.input_contrast_std.set(int(np.std(GRAY_IMG)))
-        self.curr_contrast_std.set(int(np.std(contrasted)))
+        self.curr_contrast_std.set(int(np.std(self.contrasted_img)))
         # Using .configure to update image avoids the white flash each time an
         #  image is updated were a Label() to be re-made here each call.
-        self.tkimg['contrast'] = manage.tk_image(image=contrasted,
+        self.tkimg['contrast'] = manage.tk_image(image=self.contrasted_img,
                                                  colorspace='bgr')
         self.img_label['contrast'].configure(image=self.tkimg['contrast'])
 
-        return contrasted
 
-    def reduce_noise(self) -> np.ndarray:
+    def reduce_noise(self) -> None:
         """
         Reduce noise in grayscale image with erode and dilate actions of
         cv2.morphologyEx.
@@ -240,10 +241,7 @@ class ProcessImage(tk.Tk):
         Uses cv2.morphologyEx params op=self.morph_op,
         kernel=<local structuring element>, iterations=self.noise_iter,
         borderType=self.border_val.
-        Called only by adjust_contrast(). Calls manage.tk_image().
-
-        Returns:
-             The array defined in adjust_contrast() with noise reduction.
+        Calls manage.tk_image().
         """
 
         # Need integers for the cv2 function parameters.
@@ -270,7 +268,7 @@ class ProcessImage(tk.Tk):
         # Read https://docs.opencv.org/3.4/db/df6/tutorial_erosion_dilatation.html
         # https://theailearner.com/tag/cv2-morphologyex/
         self.reduced_noise_img = cv2.morphologyEx(
-            src=self.adjust_contrast(),
+            src=self.contrasted_img,
             op=morph_op,
             kernel=element,
             iterations=iteration,
@@ -281,21 +279,15 @@ class ProcessImage(tk.Tk):
                                               colorspace='bgr')
         self.img_label['redux'].configure(image=self.tkimg['redux'])
 
-        return self.reduced_noise_img
 
-    def filter_image(self) -> np.ndarray:
+    def filter_image(self) -> None:
         """
         Applies a filter selection to blur the image for Canny edge
         detection or threshold contouring.
         Called from contour_threshold(). Calls manage.tk_image().
-
-        Returns: The filtered (blurred) image array processed by
-                 reduce_noise().
-
         """
 
         filter_selected = self.cbox_val['filter_pref'].get()
-        redux_img = self.reduce_noise()
 
         # Need to translate the string border type to that constant's integer.
         border_type = const.CV_BORDER[self.cbox_val['border_pref'].get()]
@@ -342,9 +334,42 @@ class ProcessImage(tk.Tk):
             filtered_img = cv2.medianBlur(src=self.reduced_noise_img,
                                           ksize=filter_k)
         elif filter_selected == 'cv2.blur':
-            filtered_img = cv2.blur(src=redux_img,
+            filtered_img = cv2.blur(src=self.reduced_noise_img,
                                     ksize=(filter_k, filter_k),
                                     borderType=border_type)
+        elif 'Convolve' in filter_selected:
+            # FROM: https://docs.opencv.org/3.4/d2/dbd/tutorial_distance_transform.html
+            #  To do the laplacian filtering as it is, we need to convert everything
+            #  into something deeper than CV_8U because the kernel has some negative values,
+            #  and we can expect in general to have a Laplacian image with negative values
+            #  BUT a 8bits unsigned int (the one we are working with) can contain values
+            #  from 0 to 255 so the possible negative numbers will be truncated.
+            # For kernel construction, see: https://stackoverflow.com/questions/58383477/
+            #    how-to-create-a-python-convolution-kernel
+            if filter_selected == 'Convolve laplace':
+                c_kernel = np.array([[1, 1, 1], [1, -4, 1], [1, 1, 1]], dtype=np.float32)
+            elif filter_selected  == 'Convolve outline':
+                c_kernel = np.array([[1, 1, 1], [1, -8, 1], [1, 1, 1]], dtype=np.float32)
+            else:  # is 'Convolve sharpen'
+                c_kernel = np.array([[0, -1, 0], [-1, 4, -1], [0, -1, 0]], dtype=np.float32)
+            broadcast_redux = cv2.cvtColor(self.reduced_noise_img, cv2.COLOR_GRAY2BGR)
+            convolved_img = cv2.filter2D(src=broadcast_redux,
+                                         ddepth=cv2.CV_32F,
+                                         kernel=c_kernel,
+                                         borderType=None)
+            # Make the enhanced image.
+            filtered_img = np.float32(INPUT_IMG) - convolved_img
+
+            # Convert back to 8bits gray scale.
+            np.clip(filtered_img, 0, 255, out=filtered_img)
+
+            # Use sharpen kernel to make an edge...
+            # if filter_selected == 'Convolve sharpen':
+            #     filtered_img = convolved_img
+            #     np.clip(convolved_img, 0, 255, out=filtered_img)
+
+            filtered_img = cv2.cvtColor(np.uint8(filtered_img), cv2.COLOR_BGR2GRAY)
+
         else:
             filtered_img = cv2.blur(src=self.reduced_noise_img,
                                     ksize=(filter_k, filter_k),
@@ -354,7 +379,7 @@ class ProcessImage(tk.Tk):
                                                colorspace='bgr')
         self.img_label['filter'].configure(image=self.tkimg['filter'])
 
-        return filtered_img
+        self.filtered_img = filtered_img
 
     def contour_threshold(self, event=None) -> int:
         """
@@ -398,7 +423,7 @@ class ProcessImage(tk.Tk):
         #   For other cv2.THRESH_*, thresh needs to be manually provided.
         # Convert values above thresh to a maxval of 255, white.
         self.computed_threshold, thresh_img = cv2.threshold(
-            src=self.filter_image(),
+            src=self.filtered_img,
             thresh=0,
             maxval=255,
             type=th_type)
@@ -496,7 +521,7 @@ class ProcessImage(tk.Tk):
         max_length = max(GRAY_IMG.shape[0], GRAY_IMG.shape[1]) * 0.9
 
         # Note: using aperatureSize decreases effects of other parameters.
-        found_edges = cv2.Canny(image=self.filter_image(),
+        found_edges = cv2.Canny(image=self.filtered_img,
                                 threshold1=canny_th_min,
                                 threshold2=canny_th_max,
                                 # apertureSize=3,  # Must be 3, 5, or 7.
@@ -768,7 +793,7 @@ class ProcessImage(tk.Tk):
             #   For other cv2.THRESH_*, thresh needs to be manually provided.
             # Convert values above thresh to maxval of 255, white.
             _, img4houghcircles = cv2.threshold(
-                src=self.filter_image(),
+                src=self.filtered_img,
                 thresh=0,
                 maxval=255,
                 type=8  # 8 == cv2.THRESH_OTSU, 16 == cv2.THRESH_TRIANGLE
@@ -777,7 +802,7 @@ class ProcessImage(tk.Tk):
         else:  # is 'filtered', the default value.
             # Here HoughCircles works on the filtered image, not threshold or contours.
             self.img_window['shaped'].title(const.WIN_NAME['circle in filtered'])
-            img4houghcircles = self.filter_image()
+            img4houghcircles = self.filtered_img
 
         # source: https://www.geeksforgeeks.org/circle-detection-using-opencv-python/
         # https://docs.opencv.org/4.x/dd/d1a/group__imgproc__feature.html#ga47849c3be0d0406ad3ca45db65a25d2d
@@ -2129,14 +2154,20 @@ class ImageViewer(ProcessImage):
         num_canny_c_all = self.num_contours['canny_all'].get()
 
         if filter_selected == 'cv2.bilateralFilter':
-            filter_sigmas = (f'd=({filter_k},{filter_k}),'
+            filter_extras = (f'd=({filter_k},{filter_k}),'
                              f' sigmaColor={sigma},'
                              f' sigmaSpace={sigma}')
         elif filter_selected == 'cv2.GaussianBlur':
-            filter_sigmas = (f'sigmaX={sigma},'
+            filter_extras = (f'sigmaX={sigma},'
                              f' sigmaY={sigma}')
+        elif filter_selected == 'Convolve laplace':
+            filter_extras = 'cv2.filter2D kernel: [1, 1, 1], [1, -4, 1], [1, 1, 1]'
+        elif filter_selected == 'Convolve outline':
+            filter_extras = 'cv2.filter2D kernel: [1, 1, 1], [1, -8, 1], [1, 1, 1]'
+        elif filter_selected == 'Convolve sharpen':
+            filter_extras = 'cv2.filter2D kernel: [0, -1, 0], [-1, 4, -1], [0, -1, 0]]'
         else:
-            filter_sigmas = ''
+            filter_extras = ''
 
         # Text is formatted for clarity in window, terminal, and saved file.
         tab = " ".ljust(21)
@@ -2151,7 +2182,7 @@ class ImageViewer(ProcessImage):
             f'{tab}cv2.morphologyEx borderType={border}\n'
             f'{"Filter:".ljust(21)}{filter_selected} ksize=({filter_k},{filter_k})\n'
             f'{tab}borderType={border}\n'
-            f'{tab}{filter_sigmas}\n'  # is blank line for box and median.
+            f'{tab}{filter_extras}\n'  # is blank line for box and median.
             f'{"cv2.threshold:".ljust(21)}type={th_type},'
             f' thresh={int(self.computed_threshold)}, maxval=255\n'
             f'{"cv2.Canny:".ljust(21)}threshold1={canny_th_min}, threshold2={canny_th_max}\n'
