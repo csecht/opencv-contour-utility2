@@ -13,17 +13,16 @@ import argparse
 import math
 import sys
 import tkinter
-
+from pathlib import Path
+from tkinter import ttk
 # noinspection PyCompatibility
 from __main__ import __doc__
 
 # Third party imports.
 import cv2
 import numpy as np
-from pathlib import Path
 from PIL import Image, ImageTk
 from PIL.ImageTk import PhotoImage
-from tkinter import ttk
 
 # Local application imports.
 import contour_modules
