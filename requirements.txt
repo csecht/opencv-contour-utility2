@@ -2,6 +2,7 @@ matplotlib
 numpy
 opencv-python
 Pillow
+packaging
 
 #matplotlib=3.7.1
 #numpy~=1.24.3
