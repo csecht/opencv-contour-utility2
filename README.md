@@ -11,7 +11,7 @@ Programs that run from the command line:
 * `contour_it.py` draws contours based on edges, thresholds, or shapes.
 * `equalize_it.py` does CLAHE histogram equalization.
 * `color_it.py` finds colors.
-* 
+
 All modules can be executed on Linux, Windows, and macOS platforms. `contour_it.py` is an upgrade of the original module found in the opencv-contour-utils repository that uses the native OpenCV GUI, but only runs on Linux systems.
 
 All contour processing steps are conducted on grayscale conversions of the specified input file. A text file of chosen settings and the resulting image file of drawn contours, overlaid on the original image, can be saved. Image file samples, listed below, are provided in the `images` folder.
@@ -114,6 +114,7 @@ Default startup window for contour parameter settings and reporting. Command lin
 All image windows that open to display each image processing step. Initial window layout will depend on your system. Here, the windows were dragged into position to show them all without overlap. Command line: `python3 -m contour_it  -i images/sample2.jpg -s 0.3`.
 
 ![shapes_settings_and_report](images/shape_report_window.png)
+
 ![hexagon_shape_found](images/found_hexagon_screenshot.png)
 
 The Shape windows appear when the "Show Shapes windows" is clicked. In this example, settings selected to find hexagon shapes. Command line: `python3 -m contour_it  -i images/sample4.jpg -s 0.3 --color yellow`.
@@ -128,6 +129,7 @@ Above: The report and settings window for `color_it.py` at default settings.
 Command line: `python3 -m color_it -i images/sample5.png -s 0.5`. 
 
 Below: The input and processed images.
+
 ![colors_scrnshot.png](images/colors_scrnshot.png)
 
 Pre-set BGR values, to be converted to HSV color bounds, for color selections in the "Select a color..." pull-down menu. (Values are from the COLOR_BOUNDARIES dictionary in contour_modules/constants.py.)
